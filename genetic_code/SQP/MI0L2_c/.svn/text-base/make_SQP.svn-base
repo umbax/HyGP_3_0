@@ -1,3 +1,0 @@
-g77 -c MI0L2.FOR TI0L2.FOR
-gcc -c  c_opt.c fdf_c.c
-g77 -o SQP  c_opt.o  fdf_c.o  MI0L2.o TI0L2.o
