@@ -1,0 +1,285 @@
+# Copyright 2016 Dr Umberto Armani
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+#! /bin/bash
+# script to run a GP experiment. All the data has to be set in the input file (input_file.txt)
+# INSTRUCTIONS: type:
+# >> ./experiment_new   input_file_path  test_data_set_path  destination_directory_path  number_of_runs  
+#       				$1				 $2					 $3							 $4
+# check for errors
+# echo Number of arguments : $#
+# check that the number of arguments is right
+if [ $# -ne 4 ]
+	then echo ERROR: number of arguments not valid. 
+	echo "Usage: >> ./experiment  input_file_path  test_data_set_path destination_directory_path  no_of_runs"
+	echo Exit...
+	exit 1
+fi 
+
+# environment variables
+# directory in which the output will be directed 
+INPUT_STRING=$1
+INPUT_DIR=${INPUT_STRING%/*}                      #extract the directory
+INPUT_FILE=${INPUT_STRING##*/}					 #extract the name 
+echo "Input file:"
+echo INPUT_DIR = $INPUT_DIR
+echo INPUT_FILE = $INPUT_FILE
+TEST_DATA_STRING=$2
+TEST_DATA_DIR=${TEST_DATA_STRING%/*}                      #extract the directory
+TEST_DATA_FILE=${TEST_DATA_STRING##*/}					 #extract the name
+echo "Test data file:"
+echo TEST_DATA_DIR = $TEST_DATA_DIR
+echo TEST_DATA_FILE = $TEST_DATA_FILE
+OUTPUT_STRING=$3
+DESTINATION=${OUTPUT_STRING%/*}        	#./output
+OUTPUT_DIR=${OUTPUT_STRING##*/}
+echo "Output string:"
+echo OUTPUT_STRING = $OUTPUT_STRING
+echo DESTINATION = $DESTINATION
+echo OUTPUT_DIR = $OUTPUT_DIR
+MAIL_ADDRESS=xxx@xxxxxx.xxx
+N_RUNS=$4
+
+
+# check if the input file exists
+if [ ! -f $INPUT_DIR/$INPUT_FILE ]
+	then echo "ERROR: input file doesn't exist!"
+	echo Exit...
+	exit 1
+fi
+
+# creating the directory
+echo Creating general directory $OUTPUT_DIR
+mkdir $DESTINATION/$OUTPUT_DIR
+
+# copy the input file (to know the input data)
+echo Copying and renaming $INPUT_DIR/$INPUT_FILE to $DESTINATION/$OUTPUT_DIR/input_file.txt ...
+cp $INPUT_DIR/$INPUT_FILE  $DESTINATION/$OUTPUT_DIR/
+mv $DESTINATION/$OUTPUT_DIR/$INPUT_FILE    $DESTINATION/$OUTPUT_DIR/input_file.txt
+
+echo Retrieving information from renamed $DESTINATION/$OUTPUT_DIR/input_file.txt...
+# it's really important that after a single "#" there is a space, otherwise AWK does not work!! 
+# retrieval of M and G
+M=(`awk '$1=="M=" {print $2}' $DESTINATION/$OUTPUT_DIR/input_file.txt`)  #population size
+G=(`awk '$1=="G=" {print $2}' $DESTINATION/$OUTPUT_DIR/input_file.txt`)  #no of generations
+echo Experiment made of $G generations and $M individuals
+echo Done
+
+# copy the test data file
+echo Copying and renaming $INPUT_DIR/$INPUT_FILE to $DESTINATION/$OUTPUT_DIR/input_file.txt ...
+cp $TEST_DATA_DIR/$TEST_DATA_FILE $DESTINATION/$OUTPUT_DIR/
+mv $DESTINATION/$OUTPUT_DIR/$TEST_DATA_FILE    $DESTINATION/$OUTPUT_DIR/test_data_set.txt
+
+#----------------------------
+# CARRY OUT THE EXPERIMENT
+#----------------------------
+for ((i=1; i<=$N_RUNS; i++ ))
+do
+	echo Creating directory result_$i
+	#1) create directory
+	mkdir $DESTINATION/$OUTPUT_DIR/run_$i
+	#2) execute single run 
+	# output on the screen redirected to file screen.txt (>& redirects also error messages): ./gp >& screen.txt
+	./gp $DESTINATION/$OUTPUT_DIR/input_file.txt $TEST_DATA_STRING  $DESTINATION/$OUTPUT_DIR/run_$i	
+	
+	#echo "Pause: press enter to continue"
+	#read GO_ON
+		
+done
+echo Done
+echo $PWD
+
+#----------------------------------------------------------------------------------------
+# COLLECTION OF THE BEST INDIVIDUAL PER EACH RUN AND ABSOLUTE BEST ON BUILDING DATA SET
+#----------------------------------------------------------------------------------------
+echo Creating archives_best.txt ...
+echo "# Gen F Fitness(RMSE)  R2(adim.)  Hits Expression" > $DESTINATION/$OUTPUT_DIR/archives_best.txt 
+for ((i=1; i<=$N_RUNS; i++ ))
+do
+	echo Reading data from  $DESTINATION/$OUTPUT_DIR/run_$i/best_gp.txt , writing to $DESTINATION/$OUTPUT_DIR/archives_best.txt ...
+	# collect data from latest_archive.txt with "cat" (>> to append, > to overwrite)
+	# MIND: all the data contained in the updated archives are collected: if a run has stopped before G, its archive is still collected!!!  
+	 awk 'END {print $0}' $DESTINATION/$OUTPUT_DIR/run_$i/best_gp.txt >> $DESTINATION/$OUTPUT_DIR/archives_best.txt
+done
+echo Done: best individual per each run copied to $DESTINATION/$OUTPUT_DIR/archives_best.txt
+
+# collection of best individual of the experiment
+echo Extracting the best individual at the end of the experiment ...
+ awk 'BEGIN{fit_min=1000000; line=0; run=0;} {if ($3<=fit_min) {fit_min=$3; line=$0; run=NR}} END{print "# Best tree found in run no. :\n" run-1 "\n# Data :\n# Gen F Fitness(RMSE)  R2(adim.)  Hits Expression\n" line;}' $DESTINATION/$OUTPUT_DIR/archives_best.txt > $DESTINATION/$OUTPUT_DIR/best_tree.txt
+echo Done: best individual of the experiment copied to $DESTINATION/$OUTPUT_DIR/best_tree.txt
+
+
+#----------------------------------------------------------------------------------------
+# COLLECTION OF THE BEST INDIVIDUAL PER EACH RUN AND ABSOLUTE BEST ON TEST DATA SET
+#----------------------------------------------------------------------------------------
+echo Creating archives_best_TEST.txt ...
+echo "# Final generation  Fitness(RMSE)  R2(adim.) Hits Expression" > $DESTINATION/$OUTPUT_DIR/archives_best_TEST.txt 
+for ((i=1; i<=$N_RUNS; i++ ))
+do
+	echo Reading data from  $DESTINATION/$OUTPUT_DIR/run_$i/best_gp.txt , writing to $DESTINATION/$OUTPUT_DIR/archives_best.txt ...
+	# collect data from final_archive_TEST.tx with "cat" (>> to append, > to overwrite)
+	# MIND: data are taken from final_archive_TEST.txt, which is written only at the end of each run!!!  
+	 awk 'END {print $0}' $DESTINATION/$OUTPUT_DIR/run_$i/best_gp_TEST.txt >> $DESTINATION/$OUTPUT_DIR/archives_best_TEST.txt
+done
+echo Done: best individual per each run copied to $DESTINATION/$OUTPUT_DIR/archives_best_TEST.txt
+
+# 2) find the best individual among the best per run
+echo Creating best_tree_TEST.txt ...
+echo "# Final generation  Fitness(RMSE)  R2(adim.) Hits Expression" > $DESTINATION/$OUTPUT_DIR/best_tree_TEST.txt 
+awk 'BEGIN{fit_min=1000000; line=0; run=0;} {if ($2<=fit_min) {fit_min=$2; line=$0; run=NR}} END{print "# Best tree found in run no. :\n" run-1 "\n# Data :\n# Gen Fitness(RMSE)  R2(adim.)  Hits Expression\n" line;}' $DESTINATION/$OUTPUT_DIR/archives_best_TEST.txt > $DESTINATION/$OUTPUT_DIR/best_tree_TEST.txt
+echo Done: best individual of the experiment on TEST data set copied to $DESTINATION/$OUTPUT_DIR/best_tree_TEST.txt
+
+
+#----------------------------------------------------------------------------------------
+# COLLECTION OF THE INDIVIDUALS IN THE WHOLE ARCHIVE PER EACH RUN (collect data of ALL individuals in each run's archive)
+#----------------------------------------------------------------------------------------
+echo Creating archives.txt ...
+for ((i=1; i<=$N_RUNS; i++ ))
+do
+	echo Reading data from  $DESTINATION/$OUTPUT_DIR/run_$i/latest_archive.txt , writing to $DESTINATION/$OUTPUT_DIR/archives.txt ...
+	# collect data from latest_archive.txt with "cat" (>> to append, > to overwrite)
+	# MIND: all the data contained in the updated archives are collected: if a run has stopped before G, its archive is still collected!!!  
+	cat  $DESTINATION/$OUTPUT_DIR/run_$i/latest_archive.txt >> $DESTINATION/$OUTPUT_DIR/archives.txt
+done
+echo Done: all the data have been written to $DESTINATION/$OUTPUT_DIR/archives.txt
+
+
+#----------------------------------------------
+# EXPERIMENT DYNAMICS
+#----------------------------------------------
+FILE_NAME[2]='fitness_min.txt'
+FILE_NAME[5]='fitness_var.txt'
+FILE_NAME[7]='size_ave.txt'
+FILE_NAME[10]='depth_ave.txt'
+FILE_NAME[12]='F_min.txt'
+FILE_NAME[15]='F_var.txt'
+FILENAME_NODE_STAT=nodes_stat.txt 
+FILENAME_TIME_STAT=time_stat.txt
+
+echo Experiment dynamics: collecting the statistical data and writing to $DESTINATION/$OUTPUT_DIR ...
+# first column
+echo Copy the first column... 
+for column in 2 5 7 10 12 15;
+do
+	FILE=${FILE_NAME[$column]}
+	awk  -v gen=$G -v col=$column '$1!="#" {print $col; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$OUTPUT_DIR/run_1/data_gp.txt  |  cat > $DESTINATION/$OUTPUT_DIR/$FILE
+done 
+
+# add the other columns
+echo Adding the other columns...
+for ((i=2; i<=$N_RUNS; i++ ))   #i = runs
+do
+	for column in 2 5 7 10 12 15;
+	do
+		FILE=${FILE_NAME[$column]}
+		awk  -v gen=$G -v col=$column '$1!="#" {print $col; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$OUTPUT_DIR/run_$i/data_gp.txt | cat > $DESTINATION/$OUTPUT_DIR/temp_c$column.txt
+		paste $DESTINATION/$OUTPUT_DIR/$FILE  $DESTINATION/$OUTPUT_DIR/temp_c$column.txt  > $DESTINATION/$OUTPUT_DIR/temp_cf$column.txt 
+		mv $DESTINATION/$OUTPUT_DIR/temp_cf$column.txt  $DESTINATION/$OUTPUT_DIR/$FILE
+	done
+	
+done
+echo Done
+
+echo Removing temporary files...
+for column in 2 5 7 10 12 15;
+do
+	rm $DESTINATION/$OUTPUT_DIR/temp_c$column.txt
+done
+echo Done
+
+#------------------------------------------------------
+# NODE SELECTION STATISTICS
+#------------------------------------------------------
+echo Node selection statistics: collecting data and writing to $DESTINATION/$OUTPUT_DIR/$FILENAME_NODE_STAT ...
+for ((i=1; i<=$N_RUNS; i++ ))   #i = runs 
+do
+	awk '$1!="#" {print $0}' $DESTINATION/$OUTPUT_DIR/run_$i/node_selection.txt >> $DESTINATION/$OUTPUT_DIR/$FILENAME_NODE_STAT
+done
+echo Done
+
+# overall time
+echo Time statistics: collecting data and writing to  $DESTINATION/$OUTPUT_DIR/$FILENAME_TIME_STAT ...
+for ((i=1; i<=$N_RUNS; i++ ))   #i = runs 
+do
+	awk '$1=="Elapsed_time(sec)=" {print $2; exit}'  $DESTINATION/$OUTPUT_DIR/run_$i/points_gp.txt >> $DESTINATION/$OUTPUT_DIR/$FILENAME_TIME_STAT
+done
+echo Done
+
+
+# averaging adaptive parameters 
+# (the output file contains a matrix whose elements are element-wise averages of the matrices in the run-i files) 
+# row=5 is the first line to be read in the file (above just comment...)
+awk -v col=1:33 -v row=5:21000 -v num=$N_RUNS '
+BEGIN {
+    split(row, r, ":")   # get indexes
+    split(col, c, ":")  # get indexes
+    max_gen = 0
+    n = num
+    n_cur_run = 0
+}
+
+{
+	if (FNR==1)  {
+		n_cur_run +=1
+		run_gen[n_cur_run]=0
+	}
+	
+	if ((r[1]<=FNR)) 
+	{  # check that the record is within matrix size
+    	for(i=c[1];i<=c[2];i++) 
+    	{
+        	data[FNR-(r[1]-1),i]+=$i
+    	}
+    	if ((FNR-(r[1]-1))>run_gen[n_cur_run]) {
+    		run_gen[n_cur_run] = FNR-(r[1]-1)
+    	}	
+    	if ((FNR-(r[1]-1))>max_gen) {
+    		max_gen = FNR-(r[1]-1)
+    	}	
+	}
+}
+
+END {
+	# print 34 fields to file (active_runs added)
+	printf("# Gen Active_runs Pop_size repr_rate cross_rate  mut_rate repr_tot reproduction_perf repr_av_delta cross_tot crossover_perf cross_av_delta tot_smut s_mutation_perf smut_av_delta  tot_pmut p_mutation_perf pmut_av_delta\n")
+    for(i=1;i<=max_gen;i++)
+    {	
+    
+    	printf("%d ", i-1)   # generation number
+    	
+    	n_active_runs=0
+    	for(k=1;k<=n;k++) 
+    		{
+        		if (i<=run_gen[k]) {
+        			n_active_runs+=1 
+        		}
+    		}
+    		
+    	printf("%d ", n_active_runs)   # number of populations still evolving (active)
+    	printf("%d ", data[i,c[1]+1]/n_active_runs)   # population size
+        for(j=c[1]+2;j<=c[2];j++)
+        {
+           	printf("%f ", data[i,j]/n_active_runs)
+        }
+        print " "
+        	
+    }
+}' $DESTINATION/$OUTPUT_DIR/run_*/adaptation_data.txt > $DESTINATION/$OUTPUT_DIR/averaged_adaptation_data.txt	
+
+echo Done
+
+#echo sending an e-mail to $MAIL_ADDRESS confirming the data are ready
+#echo "Data of the experiment are ready in directory $DESTINATION/$OUTPUT_DIR" | mail -s "DATA AVAILABLE $OUTPUT_DIR" $MAIL_ADDRESS
+echo Mail NOT sent to $MAIL_ADDRESS. End
