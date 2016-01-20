@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+QUICK GUIDE TO COMPILE AND RUN HyGP ON A LINUX DESKTOP MACHINE
+(sequential execution, not parallel, on a single machine, not a cluster)
 
-# normal compilation (sequential execution, not parallel, on a single machine)
 
+Clean previous versions:
 >> make clean
 
+
+Compile HyGP:
 >> make
 # parallel compilation
 # g++ -c -g parallel_master.cpp -o master.o -fopenmp
@@ -34,5 +38,7 @@ gfortran -fsecond-underscore -c ./genetic_code/SQP/MI0L2_c/TI0L2.FOR  -o T.o
 gfortran -std='legacy' -c ./genetic_code/SQP/MI0L2_c/MI0L2.FOR -o M.o
 gfortran -std='legacy' -o gp M.o T.o master.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
 
+
+Run the experiment typing "./experiment_new" followed by input file location, test file location, output folder name (will be created) and number of runs:
 >> ./experiment_new input/Rosenbrock/Rosenbrock_high_prec.txt input/Rosenbrock/Rosenbrock_high_prec_TEST.txt output/test/Rosenbrock_3 3
 
