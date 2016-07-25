@@ -1,0 +1,3 @@
+# Node selection statistics
+# Total n. selected   |   N. Selected per type: Binary = 0, Unary = 1, Var = 2, Const = 3      |       N. selected per depth [0 1 2   ... 30 ]
+1600   761  331  505  3    280  239  242  259  192  196  114  65  12  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0

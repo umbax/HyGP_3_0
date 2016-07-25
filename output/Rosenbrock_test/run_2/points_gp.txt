@@ -1,0 +1,19 @@
+# Training set and corresponding values of objective function (g_obj) and best individual
+M= 50
+G= 40
+Method= 4
+Generation= 40
+Elapsed_time(sec)= 2
+Used_seed= 1469325747
+    g_obj         tree          
+0    2.071918e+02 2.972095e+02
+1    2.791452e+00 -6.795922e+00
+2    1.346162e+03 1.257046e+03
+3    7.257540e+02 8.260024e+02
+4    1.832951e+01 -2.772488e+01
+5    5.046556e+02 5.211076e+02
+6    2.108960e+01 2.224793e+01
+7    3.715360e+01 1.712644e+01
+8    4.166986e+01 1.712260e+01
+9    3.805549e+02 3.620084e+02
+
