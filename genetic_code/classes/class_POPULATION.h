@@ -132,7 +132,7 @@ class Population {
 	int ntree_fdf_c; // Simple way to make fdf_c able to get the values of the tree whose costants are being optimized
 	void evaluate(int, int); // sets error, F and other attributes  of each tree
 	void evaluate_complete_trees(void); // evaluates fitness, hits, corrections, R2 of complete trees on a given data set
-	int tuning_individual(int, Binary_Node *, Binary_Node *, int);      //extracts the terminal_const variables and optimise them
+	int tuning_individual(int, Binary_Node *, Binary_Node *, int, int);      //finds, extracts the terminal_const variables and optimise them through SQP
 	double constraint_evaluation(Val**, int, char*, Variable **, int, Binary_Node *);
 
 	// pulsation control
@@ -204,7 +204,7 @@ class Population {
 	void adapt_genetic_operators_rates_notused2(void); //actually not used in the execution...for tests
 
 	// STATISTICS
-	// POPULATION STATISTICS in the current generation 
+	// ARCHIVE STATISTICS in the current generation
 	Val Fit_min;
 	Val Fit_ave;
 	Val Fit_max;
@@ -221,6 +221,7 @@ class Population {
 	double F_var;
 	double pen_ord1_ave;
 	void compute_statistics(void);
+
 
 	// NODE SELECTION STATISTICS 
 	int total_nodes_selected;

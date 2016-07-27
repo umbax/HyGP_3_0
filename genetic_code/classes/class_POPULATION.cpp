@@ -79,7 +79,7 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 
 	n_tree_evaluations = 0;
 
-	// initialise statistical data (with values that make no harm)
+	// initialise population statistics data (with values that make no harm)
 	Fit_min = 1.;
 	Fit_ave = 1.;
 	Fit_max = 1.;
@@ -92,6 +92,7 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 	D_max = 1.;
 	pen_ord1_ave = 1.;
 	
+
 	// initialise variables for node selection statistics -  to be put in RunStatistics!
 	total_nodes_selected = 0;
 	selected_nodes_per_depth = new int[parameters.depth_lim+1];
@@ -2121,7 +2122,7 @@ void Population::evaluate(int gen, int G)
 		//}
    
     
-    // 0 - copy the parameterless trees in a new array (complete_trees)
+		// 0 - copy the parameterless trees in a new array (complete_trees)
 		if (COMMENT) cout << " Copying individual trees["<< i << "] to complete_trees[" << i << "]..." << endl;
 		// delete previous (old) complete tree if it exists
 		if (complete_trees[i])
@@ -2134,8 +2135,9 @@ void Population::evaluate(int gen, int G)
 			delete [] expr;
 		}
 
-		// 1 - insert parameters in the trees (otherwise without)
-		if (COMMENT)  cout << " Inserting parameters in individual complete_trees["<< i << "]" << endl;
+
+		// 1 - insert parameters in the trees in complete_trees (otherwise without)
+		if (COMMENT)  cout << " Inserting parameters (constant=1) in individual complete_trees["<< i << "]" << endl;
 		parameters_allocation(complete_trees[i],&complete_trees[i]);
 		if (COMMENT) {
 			expr = complete_trees[i]->print();
@@ -2144,25 +2146,22 @@ void Population::evaluate(int gen, int G)
 			delete [] expr;
 		}
 
-	
 
-		// 2 - tune newly generated complete trees,
-		// tuning is done on the TRAINING (BUILDING) SET
+		// 2 - tune newly generated complete trees - which means tuning all the numerical parameters in a tree
+		// tuning is done on the TRAINING (BUILDING) SET and only if the number of numerical parameters is <= a given threshold
 		// evaluation is done on the EVALUATION SET (they are the same set if SPLIT is not enabled)
 		// RMSE (error) and other tree's attributes are evaluated at this stage
 		// (this is done also for trees copied as a result of reproduction - as the structure is copied, not the parameters!)
 		if (COMMENT)  
 			cout << "\nTuning parameters in individual complete_trees["<< i << "]" << endl;
-		
-		tuning_individual(parameters.n_guesses, trees[i], complete_trees[i], i);
+		int n_param_threshold = floor(0.5*n_test_cases_tune);
+		tuning_individual(parameters.n_guesses, trees[i], complete_trees[i], i, n_param_threshold);
 		if (COMMENT) {
 					expr = complete_trees[i]->print();
 					cout << "Individual in complete_trees[" << i << "]" << endl;
 					cout << " " << expr << endl;
 					delete [] expr;
 		}
-
-
 		if (COMMENT) {
 			expr = complete_trees[i]->print();
 			cout << "Individual in complete_trees[" << i << "] has " << complete_trees[i]->n_tuning_parameters <<" parameters" << endl;
@@ -2672,6 +2671,7 @@ void Population::parameters_allocation(Binary_Node *tree, Binary_Node**p_tree)
 
 }
 
+
 //function to add parameters to the whole population (recursive call to parameters_allocation)
 void Population::population_parameters_allocation(void)  
 {
@@ -2686,7 +2686,7 @@ void Population::population_parameters_allocation(void)
 // function to tune a single tree (single or more initial guesses)
 // input: address of the parameterless tree, address of the complete tree, corresponding number of the tree
 // output: integer (just to check)
-int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binary_Node *ntree, int tree_no)
+int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binary_Node *ntree, int tree_no, int n_param_threshold)
 {	
 	int COMMENT = 0;
 	int c;
@@ -2745,7 +2745,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	//--------------------------------------------------------------------------------------------------------------------------------
 	// find the addresses of the parameters to be tuned (pulsations are recognised by find_pulsations)
 	//--------------------------------------------------------------------------------------------------------------------------------
-	n_param = ntree->find_parameters();  
+	n_param = ntree->find_parameters();  // number of parameters found in the tree
 	find_pulsations(ntree);    //update n_pulsations and index_puls (both Population members)
 	n_nodes = ntree->count();
 
@@ -2912,46 +2912,57 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			cout << "\n  ntree_fdf_c = " << ntree_fdf_c;
 
 		//-----------------------------------------------------------
-		// call to the optimization function	
+		// call the optimization function (LINK TO EXTERNAL FUNCTION)
 		//-----------------------------------------------------------
 
-		method = 0; // IMPORTANT!
-		if (COMMENT) 
-			cout << "\nPopulation::tuning_individual : before optimisation ICONTR = method = " << method;
-		// to perform optimization with TINL2_mod.cpp, MINL2.cpp through f2c: DOESN'T WORK		
-		//c = opti_cpp(this, &method, n_param, n_test_cases, ntree,x); 
+		// 25/7/2016 : HERE YOU COULD ADD A CHECK TO SKIP TUNING (AND SO LEAVE CONSTANT NODES RANDOMLY INITIALISED)
+        //             IF THE NUMBER OF PARAMETERS IS LARGER THAN SAY HALF THE QUANTITY OF THE TRAINING POINTS...
+		//             SEE BISHOP 1996 ARTICLE
+		// IF (CONDITION FOR TUNING is TRUE) THEN    - example n_param <= n_param_max = 0.5 * size training data set
+		if (n_param<=n_param_threshold) {
+			method = 0; // IMPORTANT!
+			if (COMMENT)
+				cout << "\nPopulation::tuning_individual : before optimisation ICONTR = method = " << method;
+			// to perform optimization with TINL2_mod.cpp, MINL2.cpp through f2c: DOESN'T WORK
+			//c = opti_cpp(this, &method, n_param, n_test_cases, ntree,x);
 		
-		// CALL FORTRAN FUNCTION: ALWAYS USE ADDRESSES OF VARIABLES, NOT VARIABLES DIRECTLY!
-		// ALSO: DON'T USE CAPITAL LETTERS... otherwise problems during compiling ("undefined reference")
-		//to perform optimization with TINL2.FOR  - Umberto's method (copied from Andrey's)		
-		//optitinl2_(&method, x, &n_param, &n_test_cases_tune, &IW);
-		if (COMMENT) cout << "\n\n  Population::tuning_individual : n_param = " << n_param << ", nfitcases = " << parameters.nfitcases;
-		//if ((double)n_param <= (0.5*(parameters.nfitcases))) {// test: optimise only if n_parameters is smaller than half of the no of fitness cases
-		if (1==1) {
-			//to perform optimization with TIOL2.FOR  - Andrey's method - WORKS PERFECTLY!
-			if (COMMENT) cout << "\nPopulation::tuning_individual : Call opti_()";
-			opti_(&method, x, &n_param, &m_total, &IW);
-		} else {
-			if (COMMENT) cout << "\nPopulation::tuning_individual : tuning through opti_() skipped ...";
-		}
+			// CALL FORTRAN FUNCTION: ALWAYS USE ADDRESSES OF VARIABLES, NOT VARIABLES DIRECTLY!
+			// ALSO: DON'T USE CAPITAL LETTERS... otherwise problems during compiling ("undefined reference")
+			//to perform optimization with TINL2.FOR  - Umberto's method (copied from Andrey's)
+			//optitinl2_(&method, x, &n_param, &n_test_cases_tune, &IW);
+			if (COMMENT) cout << "\n\n  Population::tuning_individual : n_param = " << n_param << ", nfitcases = " << parameters.nfitcases;
+			//if ((double)n_param <= (0.5*(parameters.nfitcases))) {// test: optimise only if n_parameters is smaller than half of the no of fitness cases
+			if (1==1) {
+				//to perform optimization with TIOL2.FOR  - Andrey's method - WORKS PERFECTLY!
+				if (COMMENT) cout << "\nPopulation::tuning_individual : Call opti_()";
+				opti_(&method, x, &n_param, &m_total, &IW);
+			} else {
+				if (COMMENT) cout << "\nPopulation::tuning_individual : tuning through opti_() skipped ...";
+			}
 
 
-		if (COMMENT) {	
-			cout << "\nPopulation::tuning_individual : after optimisation ICONTR = method = " << method;
-			if (method==2) cout << "\n => UPPER LIMIT FOR FUNCTION EVALUATIONS EXCEEDED.";
-			if (method==1) cout << "\n => SUM OF SQUARES FAILS TO DECREASE"; 
-			if (method==0) cout << "\n => successful convergence";
-			if (method<0) cout << "\n => COMPUTATION DID NOT START: see SQP_guide (pag 14) for details"; 
-		}		
-		if (method==0) {
-			n_guess_ok++;
+			if (COMMENT) {
+				cout << "\nPopulation::tuning_individual : after optimisation ICONTR = method = " << method;
+				if (method==2) cout << "\n => UPPER LIMIT FOR FUNCTION EVALUATIONS EXCEEDED.";
+				if (method==1) cout << "\n => SUM OF SQUARES FAILS TO DECREASE";
+				if (method==0) cout << "\n => successful convergence";
+				if (method<0) cout << "\n => COMPUTATION DID NOT START: see SQP_guide (pag 14) for details";
+			}
+			if (method==0) {
+				n_guess_ok++;
+			}
+
+			// update the tree parameters with the new, optimised ones
+			update_complete_tree(ntree, x, n_param);
+
 		}
+
+		// OTHERWISE THE TREE JUST STAYS AS IT IS, WITH RANDOMLY GENERATED PARAMETERS
 
 		//-----------------------------------------------------------------------------------------------------
 		//evaluate fitness function and the other parameters defining the state of the tree 
 		// on the building set (it doesn't assign the values to the tree...wait for the final update)
 		//-----------------------------------------------------------------------------------------------------
-		update_complete_tree(ntree, x, n_param);
 		// the following call to fitness_func could be spared, if fitness calculated during tuning were used, saving computation time!!!!!
 		fitness_func(problem.Sy, problem.data_evaluation, problem.n_evaluation, ntree, result, parameters.normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
 		fitness = result[0];
@@ -2985,7 +2996,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		//-------------------------------------------------------------------------------------------------------
 */		
 		// update selection of best individual
-		// Mind!!!! Seleciton is based on fitness (or RMSE), not on the aggregated error F (obvious)!!!
+		// Mind!!!! Selection is based on fitness (or RMSE), not on the aggregated error F (obvious)!!!
 		//if ((fitness < fitness_best) && (method>=0) && (der_check)) {
 		if (fitness < fitness_best)  {	
 			fitness_best = fitness;
@@ -3006,7 +3017,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		}
 
 
-	// here the cycle stops ---------------------------------------------------------------------------------------------------
+	// here the cycle for (... i_guess<n_guesses ...) stops ---------------------------------------------------------------------------------------------------
 	}
 
 	//update state variables of the (complete) tree with the best set of (tuned) parameters
@@ -3818,11 +3829,11 @@ void Population::adapt_genetic_operators_rates(void)
 //&/
 
 void Population::compute_statistics(void)
-// function that computes basic statistics for the current generation
+// function that computes basic ARCHIVE statistics for the CURRENT generation
 // Fit (fitness initially meant RMSE): min, max, mean and unb. est. of the pop. variance on the archive
-// size: minimum,  average, maximum on the archive
-// depth: minimum,  average, maximum on the archive
-// F value:minimum,  average, maximum, variance on the archive
+// size: minimum,  average, maximum in the archive
+// depth: minimum,  average, maximum in the archive
+// F value: minimum,  average, maximum, variance in the archive
 {
 	int COMMENT = 0;
 
