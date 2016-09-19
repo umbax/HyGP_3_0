@@ -2055,6 +2055,7 @@ void Population::new_spawn(RunParameters pr, ProblemDefinition pb, int n_test_ca
 
 
 // structuralGP : here evaluate() carries out more tasks than it does in classic GP:
+// EDITING - if needed
 // 0 - copies the parameterless trees in a new array (complete_trees)
 // 1 - inserts parameters in the trees (otherwise without)
 // 2 - tunes newly generated complete trees, evaluating their fitness values
@@ -2101,27 +2102,14 @@ void Population::evaluate(int gen, int G)
 			delete [] expr;
 		}
 		
-		// find out if the very same individual was present the previous generation.
-		// If so, store the values of the parameters.
-		// (apply this search only to the best individual, trees[0])	
 		
-		
- 	  // NEW OPERATION: Edit trees to avoid undefined operations (es: x/0).
-    // Doing this on the array of parameterless trees allow the modification to be trasmitted throughout the      evolution
-		// for now check that if a variable is found as denominator,
-		// such variable is not zero within the design space
-		//if (problem.division) {
-			// gets here if division is among primitives
-			//char *expr;
-			//expr = complete_trees[i]->print();
-			//cout << "\n\n" << i << ") Tree before editing: " << expr;
-		//	edit_tree((Node*)trees[i], (Node**)&trees[i]);
-			//cout << "\nDone";
-			//expr = complete_trees[i]->print();
-			//cout << "\n" << i << ") Tree after editing: " << expr;
-		//}
-   
+		// EDITING (pag 266 PhD thesis): Edit trees to avoid undefined operations, for now only x/0
+		// Doing this on the array of parameterless trees allow the modification to be transmitted throughout the evolution.
+		// Strategy adopted: Ed2 - if a variable is found as divisor (right child of a division),
+		// such variable is either replaced with 1 (Strategy : Ed) or might be summed with 1 (Strategy: Ed2)
+		perform_editing(i);
     
+
 		// 0 - copy the parameterless trees in a new array (complete_trees)
 		if (COMMENT) cout << " Copying individual trees["<< i << "] to complete_trees[" << i << "]..." << endl;
 		// delete previous (old) complete tree if it exists
@@ -2680,6 +2668,28 @@ void Population::population_parameters_allocation(void)
 		cout << "\n\nIndividual " << i << endl;
 		parameters_allocation(trees[i],&trees[i]);
 	}
+}
+
+
+// function that performs EDITING on the individuals without parameters
+//PROBLEM : still at an early stage of development, as currently avoids only x/a for a=0,
+// and a must be a single node to be recognised...
+// input: number of the tree to be edited in trees[]
+void Population::perform_editing(int i)
+{
+	int COMMENT = 0;
+	// check if critical operations are used
+	if (problem.division) { // add check if division is in the tree, so to skip in case this operation (editing)
+		// gets here if division is among primitives
+		char *expr;
+		if (COMMENT) expr = trees[i]->print();
+		if (COMMENT) cout << "\n\n" << i << ") Tree before editing: " << expr;
+		edit_tree((Node*)trees[i], (Node**)&trees[i]);
+		if (COMMENT) cout << "\nDone";
+		if (COMMENT) expr = trees[i]->print();
+		if (COMMENT) cout << "\n" << i << ") Tree after editing: " << expr;
+	}
+
 }
 
 

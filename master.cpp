@@ -51,8 +51,8 @@ double MIN_VAL = 1.8e-19;
 #include "./genetic_code/read_input/read_test_data.h"
 #include "./genetic_code/input_checks/input_check.h"
 #include "./genetic_code/classes/class_NODE_base.h"
-#include "./genetic_code/tree functions/tree_operations.h"
-#include "./genetic_code/tree functions/vector_derivative_functions.h"
+#include "genetic_code/tree_functions/tree_operations.h"
+#include "genetic_code/tree_functions/vector_derivative_functions.h"
 #include "./genetic_code/modules/primitives.cpp"
 #include "./genetic_code/classes/class_BINARY_NODE.h"
 #include "./genetic_code/classes/class_UNARY_NODE.h"
@@ -145,7 +145,7 @@ int main (int argc, char *argv[])
 	// now all is done in read_input_file (but it's too messy there...)
 	
 	// show the results
-	show_loaded_data(&parameters, &problem);
+	//show_loaded_data(&parameters, &problem);
 		
 	// to stop the execution
 	//cout << "Have a go?" << endl;
@@ -367,6 +367,7 @@ int main (int argc, char *argv[])
 	return 0;
 }
 
+// to get rid of the following source files inclusions, compile those source files separately and link them in makefile!!!!
 #include "./genetic_code/modules/variable.cpp"
 #include "./genetic_code/classes/class_NODE_base.cpp"
 #include "./genetic_code/classes/class_BINARY_NODE.cpp"
@@ -380,12 +381,12 @@ int main (int argc, char *argv[])
 //#include "./genetic code/SQP/MINL2.cpp"    - only for optimizer translated in C++
 //#include "./genetic code/SQP/TINL2_mod.cpp"   - only for optimizer translated in C++
 #include "./genetic_code/classes/class_POPULATION.cpp"
-#include "./genetic_code/tree functions/tree_operations.cpp"
+#include "genetic_code/tree_functions/tree_operations.cpp"
 //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
 #include "./genetic_code/SQP/MI0L2_c/fdf_c.cpp"
 //for Umberto's method - TINL2 and MINL2 - WORKS?
 //#include "./genetic code/SQP/fdfTINL2_c.cpp"  
-#include "./genetic_code/tree functions/vector_derivative_functions.cpp"
+#include "genetic_code/tree_functions/vector_derivative_functions.cpp"
 #include "./genetic_code/classes/run_parameters.cpp"
 #include "./genetic_code/classes/problem_definition.cpp"
 #include "./genetic_code/classes/reporter.cpp"
