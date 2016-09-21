@@ -356,7 +356,7 @@ void edit_tree(Node *cur_node, Node** p_tree)
 			// check that the variable is zero in the design space
 			Variable *var = ((Terminal_Var*)r_child)->get_var_address();
 		
-			c = int_rand(2);
+			c = int_rand(2); //Ed3
 			if (c) {//Ed3: random decision  //Ed, Ed2: CHECK ON VARIABLE DOMAIN: if ((var->lower_b)*(var->upper_b) <= 0.0) {
 				// here the variable assumes zero value in the design space:
 				// either replace the node with a terminal const = 1.0 or add a terminal_const = 1.0

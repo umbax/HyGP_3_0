@@ -40,8 +40,8 @@ double MIN_VAL = 1.8e-19;
 // HEADERS
 // do not change the order of the following include commands! 
 //Otherwise you may have undeclared objects //
-#include "./genetic_code/modules/nodes_types.h"
-#include "./genetic_code/modules/Val_type.h"
+#include "./genetic_code/modules/nodes_types.h"   	//just a header, no source file
+#include "./genetic_code/modules/Val_type.h"		//just a header, no source file
 #include "./genetic_code/modules/variable.h"
 #include "./genetic_code/modules/func_primitives_prototypes.h"
 #include "./genetic_code/classes/run_parameters.h"
@@ -51,8 +51,8 @@ double MIN_VAL = 1.8e-19;
 #include "./genetic_code/read_input/read_test_data.h"
 #include "./genetic_code/input_checks/input_check.h"
 #include "./genetic_code/classes/class_NODE_base.h"
-#include "genetic_code/tree_functions/tree_operations.h"
-#include "genetic_code/tree_functions/vector_derivative_functions.h"
+#include "./genetic_code/tree_functions/tree_operations.h"
+#include "./genetic_code/tree_functions/vector_derivative_functions.h"
 #include "./genetic_code/modules/primitives.cpp"
 #include "./genetic_code/classes/class_BINARY_NODE.h"
 #include "./genetic_code/classes/class_UNARY_NODE.h"
@@ -367,21 +367,20 @@ int main (int argc, char *argv[])
 	return 0;
 }
 
-// to get rid of the following source files inclusions, compile those source files separately and link them in makefile!!!!
-#include "./genetic_code/modules/variable.cpp"
+// to get rid of the following source files inclusions, compile their source files separately and link them in makefile!!!!
 #include "./genetic_code/classes/class_NODE_base.cpp"
 #include "./genetic_code/classes/class_BINARY_NODE.cpp"
 #include "./genetic_code/classes/class_UNARY_NODE.cpp"
 #include "./genetic_code/classes/class_TERMINAL_VAR.cpp"
 #include "./genetic_code/classes/class_TERMINAL_CONST.cpp"
-# include "./genetic_code/read_input/read_file_new.cpp"
+#include "./genetic_code/read_input/read_file_new.cpp"
 #include "./genetic_code/read_input/read_test_data.cpp"
-# include "./genetic_code/read_input/show_loaded_data.cpp"
+#include "./genetic_code/read_input/show_loaded_data.cpp"
 #include "./genetic_code/input_checks/input_check.cpp"
 //#include "./genetic code/SQP/MINL2.cpp"    - only for optimizer translated in C++
 //#include "./genetic code/SQP/TINL2_mod.cpp"   - only for optimizer translated in C++
 #include "./genetic_code/classes/class_POPULATION.cpp"
-#include "genetic_code/tree_functions/tree_operations.cpp"
+#include "./genetic_code/tree_functions/tree_operations.cpp"
 //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
 #include "./genetic_code/SQP/MI0L2_c/fdf_c.cpp"
 //for Umberto's method - TINL2 and MINL2 - WORKS?

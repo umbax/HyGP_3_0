@@ -12,22 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+
+#include <iostream>
+#include <cstring>    // to manipulate strings (C)
+
+using namespace std;
+
+#include "Val_type.h"
+#include "variable.h"
 // variable
 
-// variable constructor
+// Variable Class constructor
 Variable::Variable(void)
-//old constructor with default values
-//(Val initial_val = 0.0, char initial_name[10] = "not set", \
-		double initial_range = 0.0, Val initial_omega_lim = MAX_VAL)
 {
 	value = 0.0; //initial_val;
 	strcpy(name, "not_set");
 	lower_b = 0.0;
 	upper_b = 0.0;
 	range = 0.0; //initial_range;
-	omega_lim = MAX_VAL; //initial_omega_lim;
+	omega_lim = 1.8e+19; //initial_omega_lim: originally =MAX_VAL, changed to a numerical value on 21/9/2016;
 }
 
+// function to show content of Class Variable variables
 void Variable::show_status(void)
 {
 	cout << "\n\nVariable \"" << name << "\" status :";
