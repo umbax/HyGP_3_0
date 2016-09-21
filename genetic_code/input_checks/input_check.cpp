@@ -12,6 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
+#include <stdlib.h>   //exit
+
+using namespace std;
+
+// dependencies
+#include "../classes/run_parameters.h"
+#include "../classes/problem_definition.h"
+
 
 void input_check(RunParameters *pr, ProblemDefinition *pb)
 {

@@ -16,6 +16,11 @@
 #ifndef PROBLEMDEFINITION_H_
 #define PROBLEMDEFINITION_H_
 
+// dependencies
+#include "../modules/Val_type.h"
+#include "../modules/variable.h"
+#include "../modules/func_primitives_prototypes.h"
+
 // class containing the data used during the evolution
 
 class ProblemDefinition

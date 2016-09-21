@@ -17,6 +17,11 @@
 #ifndef RUNPARAMETERS_H_
 #define RUNPARAMETERS_H_
 
+using namespace std;
+
+// dependencies
+#include "../modules/Val_type.h"
+
 // class containing the parameters defining the evolution
 class RunParameters
 {

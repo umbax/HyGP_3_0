@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef CLASS_NODE_BASE_H_
+#define CLASS_NODE_BASE_H_
+
+// dependencies
+#include "../modules/Val_type.h"
 
 // base NODE class definition (UTF-8 codification)
 
@@ -57,6 +62,6 @@ class Node {
 };
 
 
-
+#endif /* CLASS_NODE_BASE_H_ */
 
 

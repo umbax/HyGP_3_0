@@ -12,6 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdlib>   // NULL
+
+using namespace std;
+
+
+// included dependencies
+#include "./class_NODE_base.h"
+#include "../modules/nodes_types.h"   	//just a header, no source file
+#include "./class_BINARY_NODE.h"	// risk of recursive loop
+#include "./class_UNARY_NODE.h"		// risk of recursive loop
+
 
 // base NODE class
 // function definitions (virtual functions are defined in the derived classes)

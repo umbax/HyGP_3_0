@@ -16,9 +16,9 @@
 #include <fstream>  // file I/O
 #include <iomanip>  // manipulators (text format)
 #include <string>    // to manipulate strings (C)
-#include <cstring>    // to manipulate strings (C)
+#include <cstring>   // to manipulate strings (C)
 #include <string>    //  string class (C++)
-#include <cstdlib>
+#include <cstdlib>   // NULL
 #include <ctime>	 // to work with variables of type time_t and random number generator "srandom"  
 #include <cmath>
 #include <algorithm>
@@ -368,7 +368,6 @@ int main (int argc, char *argv[])
 }
 
 // to get rid of the following source files inclusions, compile their source files separately and link them in makefile!!!!
-#include "./genetic_code/classes/class_NODE_base.cpp"
 #include "./genetic_code/classes/class_BINARY_NODE.cpp"
 #include "./genetic_code/classes/class_UNARY_NODE.cpp"
 #include "./genetic_code/classes/class_TERMINAL_VAR.cpp"
@@ -376,7 +375,6 @@ int main (int argc, char *argv[])
 #include "./genetic_code/read_input/read_file_new.cpp"
 #include "./genetic_code/read_input/read_test_data.cpp"
 #include "./genetic_code/read_input/show_loaded_data.cpp"
-#include "./genetic_code/input_checks/input_check.cpp"
 //#include "./genetic code/SQP/MINL2.cpp"    - only for optimizer translated in C++
 //#include "./genetic code/SQP/TINL2_mod.cpp"   - only for optimizer translated in C++
 #include "./genetic_code/classes/class_POPULATION.cpp"

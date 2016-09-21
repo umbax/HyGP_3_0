@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+#ifndef FUNC_PRIMITIVES_PROTOTYPES_H_
+#define FUNC_PRIMITIVES_PROTOTYPES_H_
+
 // functional primitives prototypes
 
 // Binary functions
@@ -29,3 +33,4 @@ typedef struct Unary_Func {
 }  Unary_Func;
 
 
+#endif /* FUNC_PRIMITIVES_PROTOTYPES_H_ */

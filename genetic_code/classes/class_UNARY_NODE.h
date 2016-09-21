@@ -18,6 +18,10 @@
 
 #ifndef CLASS_UNARY_NODE_H_
 #define CLASS_UNARY_NODE_H_
+
+// dependencies
+#include "../modules/func_primitives_prototypes.h"
+
 class Unary_Node : public Node {
 
   private:

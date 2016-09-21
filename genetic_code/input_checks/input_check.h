@@ -13,4 +13,9 @@
 // limitations under the License.
 
 
+#ifndef INPUT_CHECK_H_
+#define INPUT_CHECK_H_
+
 void input_check(RunParameters*, ProblemDefinition*);
+
+#endif /* INPUT_CHECK_H_ */

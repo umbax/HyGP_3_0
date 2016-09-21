@@ -16,6 +16,13 @@
 #ifndef CLASS_BINARY_NODE_H_
 #define CLASS_BINARY_NODE_H_
 
+#include <vector>
+
+using namespace std;
+
+// dependencies
+#include "../modules/func_primitives_prototypes.h"
+
 // derived node class BINARY_NODE
 
 // binary operation node
