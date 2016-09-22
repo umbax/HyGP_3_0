@@ -21,6 +21,9 @@
 
 // dependencies
 #include "../modules/func_primitives_prototypes.h"
+#include "./class_NODE_base.h"
+#include "../modules/primitives.h"
+
 
 class Unary_Node : public Node {
 

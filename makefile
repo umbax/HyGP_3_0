@@ -17,9 +17,9 @@
 # no options is run.
 all: gp
 
-gp: master.o T.o M.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/classes/class_NODE_base.o
+gp: master.o T.o M.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o class_BINARY_NODE.o ./genetic_code/classes/class_UNARY_NODE.o ./genetic_code/classes/class_NODE_base.o ./genetic_code/modules/primitives.o
 # for Linux on feng-gps1
-	gfortran -std='legacy' -o gp M.o T.o master.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/classes/class_NODE_base.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
+	gfortran -std='legacy' -o gp M.o T.o master.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/classes/class_BINARY_NODE.o ./genetic_code/classes/class_UNARY_NODE.o ./genetic_code/classes/class_NODE_base.o ./genetic_code/modules/primitives.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
 # for Linux on pre-pc1017 (NOTE the version number! 11/2010)
 # g77 -o gp M.o T.o master.o -L/usr/lib/gcc/x86_64-redhat-linux/4.1.2/ -lstdc++ 
 # for development under Windows (Eclipse)   D:/MinGW/lib/gcc/mingw32/4.5.0/
@@ -43,13 +43,27 @@ input_check.o:
 variable.o: 
 	g++ -c -g ./genetic_code/modules/variable.cpp -o ./genetic_code/modules/variable.o
 
+class_BINARY_NODE.o:	
+	g++ -c -g ./genetic_code/classes/class_BINARY_NODE.cpp -o ./genetic_code/classes/class_BINARY_NODE.o
+
+class_UNARY_NODE.o:	
+	g++ -c -g ./genetic_code/classes/class_UNARY_NODE.cpp -o ./genetic_code/classes/class_UNARY_NODE.o
+
 class_NODE_base.o:	
 	g++ -c -g ./genetic_code/classes/class_NODE_base.cpp -o ./genetic_code/classes/class_NODE_base.o
 
+primitives.o:
+	g++ -c -g ./genetic_code/modules/primitives.cpp -o ./genetic_code/modules/primitives.o
+	# use extern to define Add, Sub, etc also mind the typedef struct renomination... use a class?
+
 clean :
-	rm M.o
-	rm T.o
-	rm master.o
-	rm ./genetic_code/modules/variable.o
-	rm ./genetic_code/input_checks/input_check.o
 	rm gp
+	rm master.o
+	rm T.o
+	rm M.o
+	rm ./genetic_code/input_checks/input_check.o
+	rm ./genetic_code/modules/variable.o
+	rm ./genetic_code/classes/class_BINARY_NODE.o
+	rm ./genetic_code/classes/class_NODE_base.o
+	rm ./genetic_code/modules/primitives.o
+	

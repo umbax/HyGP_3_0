@@ -15,6 +15,20 @@
 
 // derived node class UNARY_NODE
 
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
+#include <stdlib.h>   //exit
+#include <cstdlib>   // NULL
+
+using namespace std;
+
+// included dependencies
+#include "./class_UNARY_NODE.h"
+#include "../modules/nodes_types.h"   	//just a header, no source file
+#include <cstdio>   // sprintf
+#include <string.h>    //  string class (C++): strlen, strdup
+#include "../tree_functions/tree_operations.h"
+
+
 // unary node constructor - like the binary one, but a different function type
 Unary_Node::Unary_Node(Node *parent_node, Unary_Func *func)
 {

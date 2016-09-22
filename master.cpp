@@ -368,7 +368,6 @@ int main (int argc, char *argv[])
 }
 
 // to get rid of the following source files inclusions, compile their source files separately and link them in makefile!!!!
-#include "./genetic_code/classes/class_UNARY_NODE.cpp"
 #include "./genetic_code/classes/class_TERMINAL_VAR.cpp"
 #include "./genetic_code/classes/class_TERMINAL_CONST.cpp"
 #include "./genetic_code/read_input/read_file_new.cpp"

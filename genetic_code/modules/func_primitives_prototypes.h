@@ -18,6 +18,10 @@
 
 // functional primitives prototypes
 
+// included dependencies
+#include "../modules/Val_type.h"
+
+
 // Binary functions
 typedef struct Binary_Func {
     Val (*eval)(Val,Val,int*);               // the function pointer (the int* is used to increment the number of times a correction is done by protected operations)
