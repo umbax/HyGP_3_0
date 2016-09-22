@@ -13,6 +13,15 @@
 // limitations under the License.
 
 
+
+#ifndef TREE_OPERATIONS_H_
+#define TREE_OPERATIONS_H_
+
+// included dependencies
+#include "../modules/Val_type.h"
+#include "../classes/class_NODE_base.h"
+#include "../modules/func_primitives_prototypes.h"
+
 Node *tree_copy(Node *, Node *);
 int tree_comp_F(const void *, const void *);
 int tree_comp_fitness(const void *, const void *);
@@ -20,3 +29,6 @@ void insert_parameter(Node *, Node **, Binary_Func *, Val);
 int insert_subtree(Node **, Node *, Node *);    
 void eliminate_subtree(Node *, Val);
 void edit_tree(Node *,  Node**);
+
+
+#endif /* TREE_OPERATIONS_H_ */

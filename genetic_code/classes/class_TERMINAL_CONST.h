@@ -18,6 +18,14 @@
 
 //derived node class TERMINAL_CONST
 
+
+using namespace std;
+
+// included dependencies
+#include "../modules/Val_type.h"
+#include "./class_NODE_base.h"
+
+
 // a constant value terminal node
 class Terminal_Const : public Node {
 

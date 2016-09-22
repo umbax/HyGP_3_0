@@ -19,7 +19,7 @@
 #include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
 #include <stdlib.h>   //exit
 #include <cstdlib>   // NULL
-#include <cstdio>   // sprintf
+#include <cstdio>   // sprintf, sscanf
 #include <string.h>    //  string class (C++): strlen, strdup
 #include <iomanip>  // manipulators (text format): setw
 
@@ -27,6 +27,7 @@ using namespace std;
 
 // included dependencies
 #include "./class_BINARY_NODE.h"
+#include "../modules/primitives.h"
 #include "../modules/nodes_types.h"   	//just a header, no source file
 #include "../tree_functions/tree_operations.h"
 

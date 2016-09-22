@@ -15,38 +15,16 @@
 
 //derived node class TERMINAL_CONST
 
-/*
-// a constant value terminal node
-class Terminal_Const : public Node {
-    
-  private:
-    Val constant;               // the constant value
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
+#include <cstdlib>   // NULL
+#include <cstdio>   // sprintf, sscanf
+#include <string.h>    //  string class (C++): strlen, strdup
 
-  public:
-    // constructor takes the parent and value
-    Terminal_Const(Node *, Val); 
+using namespace std;
 
-    // the value function just needs to return the constant
-    Val value(int*);
-	// counter function is just 1 for this node
-    int count(void);
-    int calc_depth(void);
-	Node *find(int);            // finder function
-    char *print(void);          // printer function
-
-	// function to allocate parameters
-	int op_check(void);
-	void check_allocation(Node **, int);
-
-	// function to assign the numerical value if the constant
-	void assign(Val c);
-};
-
-
-*/
-
-
-
+// included dependencies
+#include "./class_TERMINAL_CONST.h"
+#include "../modules/nodes_types.h"   	//just a header, no source file
 
 
 

@@ -18,6 +18,16 @@
 #ifndef CLASS_TERMINAL_VAR_H_
 #define CLASS_TERMINAL_VAR_H_
 
+
+
+using namespace std;
+
+// included dependencies
+#include "../modules/Val_type.h"
+#include "../modules/variable.h"
+#include "./class_NODE_base.h"
+
+
 // variable terminal node.  uses a Val ref for the value
 class Terminal_Var : public Node {
 

@@ -15,6 +15,22 @@
 
 // derived node class TERMINAL_VAR
 
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
+#include <stdlib.h>   //exit
+#include <cstdio>   // sprintf, sscanf
+#include <string>    //  string class (C++)
+#include <string.h>    //  string class (C++): strlen, strdup
+
+using namespace std;
+
+// included dependencies
+#include "./class_TERMINAL_VAR.h"
+#include "../modules/primitives.h"
+#include "../modules/nodes_types.h"   	//just a header, no source file
+#include "../tree_functions/tree_operations.h"
+
+
+
 // function definitions
 
 // variable terminal node constructor.  like the above, but stores a ref

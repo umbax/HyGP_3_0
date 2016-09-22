@@ -23,7 +23,7 @@ using namespace std;
 // dependencies
 #include "../modules/Val_type.h"
 #include "./class_NODE_base.h"
-#include "../modules/primitives.h"
+#include "../modules/func_primitives_prototypes.h"
 
 // derived node class BINARY_NODE
 
