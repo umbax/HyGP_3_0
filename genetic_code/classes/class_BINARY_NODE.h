@@ -21,7 +21,9 @@
 using namespace std;
 
 // dependencies
-#include "../modules/func_primitives_prototypes.h"
+#include "../modules/Val_type.h"
+#include "../modules/primitives.h"
+#include "./class_NODE_base.h"
 
 // derived node class BINARY_NODE
 

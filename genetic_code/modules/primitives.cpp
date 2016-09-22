@@ -12,11 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 // functional primitives definition
 
+#include <cmath>
 
-// BINARY FUNCTIONS
+using namespace std;
+
+// included dependencies
+#include "../modules/Val_type.h"		//just a header, no source file
+#include "../modules/func_primitives_prototypes.h"
+
+
+
+// BINARY FUNCTIONS (Binary_Func)
 
 // function for adding 2 values
 Val add(Val a, Val b, int* n_corrections)
@@ -102,7 +110,7 @@ Binary_Func Spow = {spow, spow_sign};
 
 
 
-// UNARY FUNCTIONS
+// UNARY FUNCTIONS (Unary_Func)
 
 Val pow1(Val a, int* n_corrections)
 {
@@ -271,3 +279,6 @@ Val hypertan(Val a, int* n_corrections)
 char hypertan_sign[] = "tanh";
 int hypertan_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
 Unary_Func Tanh = {hypertan, hypertan_sign, &hypertan_pos};
+
+
+

@@ -16,6 +16,21 @@
 // class BINARY_NODE
 // Binary Node function definitions
 
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
+#include <stdlib.h>   //exit
+#include <cstdlib>   // NULL
+#include <cstdio>   // sprintf
+#include <string.h>    //  string class (C++): strlen, strdup
+#include <iomanip>  // manipulators (text format): setw
+
+using namespace std;
+
+// included dependencies
+#include "./class_BINARY_NODE.h"
+#include "../modules/nodes_types.h"   	//just a header, no source file
+#include "../tree_functions/tree_operations.h"
+
+
 
 // binary node constructor - takes the parent node and the function of this 
 // node

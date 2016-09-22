@@ -18,4 +18,8 @@
 
 typedef double Val;
 
+// definition of max and minimum absolute values
+#define MAX_VAL 1.8e+19
+#define MIN_VAL 1.8e-19
+
 #endif /* VAL_TYPE_H_ */

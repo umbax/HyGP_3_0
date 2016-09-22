@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <iostream>  // basic i/o commands
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
 #include <fstream>  // file I/O
-#include <iomanip>  // manipulators (text format)
+#include <iomanip>  // manipulators (text format): setw
 #include <string>    // to manipulate strings (C)
 #include <cstring>   // to manipulate strings (C)
 #include <string>    //  string class (C++)
@@ -34,8 +34,8 @@ using namespace std;
 
 // global variables - numeric settings
 const double PI = 4.0*atan(1.0);
-double MAX_VAL = 1.8e+19;
-double MIN_VAL = 1.8e-19;
+//double MAX_VAL = 1.8e+19;   // redefined in Val_type.h
+//double MIN_VAL = 1.8e-19;		// redefined in Val_type.h
 
 // HEADERS
 // do not change the order of the following include commands! 
@@ -53,7 +53,7 @@ double MIN_VAL = 1.8e-19;
 #include "./genetic_code/classes/class_NODE_base.h"
 #include "./genetic_code/tree_functions/tree_operations.h"
 #include "./genetic_code/tree_functions/vector_derivative_functions.h"
-#include "./genetic_code/modules/primitives.cpp"
+#include "./genetic_code/modules/primitives.h"	// global (extern) structs defining functional primitives
 #include "./genetic_code/classes/class_BINARY_NODE.h"
 #include "./genetic_code/classes/class_UNARY_NODE.h"
 #include "./genetic_code/classes/class_TERMINAL_VAR.h"
@@ -368,7 +368,6 @@ int main (int argc, char *argv[])
 }
 
 // to get rid of the following source files inclusions, compile their source files separately and link them in makefile!!!!
-#include "./genetic_code/classes/class_BINARY_NODE.cpp"
 #include "./genetic_code/classes/class_UNARY_NODE.cpp"
 #include "./genetic_code/classes/class_TERMINAL_VAR.cpp"
 #include "./genetic_code/classes/class_TERMINAL_CONST.cpp"
