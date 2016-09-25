@@ -2,6 +2,7 @@
 C++ Hybrid Genetic Programming code for symbolic regression of explicit metamodels from data
 
 Main features
+
 Encoding: models or individuals are represented by trees with unary and binary operations
 
 Selection: tournament out of three individuals selected from elite or whole population
