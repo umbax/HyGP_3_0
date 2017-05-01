@@ -129,7 +129,10 @@ class Population {
 	Node *remove_unary_node(Unary_Node *u_node);
 	
 	void population_parameters_allocation(void);
-	int ntree_fdf_c; // Simple way to make fdf_c able to get the values of the tree whose costants are being optimized
+
+	int ntree_fdf_c; // SQP parameter optimisation: simple way to make fdf_c able to get the values of the tree whose costants are being optimized
+	double pso_objfunction(double*, int, Binary_Node*); // HyPSO parameter optimisation
+
 	void evaluate(int, int); // sets error, F and other attributes  of each tree
 	void evaluate_complete_trees(void); // evaluates fitness, hits, corrections, R2 of complete trees on a given data set
 	void perform_editing(int i); // edits trees[i], individual without parameters

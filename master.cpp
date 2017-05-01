@@ -34,8 +34,8 @@ using namespace std;
 
 // global variables - numeric settings
 const double PI = 4.0*atan(1.0);
-//double MAX_VAL = 1.8e+19;   // redefined in Val_type.h
-//double MIN_VAL = 1.8e-19;		// redefined in Val_type.h
+//double MAX_VAL = 1.8e+19;   // can be redefined in Val_type.h
+//double MIN_VAL = 1.8e-19;		// can be redefined in Val_type.h
 
 // HEADERS
 // do not change the order of the following include commands! 
@@ -48,7 +48,7 @@ const double PI = 4.0*atan(1.0);
 #include "./genetic_code/classes/problem_definition.h"
 #include "./genetic_code/read_input/show_loaded_data.h"
 #include "./genetic_code/read_input/read_file_new.h"
-#include "./genetic_code/read_input/read_test_data.h"
+#include "./genetic_code/read_input/read_test_data.h" // not implemented yet in OpenMP version
 #include "./genetic_code/input_checks/input_check.h"
 #include "./genetic_code/classes/class_NODE_base.h"
 #include "./genetic_code/tree_functions/tree_operations.h"
