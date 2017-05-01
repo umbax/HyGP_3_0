@@ -1,0 +1,236 @@
+#! /bin/bash  
+# script to collect the data if the experiment was stopped before all runs were carried out
+# INSTRUCTIONS: type:
+# >> ./posteriori  destination_directory  no_of_the_last_run
+echo
+
+#echo Number of arguments : $#
+# check that the number of arguments is right
+if [ $# -ne 2 ]
+	then echo ERROR: number of arguments not valid.
+	echo "Usage:  >> ./posteriori  experiment_directory  no_of_the_last_run"
+	echo "Example:   >> ./posteriori  output/Branin_Hoo/Branin_G200M50R50  50 "
+	echo  Exit...
+	exit 1
+fi 
+
+# environment variables
+# directory in which the output will be directed 
+#DESTINATION=./output
+########## new!
+# environment variables
+# directory in which the output will be directed 
+STRING=$1
+DESTINATION=${STRING%/*}        	#extract the directory
+EXP_DIR=${STRING##*/} 			#extract the name 
+echo STRING = $STRING
+echo Address experiment : DESTINATION = $DESTINATION
+echo Experiment folder : EXP_DIR = $EXP_DIR
+MAIL_ADDRESS=xxx
+N_RUNS=$2
+
+
+
+# copy the input file (to know the input data)
+echo Retrieving information from $DESTINATION/$EXP_DIR/input_file.txt ...
+# it's really important that after a single "#" there is a space, otherwise AWK does not work!! 
+M=(`awk '$1=="M=" {print $2}' $DESTINATION/$EXP_DIR/input_file.txt`) #population size
+G=(`awk '$1=="G=" {print $2}' $DESTINATION/$EXP_DIR/input_file.txt`)  #no of generations
+echo Population $M.
+echo Hypothetical no. of generations: $G 
+echo Experiment stopped at run $N_RUNS . 
+
+
+# collection of best individual per each run (first individual of each run's archive)
+# to make sure archives_best already exists, delete it
+#rm $DESTINATION/$EXP_DIR/archives_best.txt
+echo
+echo Creating archives_best.txt ...
+echo "# Gen F Fitness(RMSE)  R2(adim.)  Hits Expression" > $DESTINATION/$EXP_DIR/archives_best.txt 
+for ((i=1; i<$2+1; i++ ))
+do
+	echo Reading data from  $EXP_DIR/run_$i/best_gp.txt , writing to $EXP_DIR/archives_best.txt ...
+	# collect data from latest_archive.txt with "cat" (>> to append, > to overwrite)
+	# MIND: all the data contained in the updated archives are collected: if a run has stopped before G, its archive is still collected!!!  
+	 awk 'END {print $0}' $DESTINATION/$EXP_DIR/run_$i/best_gp.txt >> $DESTINATION/$EXP_DIR/archives_best.txt
+done
+echo Done: best individual per each run copied to $DESTINATION/$EXP_DIR/archives_best.txt
+
+# collection of best individual of the experiment
+echo
+echo Extracting the best individual at the end of the experiment ...
+ awk 'BEGIN{fit_min=1000000; line=0; run=0;} {if ($3<=fit_min) {fit_min=$3; line=$0; run=NR}} END{print "# Best tree found in run no. :\n" run-1 "\n# Data :\n# Gen F Fitness(RMSE)  R2(adim.)  Hits Expression\n" line;}' $DESTINATION/$EXP_DIR/archives_best.txt > $DESTINATION/$EXP_DIR/best_tree.txt
+echo Done: best individual of the experiment copied to $EXP_DIR/best_tree.txt
+
+# runs' archives
+if [ -e $DESTINATION/$EXP_DIR/archives.txt ]
+then
+    rm $DESTINATION/$EXP_DIR/archives.txt
+fi
+echo
+echo Creating archives.txt ...
+for ((i=1; i<$2+1; i++ ))
+do
+	echo Reading data from  $EXP_DIR/run_$i/latest_archive.txt,  writing to $EXP_DIR/archives.txt ...
+	#1) collect data from latest_archive.txt with "cat" (>> to append, > to overwrite)
+	cat  $DESTINATION/$EXP_DIR/run_$i/latest_archive.txt >> $DESTINATION/$EXP_DIR/archives.txt
+done
+echo Done: all the data have been written to $EXP_DIR/archives.txt
+echo
+
+
+# experiment dynamics
+FILE_NAME_c2=fitness_min.txt
+FILE_NAME_c5=fitness_var.txt
+FILE_NAME_c7=size_ave.txt
+FILE_NAME_c10=depth_ave.txt
+FILE_NAME_c12=F_min.txt
+FILE_NAME_c15=F_var.txt
+FILENAME_NODE_STAT=nodes_stat.txt 
+FILENAME_TIME_STAT=time_stat.txt
+
+echo Collecting the statistical data and writing to $EXP_DIR ...
+#copy the first column 
+awk  -v gen=$G '$1!="#" {print $2; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_1/data_gp.txt  | cat > $DESTINATION/$EXP_DIR/$FILE_NAME_c2
+
+awk  -v gen=$G '$1!="#" {print $5; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_1/data_gp.txt  | cat > $DESTINATION/$EXP_DIR/$FILE_NAME_c5
+
+awk  -v gen=$G '$1!="#" {print $7; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_1/data_gp.txt  | cat > $DESTINATION/$EXP_DIR/$FILE_NAME_c7
+
+awk  -v gen=$G '$1!="#" {print $10; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_1/data_gp.txt  | cat > $DESTINATION/$EXP_DIR/$FILE_NAME_c10
+
+awk  -v gen=$G '$1!="#" {print $12; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_1/data_gp.txt  | cat > $DESTINATION/$EXP_DIR/$FILE_NAME_c12
+
+awk  -v gen=$G '$1!="#" {print $15; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_1/data_gp.txt  | cat > $DESTINATION/$EXP_DIR/$FILE_NAME_c15
+
+# node selection statistics
+if [ -e $DESTINATION/$EXP_DIR/run_1/node_selection.txt ]
+then
+    awk '$1!="#" {print $0}' $DESTINATION/$EXP_DIR/run_1/node_selection.txt > $DESTINATION/$EXP_DIR/$FILENAME_NODE_STAT
+else
+    echo "$DESTINATION/$EXP_DIR/run_1/node_selection.txt not found. Maybe run 1 was interrupted..."
+fi
+
+# time statistics 
+awk '$1=="Elapsed_time(sec)=" {print $2; exit}' $DESTINATION/$EXP_DIR/run_1/points_gp.txt >> $DESTINATION/$EXP_DIR/$FILENAME_TIME_STAT
+
+
+# add the other columns
+for ((i=2; i<$2+1; i++ ))   #i = runs
+do
+	awk  -v gen=$G '$1!="#" {print $2; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_$i/data_gp.txt | cat > $DESTINATION/$EXP_DIR/temp_c2.txt
+	paste $DESTINATION/$EXP_DIR/$FILE_NAME_c2  $DESTINATION/$EXP_DIR/temp_c2.txt  > $DESTINATION/$EXP_DIR/temp_c2f.txt 
+	mv $DESTINATION/$EXP_DIR/temp_c2f.txt  $DESTINATION/$EXP_DIR/$FILE_NAME_c2
+
+	awk  -v gen=$G '$1!="#" {print $5; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_$i/data_gp.txt | cat > $DESTINATION/$EXP_DIR/temp_c5.txt
+	paste $DESTINATION/$EXP_DIR/$FILE_NAME_c5  $DESTINATION/$EXP_DIR/temp_c5.txt  >  $DESTINATION/$EXP_DIR/temp_c5f.txt 
+	mv $DESTINATION/$EXP_DIR/temp_c5f.txt  $DESTINATION/$EXP_DIR/$FILE_NAME_c5
+
+	awk  -v gen=$G '$1!="#" {print $7; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_$i/data_gp.txt | cat > $DESTINATION/$EXP_DIR/temp_c7.txt
+	paste $DESTINATION/$EXP_DIR/$FILE_NAME_c7  $DESTINATION/$EXP_DIR/temp_c7.txt  >  $DESTINATION/$EXP_DIR/temp_c7f.txt 
+	mv $DESTINATION/$EXP_DIR/temp_c7f.txt  $DESTINATION/$EXP_DIR/$FILE_NAME_c7
+
+	awk  -v gen=$G '$1!="#" {print $10; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}'  $DESTINATION/$EXP_DIR/run_$i/data_gp.txt | cat > $DESTINATION/$EXP_DIR/temp_c10.txt
+	paste $DESTINATION/$EXP_DIR/$FILE_NAME_c10  $DESTINATION/$EXP_DIR/temp_c10.txt > $DESTINATION/$EXP_DIR/temp_c10f.txt
+	mv $DESTINATION/$EXP_DIR/temp_c10f.txt $DESTINATION/$EXP_DIR/$FILE_NAME_c10
+
+    awk  -v gen=$G '$1!="#" {print $12; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_$i/data_gp.txt | cat > $DESTINATION/$EXP_DIR/temp_c12.txt
+	paste $DESTINATION/$EXP_DIR/$FILE_NAME_c12  $DESTINATION/$EXP_DIR/temp_c12.txt  > $DESTINATION/$EXP_DIR/temp_c12f.txt 
+	mv $DESTINATION/$EXP_DIR/temp_c12f.txt  $DESTINATION/$EXP_DIR/$FILE_NAME_c12
+
+	awk  -v gen=$G '$1!="#" {print $15; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$EXP_DIR/run_$i/data_gp.txt | cat > $DESTINATION/$EXP_DIR/temp_c15.txt
+	paste $DESTINATION/$EXP_DIR/$FILE_NAME_c15  $DESTINATION/$EXP_DIR/temp_c15.txt  >  $DESTINATION/$EXP_DIR/temp_c15f.txt 
+	mv $DESTINATION/$EXP_DIR/temp_c15f.txt  $DESTINATION/$EXP_DIR/$FILE_NAME_c15
+	
+	# node selection statistics
+	if [ -e $DESTINATION/$EXP_DIR/run_$i/node_selection.txt ]
+	then 
+	    awk '$1!="#" {print $0}' $DESTINATION/$EXP_DIR/run_$i/node_selection.txt >> $DESTINATION/$EXP_DIR/$FILENAME_NODE_STAT
+	else
+		echo "$DESTINATION/$EXP_DIR/run_$i/node_selection.txt not found. Maybe run $i was interrupted..."
+	fi
+	
+	# time statistics 
+		awk '$1=="Elapsed_time(sec)=" {print $2; exit}' $DESTINATION/$EXP_DIR/run_$i/points_gp.txt >> $DESTINATION/$EXP_DIR/$FILENAME_TIME_STAT	
+
+done
+echo Done: statistical data have been written to:
+echo $EXP_DIR/ :
+echo $FILE_NAME_c2 
+echo $FILE_NAME_c5 
+echo $FILE_NAME_c7 
+echo $FILE_NAME_c10
+echo $FILE_NAME_c12
+echo $FILE_NAME_c15
+echo $FILENAME_NODE_STAT
+echo $FILENAME_TIME_STAT	
+echo
+echo Removing temporary files...
+rm $DESTINATION/$EXP_DIR/temp_c2.txt
+rm $DESTINATION/$EXP_DIR/temp_c5.txt
+rm $DESTINATION/$EXP_DIR/temp_c7.txt
+rm $DESTINATION/$EXP_DIR/temp_c10.txt
+rm $DESTINATION/$EXP_DIR/temp_c12.txt
+rm $DESTINATION/$EXP_DIR/temp_c15.txt
+echo Done
+
+
+# averaging adaptive parameters 
+# (the output file contains a matrix whose elements are element-wise averages of the matrices in the run-i files) 
+# row=5 is the first line to be read in the file (above just comment...)
+awk -v col=1:33 -v row=5:21000 -v num=$N_RUNS '
+BEGIN {
+    split(row, r, ":")   # get indexes
+    split(col, c, ":")  # get indexes
+    max_gen = 0
+    n = num
+    n_cur_run = 0
+}
+
+{
+	if (FNR==1)  {
+		n_cur_run +=1
+		run_gen[n_cur_run]=0
+	}
+	
+	if ((r[1]<=FNR)) 
+	{  # check that the record is within matrix size
+    	for(i=c[1];i<=c[2];i++) 
+    	{
+        	data[FNR-(r[1]-1),i]+=$i
+    	}
+    	if ((FNR-(r[1]-1))>run_gen[n_cur_run]) {
+    		run_gen[n_cur_run] = FNR-(r[1]-1)
+    	}	
+    	if ((FNR-(r[1]-1))>max_gen) {
+    		max_gen = FNR-(r[1]-1)
+    	}	
+	}
+}
+
+END {
+	# print 34 fields to file (active_runs added)
+	printf("# Gen Active_runs Pop_size repr_rate cross_rate  mut_rate repr_tot reproduction_perf repr_av_delta cross_tot crossover_perf cross_av_delta tot_smut s_mutation_perf smut_av_delta  tot_pmut p_mutation_perf pmut_av_delta\n")
+    for(i=1;i<=max_gen;i++)
+    {	
+    
+    	printf("%d ", i-1)   # generation number
+    	
+    	n_active_runs=0
+    	for(k=1;k<=n;k++) 
+    		{
+        		if (i<=run_gen[k]) {
+        			n_active_runs+=1 
+        		}
+    		}
+    		
+    	printf("%d ", n_active_runs)   # number of populations still evolving (active)
+    	printf("%d ", data[i,c[1]+1]/n_active_runs)   # population size
+        for(j=c[1]+2;j<=c[2];j++)
+        {
+           	printf("%e ", data[i,j]/n_active_runs)
+        }
+        print " "
+        	
+    }
+}' $DESTINATION/$EXP_DIR/run_*/adaptation_data.txt > $DESTINATION/$EXP_DIR/averaged_adaptation_data.txt	

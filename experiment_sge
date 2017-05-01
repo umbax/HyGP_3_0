@@ -1,0 +1,45 @@
+#!/bin/csh
+# script to run a GP experiment. 
+# Runs are launched in parallel  using job array (qsub script embedded in this script)
+# SETTINGS : from here >
+#$ -A user_name
+#$ -N experiment_name
+#$ -q all.q
+#$ -cwd
+#$ -V
+#$ -l h_rt=48:00:00
+#$ -l h_vmem=16G
+#$ -t 1-12                       
+INPUT_STRING=./input/GP_sequential/input/Rosenbrock/Rosenbrock_high_prec.txt
+OUTPUT_STRING=./output/Rosenbrock_SGE_test
+# to here <.
+
+
+# ----- don't touch what follows! -------------------------
+INPUT_DIR=${INPUT_STRING%/*} 
+INPUT_FILE=${INPUT_STRING##*/}  
+echo INPUT_DIR = $INPUT_DIR
+echo INPUT_FILE = $INPUT_FILE
+
+DESTINATION=${OUTPUT_STRING%/*} 
+OUTPUT_DIR=${OUTPUT_STRING##*/}
+echo DESTINATION = $DESTINATION
+echo OUTPUT_DIR = $OUTPUT_DIR
+
+# create experiment directory and copy input file 
+#if ( ! -d "$DESTINATION/$OUTPUT_DIR" ) then
+    echo "Creating  $DESTINATION/$OUTPUT_DIR ..."
+    mkdir $DESTINATION/$OUTPUT_DIR
+    cp $INPUT_DIR/$INPUT_FILE  $DESTINATION/$OUTPUT_DIR/input_file.txt
+#endif
+
+# create run folder
+mkdir $DESTINATION/$OUTPUT_DIR/run_$SGE_TASK_ID
+
+# create a temporary input file in the run folder with the right seed 
+SEED=$((($RANDOM%100000)*3000+($RANDOM%100000)+$SGE_TASK_ID*2543))
+echo "SEED = $SEED"
+awk -v s=$SEED '{if($1=="SEED=") {print $1, s} else {print $0}}' $DESTINATION/$OUTPUT_DIR/input_file.txt >  $DESTINATION/$OUTPUT_DIR/run_$SGE_TASK_ID/input_file_temp$SGE_TASK_ID.txt
+
+# launch single run (normal compilation)
+./gp $DESTINATION/$OUTPUT_DIR/run_$SGE_TASK_ID/input_file_temp$SGE_TASK_ID.txt  $DESTINATION/$OUTPUT_DIR/run_$SGE_TASK_ID/
