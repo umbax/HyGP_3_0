@@ -13,6 +13,8 @@
 // limitations under the License.
 
 
+#include "../HyPSO/hypso_launcher.cpp"
+
 // class POPULATION - function definitions
 
 // POPULATION CLASS CONSTRUCTOR
@@ -2284,11 +2286,16 @@ void Population::evaluate_complete_trees()
 
 
 // fitness function definition (sum of the absolute value of the errors)
-// input:
-// address of the data matrix to be used for evaluation of fitness
-// no of records or cases (no of rows to be used)
-// address of the complete tree to be evaluated (root node)
-// address of the array where to put results
+// Input:
+// - address of the data matrix to be used for evaluation of fitness
+// - no of records or cases (no of rows to be used)
+// - address of the complete tree to be evaluated (root node)
+// - address of the array where to put results
+// Output (stored indirectly in result_tree[] and referring to the specific dataset fed in):
+// - error on data set (generally RMSE) : result_tree[0]
+// - no of hits : result_tree[1]
+// - no of corrections done by protected operations : result_tree[2]
+// - value of R2 (coefficient of determination) : result_tree[3]
 void Population::fitness_func(Val Sy, Val ** data_used, int n_cases, Node *current_tree, Val *result_tree, bool normalised)
 {
 	int COMMENT =0;
@@ -2371,6 +2378,32 @@ void Population::fitness_func(Val Sy, Val ** data_used, int n_cases, Node *curre
 
 	if (COMMENT) cout << "Fitness value  = " << result_tree[0] << endl;
 
+}
+
+
+// Function that defines the objective to minimise for PSO algorithm (coarse tree's parameters optimisation)
+// Input:
+// - array of tree's parameters
+// - number of parameters (spacedim)
+// - pointer to tree root node
+// Output:
+// - tree RMSE error (simple fitness, not aggregated one!)
+double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
+{
+	double fitness; // actually an error (RMSE). Be aware that this should be a Val type...
+	Val result[4];
+
+	// update tree parameters with input values x
+	update_complete_tree(ntree, x, n_param);
+
+	// evaluate tree fitness (error)
+	fitness_func(problem.Sy, problem.data_evaluation, problem.n_evaluation, ntree, result, parameters.normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
+	fitness = (double)result[0];
+	//hits = (int)result[1];
+	//n_corrections = (int)result[2];
+	//R2 = result[3];
+
+	return fitness;
 }
 
 
@@ -2922,7 +2955,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			cout << "\n  ntree_fdf_c = " << ntree_fdf_c;
 
 		//-----------------------------------------------------------
-		// call the optimization function (LINK TO EXTERNAL FUNCTION)
+		// call the optimization functions: HYPSO (C++) and/or SQP (Fortran) (LINKS TO EXTERNAL FUNCTION)
 		//-----------------------------------------------------------
 
 		// 25/7/2016 : HERE YOU COULD ADD A CHECK TO SKIP TUNING (AND SO LEAVE CONSTANT NODES RANDOMLY INITIALISED)
@@ -2930,6 +2963,14 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		//             SEE BISHOP 1996 ARTICLE
 		// IF (CONDITION FOR TUNING is TRUE) THEN    - example n_param <= n_param_max = 0.5 * size training data set
 		if (n_param<=n_param_threshold) {
+
+			// insert here call to HyPSO (just try to run HyPSO for a couple of iterations to search for global minima)
+			// steps involved: call to HYPSO/pso_launcher, launch psominimize, internal call to objective function in model.cpp (tree evaluator and error definition with weights for pulsations...)
+			//double (*p_objfun)(double*, int, Binary_Node*);
+			//p_objfun = &Population::pso_objfunction;  // method in Population
+			//hypso_launcher(p_objfun, ntree, n_param, x); // method NOT belonging to Population
+
+			// SQP parameters optimisation
 			method = 0; // IMPORTANT!
 			if (COMMENT)
 				cout << "\nPopulation::tuning_individual : before optimisation ICONTR = method = " << method;
@@ -2941,7 +2982,6 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			//to perform optimization with TINL2.FOR  - Umberto's method (copied from Andrey's)
 			//optitinl2_(&method, x, &n_param, &n_test_cases_tune, &IW);
 			if (COMMENT) cout << "\n\n  Population::tuning_individual : n_param = " << n_param << ", nfitcases = " << parameters.nfitcases;
-			//if ((double)n_param <= (0.5*(parameters.nfitcases))) {// test: optimise only if n_parameters is smaller than half of the no of fitness cases
 			if (1==1) {
 				//to perform optimization with TIOL2.FOR  - Andrey's method - WORKS PERFECTLY!
 				if (COMMENT) cout << "\nPopulation::tuning_individual : Call opti_()";
@@ -2962,7 +3002,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 				n_guess_ok++;
 			}
 
-			// update the tree parameters with the new, optimised ones
+			// update the tree with the new, optimised values of the parameters
 			update_complete_tree(ntree, x, n_param);
 
 		}
