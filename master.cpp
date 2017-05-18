@@ -50,14 +50,10 @@ const double PI = 4.0*atan(1.0);
 #include "./genetic_code/read_input/read_file_new.h"
 #include "./genetic_code/read_input/read_test_data.h" // not implemented yet in OpenMP version
 #include "./genetic_code/input_checks/input_check.h"
-#include "./genetic_code/classes/class_NODE_base.h"
 #include "./genetic_code/tree_functions/tree_operations.h"
 #include "./genetic_code/tree_functions/vector_derivative_functions.h"
 #include "./genetic_code/modules/primitives.h"	// global (extern) structs defining functional primitives
-#include "./genetic_code/classes/class_BINARY_NODE.h"
-#include "./genetic_code/classes/class_UNARY_NODE.h"
-#include "./genetic_code/classes/class_TERMINAL_VAR.h"
-#include "./genetic_code/classes/class_TERMINAL_CONST.h"
+#include "./genetic_code/nodes/nodes.h"
 #include "./genetic_code/classes/class_POPULATION.h"
 #include "./genetic_code/classes/reporter.h"
 

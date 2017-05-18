@@ -17,9 +17,9 @@
 # no options is run.
 all: gp
 
-gp: master.o T.o M.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o class_BINARY_NODE.o ./genetic_code/classes/class_UNARY_NODE.o ./genetic_code/classes/class_TERMINAL_VAR.o ./genetic_code/classes/class_TERMINAL_CONST.o ./genetic_code/classes/class_NODE_base.o ./genetic_code/modules/primitives.o
+gp: master.o T.o M.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o
 # for Linux on feng-gps1
-	gfortran -std='legacy' -o gp M.o T.o master.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/classes/class_BINARY_NODE.o ./genetic_code/classes/class_UNARY_NODE.o ./genetic_code/classes/class_TERMINAL_VAR.o ./genetic_code/classes/class_TERMINAL_CONST.o ./genetic_code/classes/class_NODE_base.o ./genetic_code/modules/primitives.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
+	gfortran -std='legacy' -o gp M.o T.o master.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
 # for Linux on pre-pc1017 (NOTE the version number! 11/2010)
 # g77 -o gp M.o T.o master.o -L/usr/lib/gcc/x86_64-redhat-linux/4.1.2/ -lstdc++ 
 # for development under Windows (Eclipse)   D:/MinGW/lib/gcc/mingw32/4.5.0/
@@ -31,9 +31,9 @@ M.o: ./genetic_code/SQP/MI0L2_c/MI0L2.FOR
 T.o: ./genetic_code/SQP/MI0L2_c/TI0L2.FOR
 	gfortran -fsecond-underscore -c ./genetic_code/SQP/MI0L2_c/TI0L2.FOR  -o T.o
 	
-master.o: master.cpp
+master.o: parallel_master.cpp
 	# parallel compilation (OpenMP)
-	# g++ -c -g parallel_master.cpp -o master.o -fopenmp
+	#g++ -c -g parallel_master.cpp -o master.o -fopenmp
 	# normal compilation
 	g++ -c -g master.cpp -o master.o
 
@@ -43,36 +43,21 @@ input_check.o:
 variable.o: 
 	g++ -c -g ./genetic_code/modules/variable.cpp -o ./genetic_code/modules/variable.o
 
-class_BINARY_NODE.o:	
-	g++ -c -g ./genetic_code/classes/class_BINARY_NODE.cpp -o ./genetic_code/classes/class_BINARY_NODE.o
-
-class_UNARY_NODE.o:	
-	g++ -c -g ./genetic_code/classes/class_UNARY_NODE.cpp -o ./genetic_code/classes/class_UNARY_NODE.o
-
-class_TERMINAL_VAR.o:
-	g++ -c -g ./genetic_code/classes/class_TERMINAL_VAR.cpp -o ./genetic_code/classes/class_TERMINAL_VAR.o
-
-class_TERMINAL_CONST.o:
-	g++ -c -g  ./genetic_code/classes/class_TERMINAL_CONST.cpp -o ./genetic_code/classes/class_TERMINAL_CONST.o
-
-class_NODE_base.o:	
-	g++ -c -g ./genetic_code/classes/class_NODE_base.cpp -o ./genetic_code/classes/class_NODE_base.o
+nodes.o:
+	g++ -c -g ./genetic_code/nodes/nodes.cpp -o ./genetic_code/nodes/nodes.o
 
 primitives.o:
 	g++ -c -g ./genetic_code/modules/primitives.cpp -o ./genetic_code/modules/primitives.o
 	# use extern to define Add, Sub, etc also mind the typedef struct renomination... use a class?
 
 clean :
-	rm gp
-	rm master.o
 	rm T.o
 	rm M.o
 	rm ./genetic_code/input_checks/input_check.o
 	rm ./genetic_code/modules/variable.o
-	rm ./genetic_code/classes/class_BINARY_NODE.o
-	rm ./genetic_code/classes/class_UNARY_NODE.o
-	rm ./genetic_code/classes/class_TERMINAL_VAR.o
-	rm ./genetic_code/classes/class_TERMINAL_CONST.o
-	rm ./genetic_code/classes/class_NODE_base.o
+	rm ./genetic_code/nodes/nodes.o
 	rm ./genetic_code/modules/primitives.o
+	rm ./master.o
+	rm ./gp
+	rm ./gp_openmp
 	

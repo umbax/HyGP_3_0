@@ -19,7 +19,7 @@
 
 // included dependencies
 #include "../modules/Val_type.h"
-#include "../classes/class_NODE_base.h"
+#include "../nodes/nodes.h"
 #include "../modules/func_primitives_prototypes.h"
 
 Node *tree_copy(Node *, Node *);
