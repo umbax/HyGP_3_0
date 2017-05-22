@@ -13,47 +13,27 @@
 // limitations under the License.
 
 #include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
-#include <fstream>  // file I/O
 #include <iomanip>  // manipulators (text format): setw
 #include <string>    // to manipulate strings (C)
 #include <cstring>   // to manipulate strings (C)
 #include <string>    //  string class (C++)
 #include <cstdlib>   // NULL
-#include <ctime>	 // to work with variables of type time_t and random number generator "srandom"  
 #include <cmath>
 #include <algorithm>
-#include <vector>
 #include <exception>
-#include <sstream>    // for stringstream
 
-///// compatibility issues (Microsoft tempting to modify commands?)
-// commented if under linux, uncommented under WINDOWS
+/// compatibility issues (Microsoft tempting to modify commands?):commented if under linux, uncommented under WINDOWS
 //#define strdup _strdup
 
 using namespace std;
 
-// global variables - numeric settings
-const double PI = 4.0*atan(1.0);
-//double MAX_VAL = 1.8e+19;   // can be redefined in Val_type.h
-//double MIN_VAL = 1.8e-19;		// can be redefined in Val_type.h
-
 // HEADERS
-// do not change the order of the following include commands! 
-//Otherwise you may have undeclared objects //
-#include "./genetic_code/modules/nodes_types.h"   	//just a header, no source file
-#include "./genetic_code/modules/Val_type.h"		//just a header, no source file
-#include "./genetic_code/modules/variable.h"
-#include "./genetic_code/modules/func_primitives_prototypes.h"
 #include "./genetic_code/classes/run_parameters.h"
 #include "./genetic_code/classes/problem_definition.h"
 #include "./genetic_code/read_input/show_loaded_data.h"
 #include "./genetic_code/read_input/read_file_new.h"
 #include "./genetic_code/read_input/read_test_data.h" // not implemented yet in OpenMP version
 #include "./genetic_code/input_checks/input_check.h"
-#include "./genetic_code/tree_functions/tree_operations.h"
-#include "./genetic_code/tree_functions/vector_derivative_functions.h"
-#include "./genetic_code/modules/primitives.h"	// global (extern) structs defining functional primitives
-#include "./genetic_code/nodes/nodes.h"
 #include "./genetic_code/classes/class_POPULATION.h"
 #include "./genetic_code/classes/reporter.h"
 
@@ -65,6 +45,9 @@ extern "C" {int  fdf_c__ (double *,  double *, int *,int *); }
 
 
 // global variables - population purposes
+const double PI = 4.0*atan(1.0);
+//double MAX_VAL = 1.8e+19;   // can be redefined in Val_type.h
+//double MIN_VAL = 1.8e-19;		// can be redefined in Val_type.h
 // try! Simple way to make fdf_c able to detect the values of a few variables. Think about inserting fdf_c in class Population!!!
 Population *Pop; // try! Simple way to make fdf_c able to get the values of the tree
 int VERBOSE = 1;     //set to 1 if you want to print on the screen all the comments! 0 for a "clean" and wordless execution...
@@ -378,4 +361,3 @@ int main (int argc, char *argv[])
 #include "genetic_code/tree_functions/vector_derivative_functions.cpp"
 #include "./genetic_code/classes/run_parameters.cpp"
 #include "./genetic_code/classes/problem_definition.cpp"
-#include "./genetic_code/classes/reporter.cpp"

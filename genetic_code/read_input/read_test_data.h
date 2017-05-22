@@ -22,6 +22,8 @@
 #ifndef READ_TEST_DATA_H_
 #define READ_TEST_DATA_H_
 
+#include <sstream>    // for stringstream
+
 void read_test_data(string, RunParameters*, ProblemDefinition*);
 
 #endif /* READ_TEST_DATA_H_ */

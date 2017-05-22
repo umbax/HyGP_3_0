@@ -17,9 +17,9 @@
 # no options is run.
 all: gp
 
-gp: master.o T.o M.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o
+gp: master.o T.o M.o ./genetic_code/classes/reporter.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o
 # for Linux on feng-gps1
-	gfortran -std='legacy' -o gp M.o T.o master.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
+	gfortran -std='legacy' -o gp M.o T.o master.o ./genetic_code/classes/reporter.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
 # for Linux on pre-pc1017 (NOTE the version number! 11/2010)
 # g77 -o gp M.o T.o master.o -L/usr/lib/gcc/x86_64-redhat-linux/4.1.2/ -lstdc++ 
 # for development under Windows (Eclipse)   D:/MinGW/lib/gcc/mingw32/4.5.0/
@@ -36,6 +36,9 @@ master.o: parallel_master.cpp
 	#g++ -c -g parallel_master.cpp -o master.o -fopenmp
 	# normal compilation
 	g++ -c -g master.cpp -o master.o
+
+reporter.o:
+	g++ -c -g ./genetic_code/classes/reporter.cpp -o ./genetic_code/classes/reporter.o
 
 input_check.o: 
 	g++ -c -g ./genetic_code/input_checks/input_check.cpp -o ./genetic_code/input_checks/input_check.o
@@ -57,7 +60,8 @@ clean :
 	rm ./genetic_code/modules/variable.o
 	rm ./genetic_code/nodes/nodes.o
 	rm ./genetic_code/modules/primitives.o
+	rm ./genetic_code/classes/reporter.o
 	rm ./master.o
 	rm ./gp
-	rm ./gp_openmp
+	#rm ./gp_openmp
 	

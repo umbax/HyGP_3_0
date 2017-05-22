@@ -12,4 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+#ifndef READ_FILE_NEW_H_
+#define READ_FILE_NEW_H_
+
+#include <sstream>    // for stringstream
+
 void read_input_file(string, RunParameters*, ProblemDefinition*);
+
+
+#endif /* READ_FILE_NEW_H_ */
