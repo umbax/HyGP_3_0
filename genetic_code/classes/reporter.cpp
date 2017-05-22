@@ -13,6 +13,9 @@
 // limitations under the License.
 
 
+#include "./reporter.h"
+
+
 // function to print statistical data to file "data_gp.txt"
 void Reporter::stats2file(RunParameters *pr, Population *P, string DIR_OUTPUT, int gi, int check_end)
 { 

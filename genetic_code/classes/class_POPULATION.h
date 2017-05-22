@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef CLASS_POPULATION_H_
+#define CLASS_POPULATION_H_
 
-// Population header
+
+#include "../tree_functions/vector_derivative_functions.h"
+#include "../tree_functions/tree_operations.h"
+//#include "../HyPSO/hypso_launcher.cpp"
 
 class Population {
  private:
@@ -236,4 +241,4 @@ class Population {
 };
 
 
-
+#endif /* CLASS_POPULATION_H_ */

@@ -16,7 +16,9 @@
 #define VARIABLE_H_
 
 // class Variable 
- 
+
+#include "./Val_type.h"
+
 class Variable
 {	
 	public:

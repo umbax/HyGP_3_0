@@ -19,7 +19,6 @@
 
 using namespace std;
 
-#include "Val_type.h"
 #include "variable.h"
 // variable
 

@@ -31,9 +31,8 @@ using namespace std;
 #include <string.h>    //  string class (C++): strlen, strdup
 #include <iomanip>  // manipulators (text format): setw
 
-#include "../modules/nodes_types.h"   	//just a header, no source file
+#include "nodes_types.h"   	//just a header, no source file
 #include "../modules/primitives.h"
-#include "../modules/nodes_types.h"   	//just a header, no source file
 #include "../tree_functions/tree_operations.h"
 
 //#include "./class_UNARY_NODE.h"

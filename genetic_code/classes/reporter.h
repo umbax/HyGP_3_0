@@ -16,7 +16,19 @@
 #ifndef REPORTER_H_
 #define REPORTER_H_
 
+#include <iomanip>  // manipulators (text format): setw
+//#include <sstream>    // for stringstream
+#include <fstream>  // file I/O
+
+#include "../nodes/nodes_types.h"    //just a header, no source file
+#include "./run_parameters.h"
+#include "./problem_definition.h"
+#include "./class_POPULATION.h"
+
+
 //class to manage file operations
+
+
 
 class Reporter
 {
