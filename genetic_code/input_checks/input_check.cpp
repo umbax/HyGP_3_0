@@ -12,14 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <iostream>
-#include <stdlib.h>   //exit
 
-using namespace std;
+#include "./input_check.h"
 
-// dependencies
-#include "../classes/run_parameters.h"
-#include "../classes/problem_definition.h"
 
 
 void input_check(RunParameters *pr, ProblemDefinition *pb)
@@ -47,7 +42,7 @@ void input_check(RunParameters *pr, ProblemDefinition *pb)
 		}
 	}
 	
-	if (abs((pr->repr_rate+pr->cross_rate+pr->mut_rate)-1.0) > 1.0e-5) {
+	if (fabs((pr->repr_rate+pr->cross_rate+pr->mut_rate)-1.0) > 1.0e-5) {
 		cerr << "\nError: repr_rate+cross_rate+mut_rate = " << pr->repr_rate+pr->cross_rate+pr->mut_rate << " !!!";
 		cerr << "\nError: the sum (repr_rate+cross_rate+mut_rate) MUST be equal to 1 !!!\n";
 		exit(-1); 

@@ -16,6 +16,14 @@
 #ifndef INPUT_CHECK_H_
 #define INPUT_CHECK_H_
 
+#include <iostream>
+#include <stdlib.h>   //exit
+#include <cmath> // fabs (abs of a float)
+
+#include "../classes/run_parameters.h"
+#include "../classes/problem_definition.h"
+
+
 void input_check(RunParameters*, ProblemDefinition*);
 
 #endif /* INPUT_CHECK_H_ */

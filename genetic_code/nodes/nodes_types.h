@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
- * read_test_data.h
- *
- *  Created on: May 10, 2014
- *      Author: umba
- */
+// nodes' types
 
-#ifndef READ_TEST_DATA_H_
-#define READ_TEST_DATA_H_
+#ifndef NODES_TYPES_H_
+#define NODES_TYPES_H_
 
-#include <sstream>    // for stringstream
+// for the numbering, see Node *Population::new_node (Node *n)
+#define NODE_UNARY 1
+#define NODE_BINARY 0
+#define NODE_VAR 2
+#define NODE_CONST 3
 
-void read_test_data(string, RunParameters*, ProblemDefinition*);
-
-#endif /* READ_TEST_DATA_H_ */
+#endif /* NODES_TYPES_H_ */

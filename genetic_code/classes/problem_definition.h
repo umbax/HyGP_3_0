@@ -17,6 +17,14 @@
 #define PROBLEMDEFINITION_H_
 
 // dependencies
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
+#include <iomanip>  // manipulators (text format): setw
+#include <cstdlib>   // NULL, exit, EXIT_FAILURE
+#include <cstdio>   // sprintf
+#include <string>    // to manipulate strings (C)
+#include <cstring>   // to manipulate strings (C) (strcpy,)
+
+
 #include "../modules/Val_type.h"
 #include "../modules/variable.h"
 #include "../modules/func_primitives_prototypes.h"
@@ -110,6 +118,7 @@ class ProblemDefinition
 		void show_data_inequality1(void);
 		void show_binary_functions(void);
 		void show_unary_functions(void);
+		void show_all(void);
 		//void show_output_statistics(void);
 };
 

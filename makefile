@@ -17,9 +17,9 @@
 # no options is run.
 all: gp
 
-gp: master.o T.o M.o ./genetic_code/classes/reporter.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o
+gp: master.o T.o M.o ./genetic_code/classes/problem_definition.o ./genetic_code/classes/run_parameters.o ./genetic_code/read_input/read_file_new.o ./genetic_code/classes/class_POPULATION.o ./genetic_code/classes/reporter.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o
 # for Linux on feng-gps1
-	gfortran -std='legacy' -o gp M.o T.o master.o ./genetic_code/classes/reporter.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
+	gfortran -std='legacy' -o gp M.o T.o master.o ./genetic_code/classes/problem_definition.o ./genetic_code/classes/run_parameters.o ./genetic_code/read_input/read_file_new.o ./genetic_code/classes/class_POPULATION.o ./genetic_code/classes/reporter.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
 # for Linux on pre-pc1017 (NOTE the version number! 11/2010)
 # g77 -o gp M.o T.o master.o -L/usr/lib/gcc/x86_64-redhat-linux/4.1.2/ -lstdc++ 
 # for development under Windows (Eclipse)   D:/MinGW/lib/gcc/mingw32/4.5.0/
@@ -31,11 +31,23 @@ M.o: ./genetic_code/SQP/MI0L2_c/MI0L2.FOR
 T.o: ./genetic_code/SQP/MI0L2_c/TI0L2.FOR
 	gfortran -fsecond-underscore -c ./genetic_code/SQP/MI0L2_c/TI0L2.FOR  -o T.o
 	
-master.o: parallel_master.cpp
+master.o: master.cpp
 	# parallel compilation (OpenMP)
 	#g++ -c -g parallel_master.cpp -o master.o -fopenmp
 	# normal compilation
 	g++ -c -g master.cpp -o master.o
+
+problem_def.o: ./genetic_code/classes/problem_definition.cpp
+	g++ -c -g ./genetic_code/classes/problem_definition.cpp -o ./genetic_code/classes/problem_definition.o
+
+run_parameters.o:
+	g++ -c -g ./genetic_code/classes/run_parameters.cpp -o ./genetic_code/classes/run_parameters.o
+
+read_file_new.o: ./genetic_code/read_input/read_file_new.cpp
+	g++ -c -g ./genetic_code/read_input/read_file_new.cpp -o ./genetic_code/read_input/read_file_new.o
+
+population.o:
+	g++ -c -g ./genetic_code/classes/class_POPULATION.cpp -o ./genetic_code/classes/class_POPULATION.o
 
 reporter.o:
 	g++ -c -g ./genetic_code/classes/reporter.cpp -o ./genetic_code/classes/reporter.o
@@ -61,6 +73,10 @@ clean :
 	rm ./genetic_code/nodes/nodes.o
 	rm ./genetic_code/modules/primitives.o
 	rm ./genetic_code/classes/reporter.o
+	rm ./genetic_code/classes/class_POPULATION.o
+	rm /genetic_code/read_input/read_file_new.o
+	rm ./genetic_code/classes/run_parameters.o
+	rm ./genetic_code/classes/problem_definition.o
 	rm ./master.o
 	rm ./gp
 	#rm ./gp_openmp

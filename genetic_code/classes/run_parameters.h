@@ -20,7 +20,9 @@
 using namespace std;
 
 // dependencies
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
 #include "../modules/Val_type.h"
+
 
 // class containing the parameters defining the evolution
 class RunParameters

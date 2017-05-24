@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 #include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
 #include <iomanip>  // manipulators (text format): setw
 #include <string>    // to manipulate strings (C)
-#include <cstring>   // to manipulate strings (C)
+#include <cstring>   // to manipulate strings (C) (strcpy,)
 #include <string>    //  string class (C++)
-#include <cstdlib>   // NULL
+#include <cstdlib>   // NULL, exit, EXIT_FAILURE
 #include <cmath>
-#include <algorithm>
+#include <algorithm> // max_element
 #include <exception>
 
 /// compatibility issues (Microsoft tempting to modify commands?):commented if under linux, uncommented under WINDOWS
@@ -27,27 +28,19 @@
 
 using namespace std;
 
-// HEADERS
+// headers
 #include "./genetic_code/classes/run_parameters.h"
 #include "./genetic_code/classes/problem_definition.h"
-#include "./genetic_code/read_input/show_loaded_data.h"
-#include "./genetic_code/read_input/read_file_new.h"
-#include "./genetic_code/read_input/read_test_data.h" // not implemented yet in OpenMP version
+#include "./genetic_code/read_input/read_file_new.h" // read test data not implemented yet in OpenMP version
 #include "./genetic_code/input_checks/input_check.h"
-#include "./genetic_code/classes/class_POPULATION.h"
 #include "./genetic_code/classes/reporter.h"
-
-extern "C" {extern void opti_(int*, double*, int*, int*, int*);}  //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
-extern "C" {int  fdf_c__ (double *,  double *, int *,int *); }
-
-//extern "C" {extern void optitinl2_(int*, double*, int*, int*,int*);}  //for Umberto's method - TINL2 and MINL2 - WORKS? WORK STILL NEEDED... 
-//extern "C" {int  fdf_ctinl2__ (double*,  double*, double*, int*, int*); }
+#include "./genetic_code/classes/class_POPULATION.h"
 
 
 // global variables - population purposes
-const double PI = 4.0*atan(1.0);
-//double MAX_VAL = 1.8e+19;   // can be redefined in Val_type.h
-//double MIN_VAL = 1.8e-19;		// can be redefined in Val_type.h
+//const double PI = 4.0*atan(1.0); // redefined in Val_type.h
+//double MAX_VAL = 1.8e+19;   // redefined in Val_type.h
+//double MIN_VAL = 1.8e-19;		// redefined in Val_type.h
 // try! Simple way to make fdf_c able to detect the values of a few variables. Think about inserting fdf_c in class Population!!!
 Population *Pop; // try! Simple way to make fdf_c able to get the values of the tree
 int VERBOSE = 1;     //set to 1 if you want to print on the screen all the comments! 0 for a "clean" and wordless execution...
@@ -124,7 +117,8 @@ int main (int argc, char *argv[])
 	// now all is done in read_input_file (but it's too messy there...)
 	
 	// show the results
-	//show_loaded_data(&parameters, &problem);
+	parameters.show();
+	problem.show_all();
 		
 	// to stop the execution
 	//cout << "Have a go?" << endl;
@@ -180,6 +174,7 @@ int main (int argc, char *argv[])
 	/// split the data set in tuning set (data_tuning) and validation set (data_validation).
 	// See SPLIT and VALIDATING_LINES in input file
 	// this function will also allow to increase the number of fitness cases during the run...
+	// 23/5/2017 rewrite the split function to implement correctly the CROSSVALIDATION and the PRESS error calculation
 	// IMPORTANT! Check that the correct Sy is used in computing RMSE (note taken on 10/5/2014)
 	P->split_data(&parameters, &problem, 0,1);
 	
@@ -293,7 +288,7 @@ int main (int argc, char *argv[])
 		if (check_end)
 			break;
 	
-		// update genetic operators rates (adaptive approach)
+		// update genetic operators rates (adaptive approach - can be turned on and off inside the function)
 		if (i)
 			P->adapt_genetic_operators_rates();
   
@@ -347,17 +342,11 @@ int main (int argc, char *argv[])
 }
 
 // to get rid of the following source files inclusions, compile their source files separately and link them in makefile!!!!
-#include "./genetic_code/read_input/read_file_new.cpp"
-#include "./genetic_code/read_input/read_test_data.cpp"
-#include "./genetic_code/read_input/show_loaded_data.cpp"
 //#include "./genetic code/SQP/MINL2.cpp"    - only for optimizer translated in C++
 //#include "./genetic code/SQP/TINL2_mod.cpp"   - only for optimizer translated in C++
-#include "./genetic_code/classes/class_POPULATION.cpp"
 #include "./genetic_code/tree_functions/tree_operations.cpp"
 //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
 #include "./genetic_code/SQP/MI0L2_c/fdf_c.cpp"
 //for Umberto's method - TINL2 and MINL2 - WORKS?
 //#include "./genetic code/SQP/fdfTINL2_c.cpp"  
 #include "genetic_code/tree_functions/vector_derivative_functions.cpp"
-#include "./genetic_code/classes/run_parameters.cpp"
-#include "./genetic_code/classes/problem_definition.cpp"

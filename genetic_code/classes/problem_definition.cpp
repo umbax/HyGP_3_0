@@ -20,6 +20,13 @@
  *      Author: cnua
  */
 
+using namespace std;
+
+#include "./problem_definition.h"
+
+
+
+
 // ProblemDefinition constructor
 ProblemDefinition::ProblemDefinition(void)
 {
@@ -500,6 +507,22 @@ void ProblemDefinition::show_unary_functions(void)
 	}
 	else
 		cout << "No unary functions used" << endl;
+}
+
+// show lots of data
+void ProblemDefinition::show_all(void)
+{
+	cout << "\n\nProblemDefinition::show_all(void)" << endl;
+	show_binary_functions();
+	show_unary_functions();
+	show_data();    //original whole data set (tuning+evaluation) from input_file
+
+	show_data_tuning();
+	show_data_evaluation();
+	show_data_test();
+
+	show_data_inequality0();
+	show_data_inequality1();
 }
 
 

@@ -17,8 +17,16 @@
 #define READ_FILE_NEW_H_
 
 #include <sstream>    // for stringstream
+#include <string>    //  string class (C++)
+#include <vector>
+#include <fstream>
+
+#include "../modules/primitives.h"
+#include "../classes/run_parameters.h"
+#include "../classes/problem_definition.h"
+
 
 void read_input_file(string, RunParameters*, ProblemDefinition*);
-
+void read_test_data(string, RunParameters*, ProblemDefinition*);
 
 #endif /* READ_FILE_NEW_H_ */

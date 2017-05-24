@@ -16,9 +16,30 @@
 #define CLASS_POPULATION_H_
 
 
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
+#include <string>    // to manipulate strings (C)
+#include <cstring>   // to manipulate strings (C)
+#include <cmath>
+#include <stdio.h>
+#include <cstdlib>   // NULL, exit, EXIT_FAILURE
+#include <algorithm> // max_element
+
+#include "../nodes/nodes_types.h"
+#include "../nodes/nodes.h"
+#include "./run_parameters.h"
+#include "./problem_definition.h"
 #include "../tree_functions/vector_derivative_functions.h"
 #include "../tree_functions/tree_operations.h"
 //#include "../HyPSO/hypso_launcher.cpp"
+
+extern "C" {extern void opti_(int*, double*, int*, int*, int*);}  //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
+extern "C" {int fdf_c__ (double *,  double *, int *,int *); }
+
+// the following two lines are a test on for a different optimiser (TINL2 and MINL2 - Umberto's method)
+//extern "C" {extern void optitinl2_(int*, double*, int*, int*,int*);}  //for Umberto's method - TINL2 and MINL2 - WORKS? WORK STILL NEEDED...
+//extern "C" {int  fdf_ctinl2__ (double*,  double*, double*, int*, int*); }
+
+
 
 class Population {
  private:

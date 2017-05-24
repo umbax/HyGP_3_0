@@ -20,9 +20,12 @@
  *      Author: cnua
  */
 
+#include "./run_parameters.h"
+
+
 void RunParameters::show(void)
 {
-	cout << "\n\n";
+	cout << "\n\nRunParameters::show(void) : data imported in RunParameters object: " << endl;
     cout << "seed = " << seed << endl;
 	cout << "nvar = " << nvar << endl;
   	cout << "minrand= " << minrand << endl;

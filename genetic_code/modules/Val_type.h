@@ -18,8 +18,9 @@
 
 typedef double Val;
 
-// definition of max and minimum absolute values
+// definition of max and minimum absolute values and pi
 #define MAX_VAL 1.8e+19
 #define MIN_VAL 1.8e-19
+#define PI 3.14159265358979323846264338327950288419716939937510582
 
 #endif /* VAL_TYPE_H_ */
