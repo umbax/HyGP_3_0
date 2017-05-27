@@ -23,6 +23,8 @@
 #include <cstdio>   // sprintf
 #include <string>    // to manipulate strings (C)
 #include <cstring>   // to manipulate strings (C) (strcpy,)
+#include <vector>
+#include <cmath>	// floor
 
 
 #include "../modules/Val_type.h"
@@ -34,10 +36,15 @@
 class ProblemDefinition
 {
 	private:
-		Val** data;			//original data provided by the user in the main input file (NOT to be touched)
-		int n_data;			//total number of rows in data (nfitcases in RunParameters)
+		// original imported data set
+		Val** data;			// original data provided by the user in the main input file (NOT to be touched)
+		int n_data;			// total number of rows in data (nfitcases in RunParameters)
 		int n_var;			// number of variables
-		int n_cols;			//number of columns in data (n_var+1)
+		int n_cols;			// number of columns in data (n_var+1)
+		// cross validation purposes
+		int n_folds;		// number of folds for crossvalidation
+		int** folds_table; // association table between fold and data row
+
 		
 	public:
 
@@ -90,14 +97,13 @@ class ProblemDefinition
 		Binary_Func *division;
 		int num_b_funcs;
 
-				
-		
-
 		//setter methods for private members
 		void set_data(Val **ext_data) {data = ext_data;};
 		void set_n_data(int tot_rows) {n_data = tot_rows;};
 		void set_n_var(int n_variables) {n_var = n_variables;};
 		void set_n_cols(int tot_cols) {n_cols = tot_cols;};
+		void set_n_folds(int n_f) {n_folds=n_f;};
+		void set_folds_table(void); // used in read_file_new.cpp line 568
 		// getter methods for private members
 		Val get_data(int row, int column) {return data[row][column];};
 		Val** get_data_address(void) {return data;};
@@ -120,6 +126,11 @@ class ProblemDefinition
 		void show_unary_functions(void);
 		void show_all(void);
 		//void show_output_statistics(void);
+
+		// function to split the whole input data in k data sets using the k-fold technique
+		// used to perform Cross validation using the PRESS predictor
+		// (http://scikit-learn.org/stable/modules/cross_validation.html)
+		void kfold_split(int);
 };
 
 #endif /* PROBLEMDEFINITION_H_ */

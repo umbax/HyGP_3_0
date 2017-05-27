@@ -18,6 +18,12 @@
 
 typedef double Val;
 
+//// used in problem_definition.h
+//typedef struct fold_t {
+//  int fold_id;   // fold number
+//  Val* p_data_row;  // pointer containing the address of the corresponding row in data
+//} fold_t;
+
 // definition of max and minimum absolute values and pi
 #define MAX_VAL 1.8e+19
 #define MIN_VAL 1.8e-19

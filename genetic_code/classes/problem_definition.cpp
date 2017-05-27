@@ -35,6 +35,8 @@ ProblemDefinition::ProblemDefinition(void)
 	n_data = -1;			//total number of rows in data
 	n_var = -1;			// number of variables
 	n_cols = -1;			//number of columns in data (n_var+1)
+	n_folds=0;
+	folds_table=NULL;
 
 	// public members
 	data_tuning = NULL;
@@ -120,6 +122,7 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 		for (int j=0; j<n_var+1; j++)
 			data[i][j]= p.data[i][j];
 
+	// copy n_folds and folds_table?
 
 
 	// copy public members
@@ -256,8 +259,19 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 // ProblemDefinition destructor
 ProblemDefinition::~ProblemDefinition(void)
 {
+	// delete all the dynamically allocated variables!!!
+	// still to understand why this destructor is called_
+	// - after Population::get_tree_derivative_given_norm_vector
+	// - Population::new_spawn and Population_evaluate()
 
+	cout << "ProblemDefinition::~ProblemDefinition(void) : destructor called" << endl;
 
+	if (folds_table!=NULL) {
+			for (int i = 0; i < n_data; ++i) delete[] folds_table[i];
+			delete[] folds_table;
+	}
+
+	cout << "ProblemDefinition::~ProblemDefinition(void) : exit" << endl;
 }
 
 
@@ -524,6 +538,69 @@ void ProblemDefinition::show_all(void)
 	show_data_inequality0();
 	show_data_inequality1();
 }
+
+
+void ProblemDefinition::set_folds_table(void)
+{
+	folds_table = new int*[n_data];
+	for (int i = 0; i < n_data; ++i)
+		folds_table[i] = new int[2];
+}
+
+
+
+// function to randomly split the whole input data in k data sets using the k-fold technique
+// used to perform Cross validation using the PRESS predictor
+// (http://scikit-learn.org/stable/modules/cross_validation.html)
+// 26/5/2017 now it just defines an association table storing the fold number of each data row
+void ProblemDefinition::kfold_split(int split_switch)
+{
+	cout << "\n\nProblemDefinition::kfold_split(int)" << endl;
+	cout << "n_folds = " << n_folds << endl;
+
+	if (split_switch==0) {
+		cout << "\n\nK-folds method not requested, p_folds_table not allocated. No action to be performed. Return" << endl;
+		return;
+	}
+
+	// check that n_folds <= n_data (if equal, the method turns into leave one out)
+	if (n_folds > n_data) {
+		// output error message
+	    cerr << "ProblemDefinition::kfold_split : ERROR ! n_folds > n_data !!!!\n";
+	    exit(-1);
+	}
+
+	int min_entry_per_fold = int(floor(double(n_data)/double(n_folds)));
+
+	// Initialise fold_table (allocated in read_file_new line 568) to create an association table: data row number and corresponding fold number
+	// scan the whole data set "data" and randomly assign each row to a different fold
+	for (int i=0; i<n_data; i++) {
+		folds_table[i][0] = i;  	// data row number
+		folds_table[i][1] = i%n_folds+1;  // fold number
+	}
+
+	// show array
+	cout << "\n\np_folds_table[]" << endl;
+	//cout << setw(3) << " Z"; // << symbol;
+	cout << left << setw(4) << "Row";
+	cout << left << setw(10) << "data_row";
+	cout << left << setw(10) << "fold_id_no";
+	cout << left << setw(15) << "Pointed data" << endl;
+	for (int i=0; i< n_data; i++)  {//m must be equal to ndata
+		cout << left << setw(4) << i;
+		cout <<  left << setw(10)  << folds_table[i][0] << left << setw(10) << folds_table[i][1];
+		cout << left << setw(15) << data[folds_table[i][0]][0] << endl;
+	}
+
+	// print the folds to file for external use - or let reporter do it...
+
+}
+
+
+
+
+
+
 
 
 // show statistics on output

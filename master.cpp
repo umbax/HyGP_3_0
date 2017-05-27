@@ -107,7 +107,7 @@ int main (int argc, char *argv[])
 	//int n_point_evals=0;   ????
 	
 	// read inputs
-	read_input_file(FILE_INPUT, &parameters, &problem);
+	read_input_file(FILE_INPUT, &parameters, &problem);  // also initialise parameters and problem objects
 	if (argc==4) read_test_data(FILE_TEST_DATA, &parameters, &problem);
 
 	// check for errors on the input parameter between parenthesis
@@ -163,6 +163,10 @@ int main (int argc, char *argv[])
 	//as it's hard to pass Pop as a parameter to fdf_c__ through fortran functions, treat it as a global variable
 	Pop = P;
 
+	// split the whole input dataset in k folds for cross validation
+	problem.kfold_split(parameters.split);  // test with 3 folds
+
+	cin.get();
 
 	///// INITIAL GENERATION (0) ///////////////////////////////////////
 	
@@ -176,8 +180,9 @@ int main (int argc, char *argv[])
 	// this function will also allow to increase the number of fitness cases during the run...
 	// 23/5/2017 rewrite the split function to implement correctly the CROSSVALIDATION and the PRESS error calculation
 	// IMPORTANT! Check that the correct Sy is used in computing RMSE (note taken on 10/5/2014)
-	P->split_data(&parameters, &problem, 0,1);
+	//P->split_data(&parameters, &problem, 0,1);
 	
+
 	/////////// OTHER GENERATIONS ///////////////////////////////////////
 	int check_end = 0;
 	int last_gen=0;

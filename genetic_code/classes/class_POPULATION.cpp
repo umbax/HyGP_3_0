@@ -1080,8 +1080,8 @@ void Population::prune_tree (Binary_Node *p_tree)
 	}
 	
 	//STOP THE RUN
-	cout << "\nPress enter to end";
-	cin.get(); 
+	//cout << "\nPress enter to end";
+	//cin.get();
 
 	// free memory occupied by importance_list
 	delete[] importance;
@@ -1253,7 +1253,7 @@ int Population::split_data (RunParameters *pr, ProblemDefinition *pb, int curren
 			pb->data_evaluation[i] = new Val[pr->nvar+1];
 	
 		//----------------------------------------------------------------------------------------------------------------------
-		//  SPLIT OF DATA BETWEEN data_validation AND data_building BASED ON INPUT FILE
+		//  SPLIT OF DATA between data_evaluation and data_tuning based on input file (see problem_definition.h)
 		// first VALIDATING_LINES of DATA matrix are used for validation, the rest for model building
 		//----------------------------------------------------------------------------------------------------------------------
 		// rows counters
@@ -1962,6 +1962,8 @@ void Population::new_spawn(RunParameters pr, ProblemDefinition pb, int n_test_ca
 	int COMMENT =0;  //1 comments, 0 silent
 	char *expr;
 
+	cout << "\n\nPopulation :: new_spawn(  )" << endl;
+
 	// set the number of individuals to copy/generate with each genetic operator
 	int repr_tot = (int)(floor(repr_rate*size));   //originally pr.repr_rate
 	if (repr_tot==0) repr_tot = 1;  // IMPORTANT: to ensure at least 1 individual in the elite
@@ -2040,17 +2042,17 @@ void Population::new_spawn(RunParameters pr, ProblemDefinition pb, int n_test_ca
 	}
 
 	//delete new_trees
-  cout << "\nStart new_trees deletion process ...";
+	cout << "\nStart new_trees deletion process ...";
 	int last_k=0;
-  for (int k=0; k<size; k++) {
-    delete new_trees[k];
-    last_k = k;
-  }
-  cout << "\nDeleted up to new_trees[ " << last_k << " ] on " << size << " individuals";
+	for (int k=0; k<size; k++) {
+		delete new_trees[k];
+		last_k = k;
+	}
+	cout << "\nDeleted up to new_trees[ " << last_k << " ] on " << size << " individuals";
 	delete[] new_trees;
 	
-	if (COMMENT) 
-		printf("\nPopulation::new_spawn : exit"); 
+	//if (COMMENT)
+		cout << "\nPopulation::new_spawn : exit" << endl;
 }
 
 
@@ -2069,7 +2071,7 @@ void Population::evaluate(int gen, int G)
 	char *expr;
 	Val F;				 //used to store the F aggregated value
 
-	if (COMMENT)
+	//if (COMMENT)
 		cout << "\n\nPopulation :: evaluate()" << endl;
 
 	// initialisation of genetic operations performance counters referring to current generation
@@ -2093,7 +2095,7 @@ void Population::evaluate(int gen, int G)
 	
 
 
-	// just go through each member and set it
+	// cycle through each individual in the population of size "size"
 	for (int i=0; i<size; i++) {
 		// print the individual without parameters
 		expr = trees[i]->print();
@@ -2110,10 +2112,10 @@ void Population::evaluate(int gen, int G)
 		// Strategy adopted: Ed2 - if a variable is found as divisor (right child of a division),
 		// such variable is either replaced with 1 (Strategy : Ed) or might be summed with 1 (Strategy: Ed2)
 		perform_editing(i);
-    
+
 
 		// 0 - copy the parameterless trees in a new array (complete_trees)
-		if (COMMENT) cout << " Copying individual trees["<< i << "] to complete_trees[" << i << "]..." << endl;
+		if (COMMENT) cout << "\n\nCopying individual trees["<< i << "] to complete_trees[" << i << "]..." << endl;
 		// delete previous (old) complete tree if it exists
 		if (complete_trees[i])
 			delete complete_trees[i]; 
@@ -2127,7 +2129,7 @@ void Population::evaluate(int gen, int G)
 
 
 		// 1 - insert parameters in the trees in complete_trees (otherwise without)
-		if (COMMENT)  cout << " Inserting parameters (constant=1) in individual complete_trees["<< i << "]" << endl;
+		if (COMMENT) cout << " Inserting parameters (constant=1) in individual complete_trees["<< i << "]" << endl;
 		parameters_allocation(complete_trees[i],&complete_trees[i]);
 		if (COMMENT) {
 			expr = complete_trees[i]->print();
@@ -2142,8 +2144,7 @@ void Population::evaluate(int gen, int G)
 		// evaluation is done on the EVALUATION SET (they are the same set if SPLIT is not enabled)
 		// RMSE (error) and other tree's attributes are evaluated at this stage
 		// (this is done also for trees copied as a result of reproduction - as the structure is copied, not the parameters!)
-		if (COMMENT)  
-			cout << "\nTuning parameters in individual complete_trees["<< i << "]" << endl;
+		if (COMMENT) cout << " Tuning parameters in individual complete_trees["<< i << "]" << endl;
 		int n_param_threshold = floor(0.5*n_test_cases_tune);
 		tuning_individual(parameters.n_guesses, trees[i], complete_trees[i], i, n_param_threshold);
 		if (COMMENT) {
@@ -2154,42 +2155,46 @@ void Population::evaluate(int gen, int G)
 		}
 		if (COMMENT) {
 			expr = complete_trees[i]->print();
-			cout << "Individual in complete_trees[" << i << "] has " << complete_trees[i]->n_tuning_parameters <<" parameters" << endl;
+			cout << " Individual in complete_trees[" << i << "] has " << complete_trees[i]->n_tuning_parameters <<" parameters" << endl;
 			cout << " " << expr << endl;
 			delete [] expr;
 		}
 
 
 		// 3 - assign the found fitness value to the corresponding parameterless tree
-		if (COMMENT)  cout << " Updating fitness value of the corresponding parameterless tree trees["<< i << "]" << endl;
+		if (COMMENT) cout << " Updating fitness value of the corresponding parameterless tree trees["<< i << "]" << endl;
 		trees[i]->fitness = complete_trees[i]->fitness;
 		
 		// 4 - zero-order constraint penalisation evaluation
-		complete_trees[i]->pen_ord0 = constraint_evaluation(problem.data_inequality0,
-																										problem.n_inequality0,
-																										problem.constraints0,
+		complete_trees[i]->pen_ord0 = constraint_evaluation(problem.data_inequality0, problem.n_inequality0, problem.constraints0,
 																										problem.v_list,
 																										parameters.nvar,
 																										complete_trees[i]);
 		if (COMMENT) cout << "\ncomplete_trees[i]->pen_ord0 = " << complete_trees[i]->pen_ord0;
 
 
-		// 5 - zero-order constraint penalisation evaluation
-		complete_trees[i]->pen_ord1 = get_tree_derivative_given_norm_vector(problem, complete_trees[i]);
+		// 5 - first-order constraint penalisation evaluation
+		// STILL TO BE CHECKED!!! USE WITH CAUTION!!!
+		// if (COMMENT) cout << " Evaluating first-order constraint penalisation evaluation" << endl;
+		//complete_trees[i]->pen_ord1 = get_tree_derivative_given_norm_vector(problem, complete_trees[i]);
+		complete_trees[i]->pen_ord1=0;
 
 		// 6 - factorisation bonus : find the depth of the first factorising operation in the complete tree
 		////if (problem.division)
+		if (COMMENT) cout << " Finding depth of first factorising operation" << endl;
 		if (parameters.w_factorisation) {
 			search_first_op(complete_trees[i],(Node*)(complete_trees[i]),0); // <= IMPORTANT for FACTORISE!
 		}
 
 		// 7 - evaluate F
-		// REMEMBER: during optimization fitness values are evaluated...
+		// REMEMBER: during optimization fitness values (sheer RMSE) are evaluated...
 		// IMPORTANT if you want to introduce penalization for complexity. Extra penalization terms
 		// must be added here to fitness
 		// assign the F value to the corresponding tree without parameters 
+		if (COMMENT) cout << " Assigning F value to tree trees["<< i << "]" << endl;
 		aggregate_F(parameters, Fit_ave,  complete_trees[i], gen, G);
 		trees[i]->F = complete_trees[i]->F;
+
 
 
 		// 8 - measure the performance of each genetic operator (counter and delta) and update window counter
@@ -2247,6 +2252,8 @@ void Population::evaluate(int gen, int G)
 		cout << "\np_mutation_perf=" << p_mutation_perf[0] << ", " << p_mutation_perf[1] << ", " << p_mutation_perf[2] << ", " << " : tot_pmut = " << tot_pmut;
 	}
 
+
+
 }
 
 
@@ -2285,14 +2292,14 @@ void Population::evaluate_complete_trees()
 
 
 
-// fitness function definition (sum of the absolute value of the errors)
+// fitness function definition (what is known as prediction error of the model)
 // Input:
 // - address of the data matrix to be used for evaluation of fitness
 // - no of records or cases (no of rows to be used)
 // - address of the complete tree to be evaluated (root node)
 // - address of the array where to put results
 // Output (stored indirectly in result_tree[] and referring to the specific dataset fed in):
-// - error on data set (generally RMSE) : result_tree[0]
+// - error on data set (RMSE or normalised RMSE) : result_tree[0]
 // - no of hits : result_tree[1]
 // - no of corrections done by protected operations : result_tree[2]
 // - value of R2 (coefficient of determination) : result_tree[3]
@@ -2954,8 +2961,11 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		if (COMMENT)
 			cout << "\n  ntree_fdf_c = " << ntree_fdf_c;
 
+		// IMPORTANT: data_tuning and data_evaluation need to be correctly defined here!
+///
+
 		//-----------------------------------------------------------
-		// call the optimization functions: HYPSO (C++) and/or SQP (Fortran) (LINKS TO EXTERNAL FUNCTION)
+		// TREE TUNING on tuning data set: call the optimization functions: HYPSO (C++) and/or SQP (Fortran) (LINKS TO EXTERNAL FUNCTION)
 		//-----------------------------------------------------------
 
 		// 25/7/2016 : HERE YOU COULD ADD A CHECK TO SKIP TUNING (AND SO LEAVE CONSTANT NODES RANDOMLY INITIALISED)
@@ -3010,11 +3020,11 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		// OTHERWISE THE TREE JUST STAYS AS IT IS, WITH RANDOMLY GENERATED PARAMETERS
 
 		//-----------------------------------------------------------------------------------------------------
-		//evaluate fitness function and the other parameters defining the state of the tree 
-		// on the building set (it doesn't assign the values to the tree...wait for the final update)
+		// TREE EVALUATION/VALIDATION on the evaluation/validation data set
+		// (it doesn't assign the values to the tree...wait for the final update)
 		//-----------------------------------------------------------------------------------------------------
-		// the following call to fitness_func could be spared, if fitness calculated during tuning were used, saving computation time!!!!!
 		fitness_func(problem.Sy, problem.data_evaluation, problem.n_evaluation, ntree, result, parameters.normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
+///
 		fitness = result[0];
 		hits = (int)result[1];
 		n_corrections = (int)result[2];
@@ -3045,8 +3055,10 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		}
 		//-------------------------------------------------------------------------------------------------------
 */		
-		// update selection of best individual
+		//-----------------------------------------------------------------------------------------------------
+		// UPDATE best individual with best parameters among those resulting from different initial guesses
 		// Mind!!!! Selection is based on fitness (or RMSE), not on the aggregated error F (obvious)!!!
+		//-----------------------------------------------------------------------------------------------------
 		//if ((fitness < fitness_best) && (method>=0) && (der_check)) {
 		if (fitness < fitness_best)  {	
 			fitness_best = fitness;
@@ -3067,7 +3079,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		}
 
 
-	// here the cycle for (... i_guess<n_guesses ...) stops ---------------------------------------------------------------------------------------------------
+	// here the cycle related to the number of random guesses on tree coefficients (i_guess<n_guesses) stops -------
 	}
 
 	//update state variables of the (complete) tree with the best set of (tuned) parameters
@@ -3288,9 +3300,9 @@ void  Population::get_tree_derivative_given_points(Val **data_used,Binary_Node *
 //		overall score of the tree with regard to 1st order inequality constraints
 double Population::get_tree_derivative_given_norm_vector(ProblemDefinition pb, Binary_Node* c_tree)
 {
-	int COMMENT = 0;
+	int COMMENT = 1;
 
-	if (COMMENT) cout << "\nget_tree_derivative_given_norm_vector" << endl;
+	if (COMMENT) cout << "\nget_tree_derivative_given_norm_vector : enter" << endl;
 
 	cout.precision(10);
 	double epsilon = 1.0E-05;    // step for derivative
@@ -3393,6 +3405,9 @@ double Population::get_tree_derivative_given_norm_vector(ProblemDefinition pb, B
 	cout.precision(5);
 	// return error value on first order partial derivative constraint
 	if (COMMENT) cout << "\nleak = " << leak << endl;
+
+	if (COMMENT) cout << "\nget_tree_derivative_given_norm_vector : exit" << endl;
+
  	return leak;
 }
 

@@ -565,6 +565,10 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	pb->set_n_data(pr->nfitcases);
 	pb->set_n_var(pr->nvar);
 	pb->set_n_cols(pr->nvar + 1);
+	if (pr->split>0) {
+		pb->set_n_folds(pr->validating_lines);
+		pb->set_folds_table();  // dynamically allocate folds_table (see ProblemDefinition.h) for crossvalidation
+	}
 
 	pb->data_tuning = DATA;			// as a default, tuning and evaluation data are set identical
 	pb->n_tuning = pr->nfitcases;

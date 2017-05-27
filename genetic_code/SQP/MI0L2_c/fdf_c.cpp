@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 extern "C" {
 int  fdf_c__ (double *f,  double *x, int *m, int *n)  
 { 
@@ -67,24 +68,29 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 	//----------------------------------------------------------------------------------------------------------------------------------
 	// DEFINITION OF THE SINGLE TERM OF THE SUM (difference between tree output and actual output)
 	//----------------------------------------------------------------------------------------------------------------------------------	
-	for (i = 0; i <  mloc; i++) {				// each i is a fitness case... mloc = n_test_cases_tune    
-	// functions	
-		g = Pop->problem.data_tuning[i][nvar];    // value of the output
-		
-		if (COMMENT) 
+	// cycle through the fitness cases used for tuning (mloc = n_test_cases_tune)
+	for (i = 0; i <  mloc; i++) {
+
+		if (COMMENT)
 			cout << "\n" << i << ") ";
-		for (int j=0; j<nvar; j++) {			// assign the right value to all the variables for the i-th fitness case
+
+		// retrieve the actual value of the output (g= known target value provided in the last column of the input matrix)
+		g = Pop->problem.data_tuning[i][nvar];
+		
+		// assign the right value to all the variables for the i-th fitness case
+		for (int j=0; j<nvar; j++) {
 			(*Pop->problem.v_list[j]).value = Pop->problem.data_tuning[i][j];
 			if (COMMENT)
 				cout << (*Pop->problem.v_list[j]).value << "  ";
 		}
 	
-		// compute tree value for point data_tune[i][j]
+		// compute tree value t for the current fitness case, point data_tune[i][j]
 		t =(Val)(Pop->tree_value(tree, NULL));
 		
 		//------------------------------------------------
 		// definition of the term used by MI0L2 		
 		//------------------------------------------------
+		// compute error as difference actual and predicted value
 		f[i] = g-t;  //so far : it works perfectly
 /*
 		if (abs(g)<1.0e-12)   //for normalised RMSE

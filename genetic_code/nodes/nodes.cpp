@@ -35,24 +35,11 @@ using namespace std;
 #include "../modules/primitives.h"
 #include "../tree_functions/tree_operations.h"
 
-//#include "./class_UNARY_NODE.h"
-//#include "./class_TERMINAL_VAR.h"
-//#include "./class_TERMINAL_CONST.h"
-
-
-
 
 /*
 // base NODE class
 // function definitions (virtual functions are defined in the derived classes)
 */
-
-
-// included dependencies
-//#include "./class_NODE_base.h"
-//#include "../modules/nodes_types.h"   	//just a header, no source file
-//#include "./class_BINARY_NODE.h"	// risk of recursive reference
-//#include "./class_UNARY_NODE.h"		// risk of recursive reference
 
 
 // node class constructor.  right now just initializes some common variables
@@ -225,7 +212,7 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 // destructor - deletes the right and left subtrees
 Binary_Node::~Binary_Node(void)
 {
-    // delete the left
+	// delete the left
     delete left;
 
     // delete the right
