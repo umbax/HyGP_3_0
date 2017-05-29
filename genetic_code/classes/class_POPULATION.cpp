@@ -24,8 +24,8 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 {
 
 	// data in RunParameters and ProblemDefinition
-    problem = *pb;    //<----- pb
-    parameters = *pr;   //<-----pr
+    problem = pb;    //<----- pb
+    parameters = pr;   //<-----pr
 
     // tree generation - shouldn't be general members, but local parameters (generation methods)
 	ntotf = (int)(pr->p_FULL*pr->M);				// --- only for RAMPED method (see parameters)
@@ -97,12 +97,12 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 
 	// initialise variables for node selection statistics -  to be put in RunStatistics!
 	total_nodes_selected = 0;
-	selected_nodes_per_depth = new int[parameters.depth_lim+1];
+	selected_nodes_per_depth = new int[parameters->depth_lim+1];
 	if (selected_nodes_per_depth == NULL) {
 		cerr << "\nError : not enough memory to create : selected_nodes_per_depth";
 		exit(-1);
 	}
-	for (int k=0; k<parameters.depth_lim+1; k++) {
+	for (int k=0; k<parameters->depth_lim+1; k++) {
 			selected_nodes_per_depth[k] = 0;
 			//cout << "Selected_nodes_per_depth [" << k << "] = " <<  selected_nodes_per_depth[k] << endl;
 	}
@@ -146,15 +146,15 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
     // Currently root nodes can be binary functions only.
     // In the future allow any kind of node to be root node
     for (int i=0;i<size;i++)
-		trees[i] = new Binary_Node(NULL,problem.b_func_list[int_rand(problem.num_b_funcs)]);    //int_rand(2)+2]);    // 2]); //gives multiplication!
+		trees[i] = new Binary_Node(NULL,problem->b_func_list[int_rand(problem->num_b_funcs)]);    //int_rand(2)+2]);    // 2]); //gives multiplication!
 
     // now go through the nodes and recursively build the random trees
-	if ((parameters.method==2) || (parameters.method==3)) // method for generating the initial pop. -> 1=no limits, 2=FULL, 3=GROW, 4=RAMPED
-		depth_max = parameters.depth_max;
+	if ((parameters->method==2) || (parameters->method==3)) // method for generating the initial pop. -> 1=no limits, 2=FULL, 3=GROW, 4=RAMPED
+		depth_max = parameters->depth_max;
 
 	for (int i=0;i<size;i++) {
-		if (parameters.method==4) {						//just for RAMPED method
-			depth_max = int_rand(parameters.depth_max - parameters.depth_min+1)+parameters.depth_min;
+		if (parameters->method==4) {						//just for RAMPED method
+			depth_max = int_rand(parameters->depth_max - parameters->depth_min+1)+parameters->depth_min;
 			full = int_rand(2);   //if 1 FULL, if 0 GROW
 			if  (full) {
 				if (n_full == ntotf)     
@@ -169,7 +169,7 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 		depth = 1;
 		build_tree(trees[i]);
 
-		if (parameters.method==4) {
+		if (parameters->method==4) {
 			if (full)
 				n_full++;
 			else
@@ -178,7 +178,7 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 	};
 
 	//depending on the method:
-	switch (parameters.method) {
+	switch (parameters->method) {
 	
 		case 1:	// no limits (original method)
 			{
@@ -259,19 +259,19 @@ Node *Population::new_node(Node *n)
 	if (&Spow)   //check if the primitive is used... to avoid run-time errors 
 		if (n->type == NODE_BINARY)
 			if  (!strcmp( ((Binary_Node*)n)->get_func()->sign,"^") )
-				if (problem.num_u_funcs)
+				if (problem->num_u_funcs)
 					type = int_rand(4);
 				else
 					type = 2+int_rand(2);
 	
 
 	if (type < 0) {	
-		switch (parameters.method) {
+		switch (parameters->method) {
 
 			case 1:
 			{
 				// no limits (original method)
-				if (problem.num_u_funcs)
+				if (problem->num_u_funcs)
 					type = int_rand(3);
 				else
 					type = 2*int_rand(2);
@@ -313,7 +313,7 @@ Node *Population::new_node(Node *n)
       case NODE_BINARY:
         {
             // create it with a random function
-			Binary_Node *nn= new Binary_Node(n,problem.b_func_list[int_rand(problem.num_b_funcs)]);   // int_rand(2)+2]); //<- solo mult and div          //
+			Binary_Node *nn= new Binary_Node(n,problem->b_func_list[int_rand(problem->num_b_funcs)]);   // int_rand(2)+2]); //<- solo mult and div          //
             // save the pointer
             newnode = (Node *)nn;
             
@@ -326,7 +326,7 @@ Node *Population::new_node(Node *n)
       case NODE_UNARY:
         {
             // create it with a random function
-            Unary_Node *nn = new Unary_Node(n,problem.u_func_list[int_rand(problem.num_u_funcs)]);
+            Unary_Node *nn = new Unary_Node(n,problem->u_func_list[int_rand(problem->num_u_funcs)]);
             // save the pointer
             newnode = (Node *)nn;
             
@@ -349,7 +349,7 @@ Node *Population::new_node(Node *n)
       case NODE_VAR:
         {
             // create it with a random variable
-            Terminal_Var *nn = new Terminal_Var(n,problem.v_list[int_rand(parameters.nvar)]);
+            Terminal_Var *nn = new Terminal_Var(n,problem->v_list[int_rand(parameters->nvar)]);
             // save the pointer
             newnode = (Node *)nn;
 			
@@ -745,7 +745,7 @@ int Population::point_mutation(Binary_Node *tree, int nm)
 	Node *par = p_nm->get_parent();
 	//check the kind of node
 	int t;
-	if ((p_nm->type ==  NODE_BINARY) && (problem.num_b_funcs>1)) {
+	if ((p_nm->type ==  NODE_BINARY) && (problem->num_b_funcs>1)) {
 			Binary_Func *p_b_fun;
 			Binary_Node *p_b_node = (Binary_Node*)p_nm;
 			t = NODE_BINARY;
@@ -756,7 +756,7 @@ int Population::point_mutation(Binary_Node *tree, int nm)
 			p_b_fun = p_b_node->get_func();
 			while ((p_b_node->get_func()) == p_b_fun) {
 				// select the pointer to the new function
-				p_b_fun = problem.b_func_list[int_rand(problem.num_b_funcs)];
+				p_b_fun = problem->b_func_list[int_rand(problem->num_b_funcs)];
 				if (COMMENT) cout << "\nChosen f: p_b_fun = " << p_b_fun << " Sign = " << p_b_fun->sign << endl; 
 			}
 			// call the function in Binary Node class to change the function of the node 
@@ -764,7 +764,7 @@ int Population::point_mutation(Binary_Node *tree, int nm)
 	}
 		
 
-	if ((p_nm->type ==  NODE_UNARY) && (problem.num_u_funcs>1)) {
+	if ((p_nm->type ==  NODE_UNARY) && (problem->num_u_funcs>1)) {
 			Unary_Func *p_u_fun;
 			Unary_Node *p_u_node = (Unary_Node*)p_nm;
 			t = NODE_UNARY;
@@ -775,7 +775,7 @@ int Population::point_mutation(Binary_Node *tree, int nm)
 			p_u_fun = p_u_node->get_func();
 			while ((p_u_node->get_func()) == p_u_fun) {
 				// select the pointer to the new function
-				p_u_fun = problem.u_func_list[int_rand(problem.num_u_funcs)];
+				p_u_fun = problem->u_func_list[int_rand(problem->num_u_funcs)];
 				if (COMMENT)  cout << "\nChosen f: p_u_fun = " << p_u_fun << " Sign = " << p_u_fun->sign; 
 			}
 			// call the function in Unary Node class to change the function of the node 
@@ -783,7 +783,7 @@ int Population::point_mutation(Binary_Node *tree, int nm)
 	}
 			
 
-	if ( ((p_nm->type ==  NODE_VAR) && (parameters.nvar>1)) || (p_nm->type ==  NODE_CONST) ) {
+	if ( ((p_nm->type ==  NODE_VAR) && (parameters->nvar>1)) || (p_nm->type ==  NODE_CONST) ) {
 			
 			if (p_nm->type ==  NODE_VAR) 
 				t = NODE_VAR;
@@ -811,7 +811,7 @@ int Population::point_mutation(Binary_Node *tree, int nm)
 				p_var = p_terminal_var->val_p();
 				while (p_var == p_terminal_var->val_p()) {
 					// select the pointer to a new variable
-					p_var = problem.v_list[int_rand(parameters.nvar)];
+					p_var = problem->v_list[int_rand(parameters->nvar)];
 					if (COMMENT) {
 						cout << "\nChosen var: p_var = " << p_var << " Sign = " << p_var->name; 
 					}
@@ -861,7 +861,7 @@ Binary_Node *Population::generate_subtree(int max_depth_subtree)
 	if (COMMENT) cout << "\nCREATION OF A NEW SUBTREE" << endl;
 	
 	// create the root of the new subtree (the first argument of the constructor is the pointer to parent, NULL, as the node is root)
-	p_new_subtree = new Binary_Node(NULL,problem.b_func_list[int_rand(problem.num_b_funcs)]);    //int_rand(2)+2]);    // 2]); //gives multiplication!
+	p_new_subtree = new Binary_Node(NULL,problem->b_func_list[int_rand(problem->num_b_funcs)]);    //int_rand(2)+2]);    // 2]); //gives multiplication!
 
  	// set the maximum depth of the new subtree ()FULL and GROW methods) or the range of the depth
 	depth_max = max_depth_subtree;    
@@ -876,7 +876,7 @@ Binary_Node *Population::generate_subtree(int max_depth_subtree)
 
 	//the method used for initialization is the same as used for initial population generation  
 	if (COMMENT) {
-		switch (parameters.method) {
+		switch (parameters->method) {
 	
 			case 1:	// no limits (original method)
 				{
@@ -1100,7 +1100,7 @@ int Population::FULL_method(void)
 {
 	int t; //type of the node
 	if (depth<depth_max) {
-		if (problem.num_u_funcs)
+		if (problem->num_u_funcs)
 			t = int_rand(2);
 		else
 			t=0;	
@@ -1120,7 +1120,7 @@ int Population::GROW_method(void)
 {
 	int t;
 	if (depth<depth_max) {
-		if (problem.num_u_funcs)
+		if (problem->num_u_funcs)
 			t = int_rand(3);	
 		else 
 			t = 2*int_rand(2);
@@ -1183,7 +1183,7 @@ void Population::print_population_with_parameters(int gen)
 	char *expr;	
 	cout <<"\n\n --------------------  GENERATION " << gen << " with parameters -------------------" << endl; 
 	cout << " n F fitness hits n_nodes depth expr" << endl; 	
-	for (int j=0;j<(int)(floor(parameters.repr_rate*parameters.M));j++) {
+	for (int j=0;j<(int)(floor(parameters->repr_rate*parameters->M));j++) {
 		cout << "\n\nComplete tree n. " << j;
 		complete_trees[j]->show_state();
 		//print only the best complete individual if COMMENT=0
@@ -1513,7 +1513,7 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 				p1 = int_rand(size);
 				p2 = int_rand(size);
 				tree_depth_max = max(trees[p1]->calc_depth(), trees[p2]->calc_depth()) + 1;  //+1 is for the new binary root node
-				if (((tree_depth_max<=parameters.depth_lim) || (count==9)) && (p1!=p2)) {
+				if (((tree_depth_max<=parameters->depth_lim) || (count==9)) && (p1!=p2)) {
 					if (COMMENT) cout << "\nComposition accepted" << endl;
 					valid_composition = 1;
 				}
@@ -1713,7 +1713,7 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 	 		// first argument is the pointer to the subtree to be replaced, the second the pointer to the subtree to be introduced
 	 		d1 = potential_depth((Node*)(trees[p1]->find(crossover_point1)), (Node*)(trees[p2]->find(crossover_point2)));
 	 		d2 = potential_depth((Node*)(trees[p2]->find(crossover_point2)), (Node*)(trees[p1]->find(crossover_point1)));
-	 		if ((d1<=parameters.depth_lim) && (d2<=parameters.depth_lim)) {
+	 		if ((d1<=parameters->depth_lim) && (d2<=parameters->depth_lim)) {
 	 			if (COMMENT)  cout << "\n Crossover is valid (offspring depths within the limit depth_lim): new max depths d1 =" << d1 << " , d2 = " << d2 << endl;
 	 			crossover_invalid = 0;
 	 		}
@@ -1877,18 +1877,18 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 	 				node_mutation = select_node(trees[pm]);
 	 				p_node_mutation = trees[pm]->find(node_mutation);
 	 				root_dist = evaluate_root_distance(p_node_mutation);
-	 				max_depth_new_subtree = parameters.depth_lim - root_dist;
+	 				max_depth_new_subtree = parameters->depth_lim - root_dist;
 	 				if (COMMENT) {
 	 					cout << "\n\nRoot distance of node " << node_mutation << " in tree " << pm << " = " << root_dist;
 	 					cout << "\nMaximum new subtree depth = " << max_depth_new_subtree;
-	 					cout << "\nDepth limit = " << parameters.depth_lim << endl;
+	 					cout << "\nDepth limit = " << parameters->depth_lim << endl;
 	 				}
 	 				// generate a new subtree with a maximum depth specified as input
 	 				p_new_subtree = generate_subtree(3);     //if 1 ONLY NEW BINARY FUNCTIONS ARE INTRODUCED!!
 	 				// check that the offspring generated by mutation don't exceed limits on depth (see depth_limit)
 	 				// first argument is the pointer to the subtree to be replaced, the second the pointer to the subtree to be introduced
 	 				dm = potential_depth((Node*)(trees[pm]->find(node_mutation)), (Node*)(p_new_subtree));
-	 				if (dm<=parameters.depth_lim) {
+	 				if (dm<=parameters->depth_lim) {
 	 					if (COMMENT) cout << "\n Subtree mutation is valid (offspring depths within the limit depth_lim): new max depth  dm =" << dm << endl;
 	 					mutation_invalid = 0;
 	 				}
@@ -2146,7 +2146,7 @@ void Population::evaluate(int gen, int G)
 		// (this is done also for trees copied as a result of reproduction - as the structure is copied, not the parameters!)
 		if (COMMENT) cout << " Tuning parameters in individual complete_trees["<< i << "]" << endl;
 		int n_param_threshold = floor(0.5*n_test_cases_tune);
-		tuning_individual(parameters.n_guesses, trees[i], complete_trees[i], i, n_param_threshold);
+		tuning_individual(parameters->n_guesses, trees[i], complete_trees[i], i, n_param_threshold);
 		if (COMMENT) {
 					expr = complete_trees[i]->print();
 					cout << "Individual in complete_trees[" << i << "]" << endl;
@@ -2166,9 +2166,9 @@ void Population::evaluate(int gen, int G)
 		trees[i]->fitness = complete_trees[i]->fitness;
 		
 		// 4 - zero-order constraint penalisation evaluation
-		complete_trees[i]->pen_ord0 = constraint_evaluation(problem.data_inequality0, problem.n_inequality0, problem.constraints0,
-																										problem.v_list,
-																										parameters.nvar,
+		complete_trees[i]->pen_ord0 = constraint_evaluation(problem->data_inequality0, problem->n_inequality0, problem->constraints0,
+																										problem->v_list,
+																										parameters->nvar,
 																										complete_trees[i]);
 		if (COMMENT) cout << "\ncomplete_trees[i]->pen_ord0 = " << complete_trees[i]->pen_ord0;
 
@@ -2182,7 +2182,7 @@ void Population::evaluate(int gen, int G)
 		// 6 - factorisation bonus : find the depth of the first factorising operation in the complete tree
 		////if (problem.division)
 		if (COMMENT) cout << " Finding depth of first factorising operation" << endl;
-		if (parameters.w_factorisation) {
+		if (parameters->w_factorisation) {
 			search_first_op(complete_trees[i],(Node*)(complete_trees[i]),0); // <= IMPORTANT for FACTORISE!
 		}
 
@@ -2266,9 +2266,9 @@ void Population::evaluate_complete_trees()
 
 	Val result[4];
 	int repr_tot = get_repr_tot();
-	cout << "\n\nFINAL EVALUATION OF ARCHIVE COMPLETE TREES ON TEST DATA SET";
+	cout << "\n\nEVALUATION of the n. " << repr_tot << " complete trees in the archive on the TEST DATA SET";
 	for (int i=0; i<repr_tot; i++) {
-		fitness_func(problem.Sy_test, problem.data_test, problem.n_test, complete_trees[i], result, parameters.normalised);   //IMPORTANT: fitness evaluated on data_test !!!
+		fitness_func(problem->Sy_test, problem->data_test, problem->n_test, complete_trees[i], result, parameters->normalised);   //IMPORTANT: fitness evaluated on data_test !!!
 
 		complete_trees[i]->n_corrections_test = (int)result[2];
 		if (!(complete_trees[i]->n_corrections_test)) {
@@ -2324,7 +2324,7 @@ void Population::fitness_func(Val Sy, Val ** data_used, int n_cases, Node *curre
 		expr = current_tree->print();
 		cout << "Tree to be evaluated:\n\n" << expr << endl;
 		delete [] expr;
-		cout << "num_vars = " << parameters.nvar << " n_cases = " << n_cases << endl;
+		cout << "num_vars = " << parameters->nvar << " n_cases = " << n_cases << endl;
 		cout << " data_used: variables    given output    tree output" << endl; 
 	}
 
@@ -2332,10 +2332,10 @@ void Population::fitness_func(Val Sy, Val ** data_used, int n_cases, Node *curre
 		if (COMMENT) cout << i << ") ";
 		
 		// assign the right value to all the variables for the i-th fitness case
-		for (int j=0; j<parameters.nvar; j++) {
-			(*problem.v_list[j]).value = data_used[i][j];
+		for (int j=0; j<parameters->nvar; j++) {
+			(problem->v_list[j])->value = data_used[i][j];
 			if (COMMENT)
-				cout << (*problem.v_list[j]).value << "  ";   //var is field of Z defined at line 247 in master.cpp (it is not a member of Terminal_Var!!!)
+				cout << (problem->v_list[j])->value << "  ";   //var is field of Z defined at line 247 in master.cpp (it is not a member of Terminal_Var!!!)
 		}
 		
 		// tree evaluation
@@ -2346,15 +2346,15 @@ void Population::fitness_func(Val Sy, Val ** data_used, int n_cases, Node *curre
 		// ERROR FUNCTION
 		// -------------------------------------------------------------------------
 		// 	RMSE VERSION
-		error =  (Val)(data_used[i][parameters.nvar] - treeval);
+		error =  (Val)(data_used[i][parameters->nvar] - treeval);
 		result_tree[0] = result_tree[0] + error*error;   //sum of the square of the errors - for RMSE *
 		
 		// NORMALISED RMSE VERSION
 		if (normalised) { 
-    			if (abs(data_used[i][parameters.nvar])>1.0e-12)   //1.0e-12
-				error_norm =  (Val)abs((data_used[i][parameters.nvar] - treeval)/data_used[i][parameters.nvar]);
+    			if (abs(data_used[i][parameters->nvar])>1.0e-12)   //1.0e-12
+				error_norm =  (Val)abs((data_used[i][parameters->nvar] - treeval)/data_used[i][parameters->nvar]);
 			else
-				error_norm =  (Val)abs(data_used[i][parameters.nvar] - treeval);
+				error_norm =  (Val)abs(data_used[i][parameters->nvar] - treeval);
 			result_tree_norm = result_tree_norm + error_norm*error_norm;   //sum of the square of the errors - for RMSE *
 		}
 		//---------------------------------------
@@ -2365,7 +2365,7 @@ void Population::fitness_func(Val Sy, Val ** data_used, int n_cases, Node *curre
 
 		// output and corresponding tree value	
 		if (COMMENT) { 
-			cout << data_used[i][parameters.nvar] << "  " << treeval << endl;
+			cout << data_used[i][parameters->nvar] << "  " << treeval << endl;
 		}
 	}
 	
@@ -2404,7 +2404,7 @@ double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
 	update_complete_tree(ntree, x, n_param);
 
 	// evaluate tree fitness (error)
-	fitness_func(problem.Sy, problem.data_evaluation, problem.n_evaluation, ntree, result, parameters.normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
+	fitness_func(problem->Sy, problem->data_evaluation, problem->n_evaluation, ntree, result, parameters->normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
 	fitness = (double)result[0];
 	//hits = (int)result[1];
 	//n_corrections = (int)result[2];
@@ -2465,7 +2465,7 @@ double Population::constraint_evaluation(Val**data, int n_cases, char* constrain
 // function to compute the aggregate version of fitness (called F)
 // input: number of the tree in trees[]  (and complete_trees[])
 // output: value of the aggregate function F
-void Population::aggregate_F(RunParameters pr, Val average_err, Binary_Node *complete_tree, int gen, int G)
+void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *complete_tree, int gen, int G)
 {	
 	int COMMENT = 0; //1 comments, 0 silent...
 	char* expr;
@@ -2536,7 +2536,7 @@ void Population::aggregate_F(RunParameters pr, Val average_err, Binary_Node *com
 	//-------------------------------------------------------------
 	// factorisation bonus enabled only if w_factorisation > 0 (see input file)
 	F7 = 0.0;
-	if (pr.w_factorisation>0) {
+	if (pr->w_factorisation>0) {
 		// FACTORISE APPROACH (also called FACTORISATION BONUS)
 		double d = (double)(complete_tree->depth_first_op);
 		// OLD STUFF not tested enough //if (d == -1)
@@ -2553,12 +2553,12 @@ void Population::aggregate_F(RunParameters pr, Val average_err, Binary_Node *com
 
 	// weights
 	//-------------------------------------------------------------
-	a2 = pr.w_complexity;   
-	a3 = pr.w_n_corrections;  
-	a4 = pr.w_size;          
-	a5 = pr.w_pen_ord0;		// penalisation of unsatisfied inequality constraint, order 0 (value)
-	a6 = pr.w_pen_ord1;		// penalisation of unsatisfied inequality constraint, order 1 (first derivative)
-	a7 = pr.w_factorisation;   // penalisation for lack of factorisation (depth of first division)
+	a2 = pr->w_complexity;
+	a3 = pr->w_n_corrections;
+	a4 = pr->w_size;
+	a5 = pr->w_pen_ord0;		// penalisation of unsatisfied inequality constraint, order 0 (value)
+	a6 = pr->w_pen_ord1;		// penalisation of unsatisfied inequality constraint, order 1 (first derivative)
+	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
 	a1= double(1.-a2-a3-a4-a5-a6); //-a7);
 	
 	//------------------------------------------------------------
@@ -2581,7 +2581,7 @@ void Population::aggregate_F(RunParameters pr, Val average_err, Binary_Node *com
 	//	dc = (double)(gen/G);
 	// else dc = 1.;
 
-	if (pr.minmax) {	
+	if (pr->minmax) {
 		// minmax approach     
 		// build the list of elements among which you want to find the maximum
 		double list[4];
@@ -2603,7 +2603,7 @@ void Population::aggregate_F(RunParameters pr, Val average_err, Binary_Node *com
 		//F = a1*F1+a2*F2+a3*(exp(F3*F3)-1)*1000000.0+a4*F4+(1000000.0)*(exp(F5*F5)-1.0)*a5;
 		//F = a1*F1+a2*F2+a3*F3*1000000.0+a4*F4+(1000000.0)*(exp(F5*F5)-1.0)*a5;
 		
-		if (pr.w_factorisation<=0) {
+		if (pr->w_factorisation<=0) {
 			// STANDARD APPROACH (HyGP, GIPPO or structural GP)
 			complete_tree->F = complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6;  // removed "+ complete_tree->T7;"
 		}
@@ -2621,7 +2621,7 @@ void Population::aggregate_F(RunParameters pr, Val average_err, Binary_Node *com
 	if (COMMENT) {  // && (i==0)) {
 		cout << "\nPopulation::aggregate_F" << endl;
 		complete_tree->show_state();
-		cout << "\nd_lim = " <<parameters.depth_lim;
+		cout << "\nd_lim = " <<parameters->depth_lim;
 		cout << "\nFit_ave = " << Fit_ave;
 		cout << "\na1 = " << a1 << "  F1 = " << F1 << "  a1*F1 = " << a1*F1;
 		cout << "\na2 = " << a2 << "  F2 = " << F2 << "  a2*F2 = " << a2*F2;
@@ -2719,7 +2719,7 @@ void Population::perform_editing(int i)
 {
 	int COMMENT = 0;
 	// check if critical operations are used
-	if (problem.division) { // add check if division is in the tree, so to skip in case this operation (editing)
+	if (problem->division) { // add check if division is in the tree, so to skip in case this operation (editing)
 		// gets here if division is among primitives
 		char *expr;
 		if (COMMENT) expr = trees[i]->print();
@@ -2921,17 +2921,17 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			for (int j=0; j<n_param; j++) {
 				// check if x[j] is a pulsation		
 				if (!(ntree->n_pulsations) || (r >= ntree->n_pulsations))
-					x[j] = constant_generation(parameters.minrand, parameters.maxrand, parameters.step);
+					x[j] = constant_generation(parameters->minrand, parameters->maxrand, parameters->step);
 				else {
 					// there's  at least one pulsation				
 					if (j== ntree->index_puls[r])	{
-						Val a = (problem.v_list[ntree->index_var[r]])->omega_lim;
-						x[j] = constant_generation(parameters.minrand, parameters.maxrand, parameters.step, -a, a);
+						Val a = (problem->v_list[ntree->index_var[r]])->omega_lim;
+						x[j] = constant_generation(parameters->minrand, parameters->maxrand, parameters->step, -a, a);
 						//x[j] = constant_generation();	// more general, but relies on the right guess!					
 						r++;
 					}
 					else 
-						x[j] = constant_generation(parameters.minrand, parameters.maxrand, parameters.step);
+						x[j] = constant_generation(parameters->minrand, parameters->maxrand, parameters->step);
 				}
 			}
 			if (COMMENT)  cout << "\n  x randomly initialized (size " << n_param << ").";
@@ -2991,7 +2991,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			// ALSO: DON'T USE CAPITAL LETTERS... otherwise problems during compiling ("undefined reference")
 			//to perform optimization with TINL2.FOR  - Umberto's method (copied from Andrey's)
 			//optitinl2_(&method, x, &n_param, &n_test_cases_tune, &IW);
-			if (COMMENT) cout << "\n\n  Population::tuning_individual : n_param = " << n_param << ", nfitcases = " << parameters.nfitcases;
+			if (COMMENT) cout << "\n\n  Population::tuning_individual : n_param = " << n_param << ", nfitcases = " << parameters->nfitcases;
 			if (1==1) {
 				//to perform optimization with TIOL2.FOR  - Andrey's method - WORKS PERFECTLY!
 				if (COMMENT) cout << "\nPopulation::tuning_individual : Call opti_()";
@@ -3023,7 +3023,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		// TREE EVALUATION/VALIDATION on the evaluation/validation data set
 		// (it doesn't assign the values to the tree...wait for the final update)
 		//-----------------------------------------------------------------------------------------------------
-		fitness_func(problem.Sy, problem.data_evaluation, problem.n_evaluation, ntree, result, parameters.normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
+		fitness_func(problem->Sy, problem->data_evaluation, problem->n_evaluation, ntree, result, parameters->normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
 ///
 		fitness = result[0];
 		hits = (int)result[1];
@@ -3213,59 +3213,59 @@ void  Population::get_tree_derivative_given_points(Val **data_used,Binary_Node *
 	// step for derivative
 	double dv = 1.0E-06;
 	double tree_initial, tree_final;
-	double *initial = new double [parameters.nvar];
-	double *final = new double [parameters.nvar];
-	double* conn_v = new double [parameters.nvar];
+	double *initial = new double [parameters->nvar];
+	double *final = new double [parameters->nvar];
+	double* conn_v = new double [parameters->nvar];
 	cout << "\nPopulation::get_tree_derivative" << endl;
 	
 	for (int row=0; row<n_der; row++) {
 		
 		// extract nvar coordinates of initial point
-		for (int k=0; k<parameters.nvar; k++)
+		for (int k=0; k<parameters->nvar; k++)
 			initial[k] = data_used[(int)(fun_der[row][1])][k];  //previous version (see get_deriv_to_closest_neighbour)
 			// INSERT HERE THE MATRIX
 		if (COMMENT)
-			if (parameters.nvar==2) cout << "\n initial = (" << initial[0] << ", " << initial[1] << ")" << endl;
+			if (parameters->nvar==2) cout << "\n initial = (" << initial[0] << ", " << initial[1] << ")" << endl;
 	
 		//evaluate tree in initial point
-		for (int k=0; k<parameters.nvar; k++) 			// assign the right value to all the variables for the i-th sample case
-				(*problem.v_list[k]).value = initial[k];
+		for (int k=0; k<parameters->nvar; k++) 			// assign the right value to all the variables for the i-th sample case
+				(problem->v_list[k])->value = initial[k];
 		tree_initial = tree_value(current_tree, NULL);    // NULL as n_corrections is not a matter here
 		if (COMMENT) cout << "\nValue of the tree at the initial point : tree_initial = " << tree_initial << endl;
 
 		// find final point
 		// find connecting vector
-		vect_sub(&(data_used[(int)(fun_der[row][2])][0]), initial, parameters.nvar, conn_v);  //ok till here
+		vect_sub(&(data_used[(int)(fun_der[row][2])][0]), initial, parameters->nvar, conn_v);  //ok till here
 		if (COMMENT)
-			if (parameters.nvar==2) cout << "Connecting vector : conn_v = (" << conn_v[0] << ", " << conn_v[1] << ")" << endl;
+			if (parameters->nvar==2) cout << "Connecting vector : conn_v = (" << conn_v[0] << ", " << conn_v[1] << ")" << endl;
 
 		// compute connecting vector magnitude
 		double magn;
-		magn = vect_magn(conn_v,parameters.nvar);
+		magn = vect_magn(conn_v,parameters->nvar);
 		if (COMMENT) cout << "magn = " << magn << endl;
 
 		// normalise connecting vector
-		vect_div_scal(conn_v, magn, parameters.nvar, conn_v);
+		vect_div_scal(conn_v, magn, parameters->nvar, conn_v);
 		if (COMMENT)
-			if (parameters.nvar==2) cout << "Normalised conn_v = (" << conn_v[0] << ", " << conn_v[1] << ")" << endl;
-		magn = vect_magn(conn_v,parameters.nvar);
+			if (parameters->nvar==2) cout << "Normalised conn_v = (" << conn_v[0] << ", " << conn_v[1] << ")" << endl;
+		magn = vect_magn(conn_v,parameters->nvar);
 		if (COMMENT) cout << "magn = " << magn << endl;
 
 		// multiply normalised connecting vector by an infinitesimal number...
 		if (COMMENT) cout << "dv = " << dv << endl;
-		vect_mult_scal(conn_v, dv, parameters.nvar, conn_v);
+		vect_mult_scal(conn_v, dv, parameters->nvar, conn_v);
 		if (COMMENT)
-			if (parameters.nvar==2) cout << "Normalised conn_v multiplied by dv = (" << conn_v[0] << ", " << conn_v[1] << ")" << endl;
-		magn = vect_magn(conn_v,parameters.nvar);
+			if (parameters->nvar==2) cout << "Normalised conn_v multiplied by dv = (" << conn_v[0] << ", " << conn_v[1] << ")" << endl;
+		magn = vect_magn(conn_v,parameters->nvar);
 		if (COMMENT) cout << "magn = " << magn << endl;
 
 		// finally, get final point
-		vect_sum(initial, conn_v, parameters.nvar, final);
-		if (COMMENT) if (parameters.nvar==2)  cout << "\n final = (" << final[0] << ", " << final[1] << ")" << endl;
+		vect_sum(initial, conn_v, parameters->nvar, final);
+		if (COMMENT) if (parameters->nvar==2)  cout << "\n final = (" << final[0] << ", " << final[1] << ")" << endl;
 
 		//evaluate tree in final point
-		for (int k=0; k<parameters.nvar; k++) 			// assign the right value to all the variables
-				(*problem.v_list[k]).value = final[k];
+		for (int k=0; k<parameters->nvar; k++) 			// assign the right value to all the variables
+				(problem->v_list[k])->value = final[k];
 		tree_final = tree_value(current_tree, NULL);    // NULL as n_corrections is not a matter here
 		if (COMMENT) cout << "\nValue of the tree at the final point : tree_final = " << tree_final << endl;
 
@@ -3659,9 +3659,9 @@ void Population::adapt_genetic_operators_rates_notused(void)
     window_counter++;
     if (window_counter==ngen_perturb+1) {
        learning_window = 0;
-       repr_rate = parameters.repr_rate; // repr_rate;
-	     cross_rate = parameters.cross_rate;
-     	 mut_rate = parameters.mut_rate;
+       repr_rate = parameters->repr_rate; // repr_rate;
+	     cross_rate = parameters->cross_rate;
+     	 mut_rate = parameters->mut_rate;
        window_counter =0;
 	  }
   }
@@ -4118,7 +4118,7 @@ void Population::find_pulsations(Binary_Node *tree)
 							// correct the number to get the index in v_list first
 							i_var = (((Terminal_Var*)brother)->get_var_number()) - 1;
 							//check that i_var< num_vars
-							if (i_var>=parameters.nvar) {
+							if (i_var>=parameters->nvar) {
 								cerr << "\nPopulation::find_pulsations : ERROR : i_var >= num_vars !!!";
 								exit (-1);
 							}

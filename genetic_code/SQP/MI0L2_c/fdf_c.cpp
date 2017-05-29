@@ -1,3 +1,4 @@
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +14,7 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
   	double z1 = 0.;
 	double pen, e_arg;	
 	char *expr;
-	int nvar = Pop->parameters.nvar;
+	int nvar = Pop->parameters->nvar;
 	//----- can be simplified --------
    	int ntree = Pop->ntree_fdf_c;   //really ugly way to read a variable...Find another one!
    	Binary_Node *tree = Pop->complete_trees[ntree];   //address of the complete tree to be optimised
@@ -75,13 +76,13 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 			cout << "\n" << i << ") ";
 
 		// retrieve the actual value of the output (g= known target value provided in the last column of the input matrix)
-		g = Pop->problem.data_tuning[i][nvar];
+		g = Pop->problem->data_tuning[i][nvar];
 		
 		// assign the right value to all the variables for the i-th fitness case
 		for (int j=0; j<nvar; j++) {
-			(*Pop->problem.v_list[j]).value = Pop->problem.data_tuning[i][j];
+			Pop->problem->v_list[j]->value = Pop->problem->data_tuning[i][j];
 			if (COMMENT)
-				cout << (*Pop->problem.v_list[j]).value << "  ";
+				cout << Pop->problem->v_list[j]->value << "  ";
 		}
 	
 		// compute tree value t for the current fitness case, point data_tune[i][j]
@@ -101,7 +102,7 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 		if (COMMENT) {
 		//check values on the screen
 			expr = Pop->print(ntree, NULL);   //trick not to write Pop->complete_trees,  that is private...
-			printf("\nfdf_ c: function number %i  corrisponding to output %i = %f",i,i,Pop->problem.data_tuning[i][Pop->problem.get_n_cols() - 1]);
+			printf("\nfdf_ c: function number %i  corrisponding to output %i = %f",i,i,Pop->problem->data_tuning[i][Pop->problem->get_n_cols() - 1]);
 			printf ("\nfdf_c : Tree %i :   %s",ntree,expr);
 			printf("\nfdf_ c: g = %E   t = %E   g-t = %E", g, t, f[i]);
 		}
@@ -117,11 +118,11 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 	for (int i=0; i< tree->n_pulsations; i++) {
 		// compare the pulsation to the corresponding omega_lim		
 		//if (abs(x[Pop->index_puls[i]]) <= Pop->omega_lim[i])  //omega_lim=2pi*N_oscillations/Zk_ampl		
-		if (abs(x[tree->index_puls[i]]) <= (Pop->problem.v_list[tree->index_var[i]])->omega_lim)  //omega_lim=2pi*N_oscillations/Zk_ampl
+		if (abs(x[tree->index_puls[i]]) <= (Pop->problem->v_list[tree->index_var[i]])->omega_lim)  //omega_lim=2pi*N_oscillations/Zk_ampl
 			f[mloc+i] = 0.0;
 		else {
 			//e_arg = abs(x[Pop->index_puls[i]]) - Pop->omega_lim[i];
-			e_arg = abs(x[tree->index_puls[i]]) - (Pop->problem.v_list[tree->index_var[i]])->omega_lim;
+			e_arg = abs(x[tree->index_puls[i]]) - (Pop->problem->v_list[tree->index_var[i]])->omega_lim;
 			pen = exp(e_arg*e_arg) - 1.0;    //in ASMO UK paper I forgot - 1.0!!!
 
 			if (pen<=MAX_VAL)
@@ -131,8 +132,8 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 		}
 		if (COMMENT) {	
 			cout << "\n" << mloc+i << ") penalisation term = " << f[mloc+i] << endl;
-			cout << "variable : " << (Pop->problem.v_list[tree->index_var[i]])->name << endl;
-			cout << "omega_lim = " << (*Pop->problem.v_list[tree->index_var[i]]).omega_lim;
+			cout << "variable : " << (Pop->problem->v_list[tree->index_var[i]])->name << endl;
+			cout << "omega_lim = " << (*Pop->problem->v_list[tree->index_var[i]]).omega_lim;
 			cout << " pulsation = " <<  x[tree->index_puls[i]] << endl;
 		}
 
