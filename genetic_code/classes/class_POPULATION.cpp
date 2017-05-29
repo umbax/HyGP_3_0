@@ -2754,8 +2754,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			//1		->start minimization with gradient computed using function values (no actual differentiation)	
 			
 	double node_value; 
-	double* x;
-	double* x_best;   
+	double* x;	// array of tree parameters (numerical coefficients)
+	double* x_best;   // best array of tree parameters (numerical coefficients)
 	Val fitness, fitness_best, R2, R2_best;
 	Val result[4];   // result[0] is the total error (fitness value), result[1] is the number of hits scored, result[2] is the n of corrections done by protected operations
 	
@@ -2962,70 +2962,10 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			cout << "\n  ntree_fdf_c = " << ntree_fdf_c;
 
 		// IMPORTANT: data_tuning and data_evaluation need to be correctly defined here!
-///
 
-		//-----------------------------------------------------------
-		// TREE TUNING on tuning data set: call the optimization functions: HYPSO (C++) and/or SQP (Fortran) (LINKS TO EXTERNAL FUNCTION)
-		//-----------------------------------------------------------
+		tuning_individual_PRESS_single_guess(ntree, x, n_param_threshold, n_param, &method, &m_total, &IW, &n_guess_ok, result);
 
-		// 25/7/2016 : HERE YOU COULD ADD A CHECK TO SKIP TUNING (AND SO LEAVE CONSTANT NODES RANDOMLY INITIALISED)
-        //             IF THE NUMBER OF PARAMETERS IS LARGER THAN SAY HALF THE QUANTITY OF THE TRAINING POINTS...
-		//             SEE BISHOP 1996 ARTICLE
-		// IF (CONDITION FOR TUNING is TRUE) THEN    - example n_param <= n_param_max = 0.5 * size training data set
-		if (n_param<=n_param_threshold) {
-
-			// insert here call to HyPSO (just try to run HyPSO for a couple of iterations to search for global minima)
-			// steps involved: call to HYPSO/pso_launcher, launch psominimize, internal call to objective function in model.cpp (tree evaluator and error definition with weights for pulsations...)
-			//double (*p_objfun)(double*, int, Binary_Node*);
-			//p_objfun = &Population::pso_objfunction;  // method in Population
-			//hypso_launcher(p_objfun, ntree, n_param, x); // method NOT belonging to Population
-
-			// SQP parameters optimisation
-			method = 0; // IMPORTANT!
-			if (COMMENT)
-				cout << "\nPopulation::tuning_individual : before optimisation ICONTR = method = " << method;
-			// to perform optimization with TINL2_mod.cpp, MINL2.cpp through f2c: DOESN'T WORK
-			//c = opti_cpp(this, &method, n_param, n_test_cases, ntree,x);
-		
-			// CALL FORTRAN FUNCTION: ALWAYS USE ADDRESSES OF VARIABLES, NOT VARIABLES DIRECTLY!
-			// ALSO: DON'T USE CAPITAL LETTERS... otherwise problems during compiling ("undefined reference")
-			//to perform optimization with TINL2.FOR  - Umberto's method (copied from Andrey's)
-			//optitinl2_(&method, x, &n_param, &n_test_cases_tune, &IW);
-			if (COMMENT) cout << "\n\n  Population::tuning_individual : n_param = " << n_param << ", nfitcases = " << parameters->nfitcases;
-			if (1==1) {
-				//to perform optimization with TIOL2.FOR  - Andrey's method - WORKS PERFECTLY!
-				if (COMMENT) cout << "\nPopulation::tuning_individual : Call opti_()";
-				opti_(&method, x, &n_param, &m_total, &IW);
-			} else {
-				if (COMMENT) cout << "\nPopulation::tuning_individual : tuning through opti_() skipped ...";
-			}
-
-
-			if (COMMENT) {
-				cout << "\nPopulation::tuning_individual : after optimisation ICONTR = method = " << method;
-				if (method==2) cout << "\n => UPPER LIMIT FOR FUNCTION EVALUATIONS EXCEEDED.";
-				if (method==1) cout << "\n => SUM OF SQUARES FAILS TO DECREASE";
-				if (method==0) cout << "\n => successful convergence";
-				if (method<0) cout << "\n => COMPUTATION DID NOT START: see SQP_guide (pag 14) for details";
-			}
-			if (method==0) {
-				n_guess_ok++;
-			}
-
-			// update the tree with the new, optimised values of the parameters
-			update_complete_tree(ntree, x, n_param);
-
-		}
-
-		// OTHERWISE THE TREE JUST STAYS AS IT IS, WITH RANDOMLY GENERATED PARAMETERS
-
-		//-----------------------------------------------------------------------------------------------------
-		// TREE EVALUATION/VALIDATION on the evaluation/validation data set
-		// (it doesn't assign the values to the tree...wait for the final update)
-		//-----------------------------------------------------------------------------------------------------
-		fitness_func(problem->Sy, problem->data_evaluation, problem->n_evaluation, ntree, result, parameters->normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
-///
-		fitness = result[0];
+		fitness = result[0];  // RMS error
 		hits = (int)result[1];
 		n_corrections = (int)result[2];
 		R2 = result[3];
@@ -3129,6 +3069,73 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 
 	return 1;    
 }
+
+// function that performs the PRESS error evaluation on a single individual, for a single guess of the individual parameters
+void Population::tuning_individual_PRESS_single_guess(Binary_Node *ntree, double* x, int n_param_threshold, int n_param, int* p_method, int* p_m_total, int* p_IW, int* p_n_guess_ok, Val* p_result)
+{
+	int COMMENT=0;
+	//-----------------------------------------------------------
+	// TREE TUNING on tuning data set: call the optimization functions: HYPSO (C++) and/or SQP (Fortran) (LINKS TO EXTERNAL FUNCTION)
+	//-----------------------------------------------------------
+
+	// 25/7/2016 : HERE YOU COULD ADD A CHECK TO SKIP TUNING (AND SO LEAVE CONSTANT NODES RANDOMLY INITIALISED)
+    //             IF THE NUMBER OF PARAMETERS IS LARGER THAN SAY HALF THE QUANTITY OF THE TRAINING POINTS...
+	//             SEE BISHOP 1996 ARTICLE
+	// IF (CONDITION FOR TUNING is TRUE) THEN    - example n_param <= n_param_max = 0.5 * size training data set
+	if (n_param<=n_param_threshold) {
+
+			// insert here call to HyPSO (just try to run HyPSO for a couple of iterations to search for global minima)
+			// steps involved: call to HYPSO/pso_launcher, launch psominimize, internal call to objective function in model.cpp (tree evaluator and error definition with weights for pulsations...)
+			//double (*p_objfun)(double*, int, Binary_Node*);
+			//p_objfun = &Population::pso_objfunction;  // method in Population
+			//hypso_launcher(p_objfun, ntree, n_param, x); // method NOT belonging to Population
+
+			// SQP parameters optimisation
+			if (COMMENT)
+				cout << "\nPopulation::tuning_individual : before optimisation ICONTR = method = " << *p_method;
+			// to perform optimization with TINL2_mod.cpp, MINL2.cpp through f2c: DOESN'T WORK
+			//c = opti_cpp(this, &method, n_param, n_test_cases, ntree,x);
+
+			// CALL FORTRAN FUNCTION: ALWAYS USE ADDRESSES OF VARIABLES, NOT VARIABLES DIRECTLY!
+			// ALSO: DON'T USE CAPITAL LETTERS... otherwise problems during compiling ("undefined reference")
+			//to perform optimization with TINL2.FOR  - Umberto's method (copied from Andrey's)
+			//optitinl2_(&method, x, &n_param, &n_test_cases_tune, &IW);
+			if (COMMENT) cout << "\n\n  Population::tuning_individual : n_param = " << n_param << ", nfitcases = " << parameters->nfitcases;
+			if (1==1) {
+				//to perform optimization with TIOL2.FOR  - Andrey's method - WORKS PERFECTLY!
+				if (COMMENT) cout << "\nPopulation::tuning_individual : Call opti_()";
+				opti_(p_method, x, &n_param, p_m_total, p_IW);
+			} else {
+				if (COMMENT) cout << "\nPopulation::tuning_individual : tuning through opti_() skipped ...";
+			}
+
+
+			if (COMMENT) {
+				cout << "\nPopulation::tuning_individual : after optimisation ICONTR = method = " << *p_method;
+				if (*p_method==2) cout << "\n => UPPER LIMIT FOR FUNCTION EVALUATIONS EXCEEDED.";
+				if (*p_method==1) cout << "\n => SUM OF SQUARES FAILS TO DECREASE";
+				if (*p_method==0) cout << "\n => successful convergence";
+				if (*p_method<0) cout << "\n => COMPUTATION DID NOT START: see SQP_guide (pag 14) for details";
+			}
+			if (*p_method==0) {
+				(*p_n_guess_ok)++;
+			}
+
+			// update the tree with the new, optimised values of the parameters
+			update_complete_tree(ntree, x, n_param);
+
+		}
+
+		// OTHERWISE THE TREE JUST STAYS AS IT IS, WITH RANDOMLY GENERATED PARAMETERS
+
+		//-----------------------------------------------------------------------------------------------------
+		// TREE EVALUATION/VALIDATION on the evaluation/validation data set
+		// (it doesn't assign the values to the tree...wait for the final update)
+		//-----------------------------------------------------------------------------------------------------
+		fitness_func(problem->Sy, problem->data_evaluation, problem->n_evaluation, ntree, p_result, parameters->normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
+
+}
+
 
 
 // function to evaluate a tree at population level (n_tree_evaluations is updated)

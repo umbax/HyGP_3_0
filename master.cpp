@@ -195,12 +195,8 @@ int main (int argc, char *argv[])
 			// split the data for the current generation (this function will also allow to increase the number of fitness cases during the run...)
 			//P->split_data(i,G,split); // not used...
 /*
-			if ((i%6)==0) {   //6
-				// KILLING and FILLING
-				P->kill_and_fill(&Mprobl);
-				//cin.get();	
-			}
-			else
+			// KILLING and FILLING
+			if ((i%6)==0) P->kill_and_fill(&Mprobl); else
 //*/
 				// GENETIC OPERATORS: sorting, reproduction, crossover, mutation, pruning
 				P->new_spawn(Mparam, Mprobl, Mparam.nfitcases,i);
@@ -235,8 +231,8 @@ int main (int argc, char *argv[])
 		//cout << "\n+++++++++++++++ POPULATION EVALUATED BUT NOT SORTED+++++++++++++";
 		//P->print_population_without_parameters(i);
 		//cout << "\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-		// sort according to F
-		// VITAL! Both populations must be sorted, trees[] and complete_trees[]...
+
+		// sort according to F : VITAL! Both populations must be sorted, trees[] and complete_trees[]...
 		P->sort(i,tree_comp_F);
 	 	
 			///printf("\n\n***********Generation %d after genetic operations (not sorted, new trees marked with f9.999999E+99)************\n", i-1);
@@ -342,7 +338,7 @@ int main (int argc, char *argv[])
 }
 
 
-
+// DIFFERENT OPTIMISERS
 //#include "./genetic code/SQP/MINL2.cpp"    - only for optimizer translated in C++
 //#include "./genetic code/SQP/TINL2_mod.cpp"   - only for optimizer translated in C++
 

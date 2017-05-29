@@ -163,6 +163,7 @@ class Population {
 	void evaluate_complete_trees(void); // evaluates fitness, hits, corrections, R2 of complete trees on a given data set
 	void perform_editing(int i); // edits trees[i], individual without parameters
 	int tuning_individual(int, Binary_Node *, Binary_Node *, int, int);      //finds, extracts the terminal_const variables and optimise them through SQP
+	void tuning_individual_PRESS_single_guess(Binary_Node*, double*, int, int, int*, int*, int*, int*, Val*);  // performs PRESS error evaluation on a single individual for a given set of parameters (tree coefficients)
 	double constraint_evaluation(Val**, int, char*, Variable **, int, Binary_Node *);
 
 	// pulsation control
