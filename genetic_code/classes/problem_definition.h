@@ -43,7 +43,8 @@ class ProblemDefinition
 		int n_cols;			// number of columns in data (n_var+1)
 		// cross validation purposes
 		int n_folds;		// number of folds for crossvalidation
-		int** folds_table; // association table between fold and data row
+		int** folds_table; // association table between fold and data row (array of int n_datax2)
+		int* points_per_fold; // array of int containing the number of points (records) per fold (n_foldsx1)
 
 		
 	public:
@@ -60,6 +61,9 @@ class ProblemDefinition
 		Val sum_output;
 		Val y_ave;
 		Val Sy;
+
+		// folds for crossvalidation
+		Val*** folds; // pointer to a 3d array (no of fold x row x column) - initialised in kfold_split
 
 		// data tuning and evaluation (tuning = building data, evaluation = cross validation data)
 		Val** data_tuning;		// BUILDING DATA SET

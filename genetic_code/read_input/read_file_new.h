@@ -16,8 +16,10 @@
 #ifndef READ_FILE_NEW_H_
 #define READ_FILE_NEW_H_
 
+#include <iostream>
 #include <sstream>    // for stringstream
 #include <string>    //  string class (C++)
+#include <cstring>   // to manipulate strings (C) (strcpy,)
 #include <vector>
 #include <fstream>
 

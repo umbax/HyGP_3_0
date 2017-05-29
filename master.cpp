@@ -17,7 +17,6 @@
 #include <iomanip>  // manipulators (text format): setw
 #include <string>    // to manipulate strings (C)
 #include <cstring>   // to manipulate strings (C) (strcpy,)
-#include <string>    //  string class (C++)
 #include <cstdlib>   // NULL, exit, EXIT_FAILURE
 #include <cmath>
 #include <algorithm> // max_element
@@ -100,41 +99,41 @@ int main (int argc, char *argv[])
 
 	// other classes instantiations
 	Variable* Z;    //to be included in ProblemDefinition...
-	RunParameters parameters;
-	ProblemDefinition problem;
+	RunParameters Mparam;  		// to distinguish it from parameters object in Population
+	ProblemDefinition Mprobl;	// to distinguish it from problem object in Population
 	Reporter pop_reporter;
 
 	//int n_point_evals=0;   ????
 	
 	// read inputs
-	read_input_file(FILE_INPUT, &parameters, &problem);  // also initialise parameters and problem objects
-	if (argc==4) read_test_data(FILE_TEST_DATA, &parameters, &problem);
+	read_input_file(FILE_INPUT, &Mparam, &Mprobl);  // also initialise parameters and problem objects
+	if (argc==4) read_test_data(FILE_TEST_DATA, &Mparam, &Mprobl);
 
 	// check for errors on the input parameter between parenthesis
-	input_check(&parameters, &problem);
+	input_check(&Mparam, &Mprobl);
 	
 	// compute additional attributes or set up structures in Problem Definition (variables, for example)
 	// now all is done in read_input_file (but it's too messy there...)
 	
 	// show the results
-	parameters.show();
-	problem.show_all();
+	Mparam.show();
+	Mprobl.show_all();
 		
 	// to stop the execution
 	//cout << "Have a go?" << endl;
 	//cin.get();
 	
 	// random value generator
-	if (parameters.seed<0) {
+	if (Mparam.seed<0) {
         // if seed = -1 use random seed (time)
         time_t *tp = NULL; // seed the random value generator
 	    srand((unsigned int) time (tp));    //to be used normally
-	    parameters.seed = time(tp); // attention! two runs that starts within 1 second have the same seed, so are identical!
-        cout << "\n\nSEED=-1 in input file: seed randomly generated = " << parameters.seed << endl;   	
+	    Mparam.seed = time(tp); // attention! two runs that starts within 1 second have the same seed, so are identical!
+        cout << "\n\nSEED=-1 in input file: seed randomly generated = " << Mparam.seed << endl;
     } else {
         // if seed >0 use the value given in input file
-        srand(parameters.seed); 
-        cout << "\n\nused seed = " << parameters.seed << endl;   	   
+        srand(Mparam.seed);
+        cout << "\n\nused seed = " << Mparam.seed << endl;
     }
 	
 
@@ -149,12 +148,12 @@ int main (int argc, char *argv[])
 	// CREATE THE POPULATION (constructor called)
 	//---------------------------------------------------------------------
     // initialise variables
-    problem.initialise_variables(&Z, parameters.max_n_periods);
-    //for (int k=0; k<problem.get_n_var(); k++)
-    //	cout << "\n v_list" << k << " = " << problem.v_list[k];
+    Mprobl.initialise_variables(&Z, Mparam.max_n_periods);
+    //for (int k=0; k<Mprobl.get_n_var(); k++)
+    //	cout << "\n v_list" << k << " = " << Mprobl.v_list[k];
 
 	// do you really need new? no, but don't touch it for now
-	Population *P = new Population(&parameters, &problem);
+	Population *P = new Population(&Mparam, &Mprobl);
 	if (!P) {
 		cerr << "\nmain : Error creating population!!!\n";
 		exit(-1); 
@@ -163,8 +162,11 @@ int main (int argc, char *argv[])
 	//as it's hard to pass Pop as a parameter to fdf_c__ through fortran functions, treat it as a global variable
 	Pop = P;
 
+	int n =Pop->parameters->nvar;
+	cout << "\nn= " << n;
+
 	// split the whole input dataset in k folds for cross validation
-	problem.kfold_split(parameters.split);  // test with 3 folds
+	Mprobl.kfold_split(Mparam.split);  // test with 3 folds
 
 	cin.get();
 
@@ -180,13 +182,13 @@ int main (int argc, char *argv[])
 	// this function will also allow to increase the number of fitness cases during the run...
 	// 23/5/2017 rewrite the split function to implement correctly the CROSSVALIDATION and the PRESS error calculation
 	// IMPORTANT! Check that the correct Sy is used in computing RMSE (note taken on 10/5/2014)
-	//P->split_data(&parameters, &problem, 0,1);
+	//P->split_data(&Mparam, &Mprobl, 0,1);
 	
 
 	/////////// OTHER GENERATIONS ///////////////////////////////////////
 	int check_end = 0;
 	int last_gen=0;
-	for (int i=0; i<parameters.G+1; i++) {
+	for (int i=0; i<Mparam.G+1; i++) {
 		
 		if (i) {   //skip generation 0
 			// split the data for the current generation (this function will also allow to increase the number of fitness cases during the run...)
@@ -194,13 +196,13 @@ int main (int argc, char *argv[])
 /*
 			if ((i%6)==0) {   //6
 				// KILLING and FILLING
-				P->kill_and_fill(&problem);
+				P->kill_and_fill(&Mprobl);
 				//cin.get();	
 			}
 			else
 //*/
 				// GENETIC OPERATORS: sorting, reproduction, crossover, mutation, pruning
-				P->new_spawn(parameters, problem, parameters.nfitcases,i);
+				P->new_spawn(Mparam, Mprobl, Mparam.nfitcases,i);
 
 			// print population WITHOUT parameters after genetic operations
 			//if (COMMENT) {
@@ -211,7 +213,7 @@ int main (int argc, char *argv[])
 		}
 
 		// evaluate fitness function (in structural GP parameters are added and tuned first, then the evaluation is performed)
-		P->evaluate(i,parameters.G);  
+		P->evaluate(i,Mparam.G);
 		
 
 			//----------------------------------------------------------------------------------
@@ -263,23 +265,15 @@ int main (int argc, char *argv[])
 		P->compute_statistics();
 
 		// evaluate termination condition
-		check_end=P->terminate(parameters.threshold);
+		check_end=P->terminate(Mparam.threshold);
 		last_gen = i;   
 
-		// for the split data set, re-tune and re-evaluate the individuals on the merged data set
-	 	if (parameters.split) {
-			if ((check_end) || (i==parameters.G)) {
-				cout << "\nBest Individual re-tuning and re-evaluation on the whole dataset" << endl;
-				P->split_data(&parameters, &problem,last_gen,last_gen);
-				P->evaluate(i,parameters.G);  
-			}
-		}
 
 		// PRINT TO FILE OPERATIONS (in case of crash, data is saved)  -------------------------
 		// print to file (stream of data to file opened and closed within the function)
-		pop_reporter.stats2file(&parameters, P, DIR_OUTPUT, i, check_end);
+		pop_reporter.stats2file(&Mparam, P, DIR_OUTPUT, i, check_end);
 		// write the test-points (training set), and the corresponding values of g_obj and the best individual (only one)
-		pop_reporter.points2file(&parameters, &problem, P, DIR_OUTPUT, i, check_end, start, finish, delta_t, parameters.seed);
+		pop_reporter.points2file(&Mparam, &Mprobl, P, DIR_OUTPUT, i, check_end, start, finish, delta_t, Mparam.seed);
 		// write best individual's expression
 		pop_reporter.update_best2file_build(P, DIR_OUTPUT, i, check_end);
 		// write the list of the best-so-far individuals (see elite or archive) - truncation!
@@ -303,7 +297,7 @@ int main (int argc, char *argv[])
 
 	//termination criterion (successful run) satisfied
 	if (check_end) {
-		cout << "Termination criterion satisfied (RMSE < " << parameters.threshold << ")." << endl;
+		cout << "Termination criterion satisfied (RMSE < " << Mparam.threshold << ")." << endl;
 		cout << "Possible solution: " << endl; 
 		P->print_population_with_parameters(last_gen);
 		cout << "Check latest_archive.txt for solutions\n" << endl;
@@ -314,7 +308,7 @@ int main (int argc, char *argv[])
 	}
 
 	// just for test
-	//P->get_tree_derivative_given_norm_vector(problem, P->complete_trees[0]);
+	//P->get_tree_derivative_given_norm_vector(Mprobl, P->complete_trees[0]);
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -322,12 +316,12 @@ int main (int argc, char *argv[])
 	// END OPERATIONS
 	//---------------------------------------------------------------------
 	// write node statistics to file
-	pop_reporter.node_stats2file(&parameters, P, DIR_OUTPUT);
+	pop_reporter.node_stats2file(&Mparam, P, DIR_OUTPUT);
 	
 	// evaluate fitness (RMSE and R2) on test data set (only if test data has been provided)
 	if (argc==4) {
 		// evaluate complete individuals on test data set provided by the user
-		P->evaluate_complete_trees(); // SET CORRECTLY problem.data_test, n_test, Sy_test after implementing function to read test data set
+		P->evaluate_complete_trees(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
 		// sort according to error (RMSE) - better not to use it to keep order and to recognise performance on building and test data sets...
 		//P->sort(last_gen,tree_comp_fitness); // non va: ordina in ordine decrescente e alcune volte pone a 0 RMSE e R2. Perché?
 		// find and print best individual on test data set to file

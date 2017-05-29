@@ -37,8 +37,10 @@ ProblemDefinition::ProblemDefinition(void)
 	n_cols = -1;			//number of columns in data (n_var+1)
 	n_folds=0;
 	folds_table=NULL;
+	points_per_fold=NULL;
 
 	// public members
+	folds = NULL;
 	data_tuning = NULL;
 	n_tuning = -1;
 	data_evaluation = NULL;
@@ -122,7 +124,7 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 		for (int j=0; j<n_var+1; j++)
 			data[i][j]= p.data[i][j];
 
-	// copy n_folds and folds_table?
+	// copy n_folds, folds_table, points_per_fold?
 
 
 	// copy public members
@@ -266,12 +268,20 @@ ProblemDefinition::~ProblemDefinition(void)
 
 	cout << "ProblemDefinition::~ProblemDefinition(void) : destructor called" << endl;
 
+	// delete folds_table array
 	if (folds_table!=NULL) {
 			for (int i = 0; i < n_data; ++i) delete[] folds_table[i];
 			delete[] folds_table;
 	}
 
+	// delete points_per_fold array
+	if (points_per_fold!=NULL)
+		delete[] points_per_fold;
+
+	// folds
+
 	cout << "ProblemDefinition::~ProblemDefinition(void) : exit" << endl;
+
 }
 
 
@@ -313,7 +323,7 @@ void ProblemDefinition::initialise_variables(Variable**p_Z, double max_n_periods
 		string num_field_s = num_field;
 		string var_name;
 		var_name = symbol + num_field_s;
-		strcpy( (*(v_list[k])).name, var_name.c_str());
+		strcpy( v_list[k]->name, var_name.c_str());
 
 		// RANGE and OMEGA_LIM
 		Val max = data[0][k];
@@ -324,13 +334,13 @@ void ProblemDefinition::initialise_variables(Variable**p_Z, double max_n_periods
 			if (data[i][k] < min)
 				min = data[i][k];
 		}
-		(*(v_list[k])).lower_b = min;
-		(*(v_list[k])).upper_b = max;
-		(*(v_list[k])).range = max-min;
-		(*(v_list[k])).omega_lim = 2.0*PI*(max_n_periods)/(max-min);
+		v_list[k]->lower_b = min;
+		v_list[k]->upper_b = max;
+		v_list[k]->range = max-min;
+		v_list[k]->omega_lim = 2.0*PI*(max_n_periods)/(max-min);
 
 		// print variable's status
-		if (COMMENT) (*(v_list[k])).show_status();
+		if (COMMENT) v_list[k]->show_status();
 		//cout << "Have a go?" << endl;
 		//cin.get();
 	}
@@ -497,9 +507,9 @@ void ProblemDefinition::show_binary_functions(void)
 	int k;
 	if (num_b_funcs>0) {
 		for (k=0; k< num_b_funcs-1; k++) {
-			cout << (*(b_func_list[k])).sign << ", ";
+			cout << b_func_list[k]->sign << ", ";
 		}
-		cout << (*(b_func_list[k])).sign;
+		cout << b_func_list[k]->sign;
 	}
 	else
 		cout << "No binary functions used";
@@ -514,9 +524,9 @@ void ProblemDefinition::show_unary_functions(void)
 	int k;
 	if (num_u_funcs>0) {
 		for (k=0; k < num_u_funcs-1; k++) {
-			cout << (*u_func_list[k]).sign << ", ";
+			cout << u_func_list[k]->sign << ", ";
 		}
-		cout << (*u_func_list[k]).sign;
+		cout << u_func_list[k]->sign;
 		cout << endl;
 	}
 	else
@@ -542,9 +552,14 @@ void ProblemDefinition::show_all(void)
 
 void ProblemDefinition::set_folds_table(void)
 {
+	// allocate folds_table
 	folds_table = new int*[n_data];
 	for (int i = 0; i < n_data; ++i)
 		folds_table[i] = new int[2];
+
+	// allocate points_per_fold
+	points_per_fold = new int[n_folds];
+
 }
 
 
@@ -569,15 +584,30 @@ void ProblemDefinition::kfold_split(int split_switch)
 	    cerr << "ProblemDefinition::kfold_split : ERROR ! n_folds > n_data !!!!\n";
 	    exit(-1);
 	}
+/*
+	// compute number of records per fold and at the same time initialise Val*** folds (array no, row no, col no)
+	folds = new Val**[n_folds];
+	int min_points = int((n_data-n_data%n_folds)/n_folds);
+	for (int i=0; i<n_folds; i++) {
+		points_per_fold[i] = min_points;
+		if ((i+1)<=(n_data%n_folds)) points_per_fold[i]++;
+		cout << "\nPoints_per_fold[" << i << "] = " << points_per_fold[i];
 
-	int min_entry_per_fold = int(floor(double(n_data)/double(n_folds)));
+		// initialise folds[i]
+		folds[i]=new Val*[points_per_fold[i]];
+		for (int j=0; j<n_data; j++) {
+			folds[i][j]=new Val[n_cols];
+		}
 
-	// Initialise fold_table (allocated in read_file_new line 568) to create an association table: data row number and corresponding fold number
+	}
+*/
+	// Initialise folds_table (allocated in read_file_new line 568) to create an association table: data row number and corresponding fold number
 	// scan the whole data set "data" and randomly assign each row to a different fold
 	for (int i=0; i<n_data; i++) {
-		folds_table[i][0] = i;  	// data row number
-		folds_table[i][1] = i%n_folds+1;  // fold number
+		folds_table[i][0] = i;  	// column 0: data row number
+		folds_table[i][1] = i%n_folds;  // column 1: fold number (number starts from 0)
 	}
+
 
 	// show array
 	cout << "\n\np_folds_table[]" << endl;

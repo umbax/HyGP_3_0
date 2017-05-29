@@ -495,6 +495,7 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	pb->num_b_funcs = NUM_B_FUNCS;
 
 
+
 	// UNARY FUNCTIONS : the names to be inserted in the input file are between " "
 	for (int k=0; k<15; k++)   //the number (15) is the number of dummy operations set in Problem Definition class
 		pb->u_func_list[k] = &(pb->dummy_uni[k]);

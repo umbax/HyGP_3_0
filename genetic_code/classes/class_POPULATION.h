@@ -102,7 +102,7 @@ class Population {
 	void fitness_func(Val, Val**, int, Node*, Val*, bool);
 
 	// parameters and function to evaluate aggregate function F (see variable in Binary Node)
-	void aggregate_F(RunParameters, Val, Binary_Node*, int, int);
+	void aggregate_F(RunParameters*, Val, Binary_Node*, int, int);
 
 
   public:
@@ -115,8 +115,8 @@ class Population {
 	// Population destructor					
     ~Population(void);        
 	
-	ProblemDefinition problem;
-	RunParameters parameters;
+	ProblemDefinition* problem;
+	RunParameters* parameters;
 	
 	int get_size(void);    // returns the population size
 	double get_repr_rate(void);  // returns repr_rate
