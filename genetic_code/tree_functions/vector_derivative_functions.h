@@ -16,6 +16,13 @@
 #ifndef VECTOR_DERIVATIVE_FUNCTIONS_H_
 #define VECTOR_DERIVATIVE_FUNCTIONS_H_
 
+// included dependencies
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed, cerr
+#include <cstdlib>   // NULL, exit, EXIT_FAILURE
+#include <algorithm> // max_element, min_element
+#include <cmath>	// pow, sqrt
+
+
 int int_rand(int);
 void basic_stat_analysis(double*,double*,int);
 void vect_sub(double*, double*, int, double*);

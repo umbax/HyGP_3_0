@@ -584,23 +584,17 @@ void ProblemDefinition::kfold_split(int split_switch)
 	    cerr << "ProblemDefinition::kfold_split : ERROR ! n_folds > n_data !!!!\n";
 	    exit(-1);
 	}
-/*
+
+
 	// compute number of records per fold and at the same time initialise Val*** folds (array no, row no, col no)
-	folds = new Val**[n_folds];
+	//folds = new Val**[n_folds]; USE VECTORS OR JUST POINTERS!
 	int min_points = int((n_data-n_data%n_folds)/n_folds);
 	for (int i=0; i<n_folds; i++) {
 		points_per_fold[i] = min_points;
 		if ((i+1)<=(n_data%n_folds)) points_per_fold[i]++;
 		cout << "\nPoints_per_fold[" << i << "] = " << points_per_fold[i];
-
-		// initialise folds[i]
-		folds[i]=new Val*[points_per_fold[i]];
-		for (int j=0; j<n_data; j++) {
-			folds[i][j]=new Val[n_cols];
-		}
-
 	}
-*/
+
 	// Initialise folds_table (allocated in read_file_new line 568) to create an association table: data row number and corresponding fold number
 	// scan the whole data set "data" and randomly assign each row to a different fold
 	for (int i=0; i<n_data; i++) {

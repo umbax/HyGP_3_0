@@ -13,6 +13,9 @@
 // limitations under the License.
 
 
+#include "../tree_functions/tree_operations.h"
+
+
 // functions performing operations on entire trees (or subtrees)
 
 

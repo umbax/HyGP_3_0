@@ -13,13 +13,13 @@
 // limitations under the License.
 
 
-#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed, cerr
 #include <iomanip>  // manipulators (text format): setw
 #include <string>    // to manipulate strings (C)
-#include <cstring>   // to manipulate strings (C) (strcpy,)
+#include <cstring>   // to manipulate strings (C) (strcpy, strcmp)
 #include <cstdlib>   // NULL, exit, EXIT_FAILURE
-#include <cmath>
-#include <algorithm> // max_element
+#include <cmath>	// pow, sqrt
+#include <algorithm> // max_element, min_element
 #include <exception>
 
 /// compatibility issues (Microsoft tempting to modify commands?):commented if under linux, uncommented under WINDOWS
@@ -34,6 +34,7 @@ using namespace std;
 #include "./genetic_code/input_checks/input_check.h"
 #include "./genetic_code/classes/reporter.h"
 #include "./genetic_code/classes/class_POPULATION.h"
+
 
 
 // global variables - population purposes
@@ -340,12 +341,14 @@ int main (int argc, char *argv[])
 	return 0;
 }
 
-// to get rid of the following source files inclusions, compile their source files separately and link them in makefile!!!!
+
+
 //#include "./genetic code/SQP/MINL2.cpp"    - only for optimizer translated in C++
 //#include "./genetic code/SQP/TINL2_mod.cpp"   - only for optimizer translated in C++
-#include "./genetic_code/tree_functions/tree_operations.cpp"
+
 //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
 #include "./genetic_code/SQP/MI0L2_c/fdf_c.cpp"
 //for Umberto's method - TINL2 and MINL2 - WORKS?
 //#include "./genetic code/SQP/fdfTINL2_c.cpp"  
-#include "genetic_code/tree_functions/vector_derivative_functions.cpp"
+
+

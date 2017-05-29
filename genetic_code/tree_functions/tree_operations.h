@@ -18,9 +18,14 @@
 #define TREE_OPERATIONS_H_
 
 // included dependencies
-#include "../modules/Val_type.h"
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
+#include <cstring>   // to manipulate strings (C) (strcpy, strcmp)
+
+#include "../nodes/nodes_types.h"
 #include "../nodes/nodes.h"
 #include "../modules/func_primitives_prototypes.h"
+#include "./vector_derivative_functions.h"
+
 
 Node *tree_copy(Node *, Node *);
 int tree_comp_F(const void *, const void *);
