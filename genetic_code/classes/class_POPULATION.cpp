@@ -22,10 +22,11 @@
 //Population::Population(RunParameters pr, ProblemDefinition pb)
 Population::Population(RunParameters* pr, ProblemDefinition* pb)
 {
+	int COMMENT=1;
 
 	// data in RunParameters and ProblemDefinition
-    problem = pb;    //<----- pb
-    parameters = pr;   //<-----pr
+    problem = pb;
+    parameters = pr;
 
     // tree generation - shouldn't be general members, but local parameters (generation methods)
 	ntotf = (int)(pr->p_FULL*pr->M);				// --- only for RAMPED method (see parameters)
@@ -82,18 +83,20 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 	n_tree_evaluations = 0;
 
 	// initialise population statistics data (with values that make no harm)
-	Fit_min = 1.;
-	Fit_ave = 1.;
-	Fit_max = 1.;
-	Fit_var = 1.;
-	S_min = 1.;
-	S_ave = 1.;
-	S_max = 1.;
-	D_min = 1.;
-	D_ave = 1.;
-	D_max = 1.;
-	pen_ord1_ave = 1.;
+	Fit_min = 1.0;
+	Fit_ave = 1.0;
+	Fit_max = 1.0;
+	Fit_var = 1.0;
+	S_min = 1.0;
+	S_ave = 1.0;
+	S_max = 1.0;
+	D_min = 1.0;
+	D_ave = 1.0;
+	D_max = 1.0;
+	pen_ord1_ave = 1.0;
 	
+	external_tree=NULL;
+
 
 	// initialise variables for node selection statistics -  to be put in RunStatistics!
 	total_nodes_selected = 0;
@@ -145,8 +148,10 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
     // go through the list and create new top level nodes.
     // Currently root nodes can be binary functions only.
     // In the future allow any kind of node to be root node
-    for (int i=0;i<size;i++)
-		trees[i] = new Binary_Node(NULL,problem->b_func_list[int_rand(problem->num_b_funcs)]);    //int_rand(2)+2]);    // 2]); //gives multiplication!
+    for (int i=0;i<size;i++) {
+		//cout << "\n Population:Population CHECK: problem->num_b_funcs = " << problem->num_b_funcs << endl;
+    	trees[i] = new Binary_Node(NULL,problem->b_func_list[int_rand(problem->num_b_funcs)]);    //int_rand(2)+2]);    // 2]); //gives multiplication!
+    }
 
     // now go through the nodes and recursively build the random trees
 	if ((parameters->method==2) || (parameters->method==3)) // method for generating the initial pop. -> 1=no limits, 2=FULL, 3=GROW, 4=RAMPED
@@ -182,20 +187,20 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 	
 		case 1:	// no limits (original method)
 			{
-			printf ("\n INITIALIZATION with NO LIMITS method");
+			printf ("\nPopulation::Population : INITIALIZATION with NO LIMITS method");
 			}
 			break;
 
 
 		case 2:  // FULL method
 			{
-			printf ("\n INITIALIZATION with FULL method");
+			printf ("\nPopulation::Population : INITIALIZATION with FULL method");
 			}
 			break;
 
 		case 3:	//GROW method
 			{
-			printf ("\n INITIALIZATION with GROW method");
+			printf ("\nPopulation::Population : INITIALIZATION with GROW method");
 			}
 			break;
 
@@ -203,7 +208,7 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 
 		case 4:	//RAMPED method
 			{
-			cout << "\n INITIALIZATION with RAMPED method";
+			cout << "\nPopulation::Population : INITIALIZATION with RAMPED method";
 			cout << "\nPopulation size = " << size;
 			cout << "\nNo. of trees expected to be built with FULL method: ntotf=p_FULL*M= " << ntotf;
 			cout << "\nNo. of trees effectively built with FULL method: n_full = " << n_full;
@@ -218,6 +223,8 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 			break;
 	}
 
+
+	cout << "Population::Population : INITIALIZATION terminated. OK." << endl;
 }
 
 
@@ -1079,10 +1086,6 @@ void Population::prune_tree (Binary_Node *p_tree)
 		delete [] expr;		
 	}
 	
-	//STOP THE RUN
-	//cout << "\nPress enter to end";
-	//cin.get();
-
 	// free memory occupied by importance_list
 	delete[] importance;
 
@@ -1153,6 +1156,16 @@ double Population::compute_time(time_t start, time_t finish, double *p_delta_t)
 }
 
 
+void Population::print_individual(Node *tree)
+{
+	char *expr;
+	expr = tree->print();
+	cout << " " << expr << " ";
+	delete [] expr;
+	return;
+}
+
+
 void Population::print_population_without_parameters(int gen)
 {
 	int COMMENT = 0;
@@ -1209,153 +1222,6 @@ void Population::sort (int gen, int (*p_tree_comp)(const void *, const void *))
 	// sort the population in complete_trees[] in descending order
     qsort(complete_trees,size,sizeof(Binary_Node *),p_tree_comp);
 }
-
-
-
-
-int Population::split_data (RunParameters *pr, ProblemDefinition *pb, int current_gen, int max_gen)
-{	
-	static int  times = 1;
-	int COMMENT = 1; // 1 comments, 0 silent...
-	if (!pr->split) {
-		if (COMMENT) cout << "\n\n NO SPLIT : tuning and fitness evaluation on the whole dataset" <<endl;
-		// in read_input tuning and evaluation data sets were already defined as identical, so just exit...
-		return 0;
-	}
-	else {
-		if (COMMENT)  cout << "\n\nSPLIT" << endl;
-
-		// the size of data_tune and data_fitness may be dynamic and vary during a run...
-		pb->n_evaluation = pr->validating_lines;
-		pb->n_tuning = pr->nfitcases - pr->validating_lines;
-	
-		//if (COMMENT) {
-		//	cout << "\nn_test_cases_fitness = " << n_test_cases_fitness << endl;
-		//	cout << "n_test_cases_tune = " << n_test_cases_tune << endl;
-		//}		
-
-		// data_tuning dynamic deletion and reallocation (each generation a new split...)
-		if (times>1) {   //really important!! The constructor sets data_tune = data. Without this check the whole data set will be destroyed!
-			for (int i=0; i < pb->n_tuning; i++)
-				delete[] pb->data_tuning[i];
-		}
-		pb->data_tuning = new Val*[pb->n_tuning];
-		for (int i=0; i < pb->n_tuning; i++) 
-			pb->data_tuning[i] = new Val[pr->nvar+1];
-	
-		// data_evaluation dynamic deletion and reallocation
-		if (times>1) {   //really important!! The constructor sets data_tune = data. Without this check the whole data set will be destroyed!
-			for (int i=0; i< pb->n_evaluation; i++)
-				delete[] pb->data_evaluation[i];
-		}
-		pb->data_evaluation = new Val*[pb->n_evaluation];
-		for (int i=0; i < pb->n_evaluation; i++)
-			pb->data_evaluation[i] = new Val[pr->nvar+1];
-	
-		//----------------------------------------------------------------------------------------------------------------------
-		//  SPLIT OF DATA between data_evaluation and data_tuning based on input file (see problem_definition.h)
-		// first VALIDATING_LINES of DATA matrix are used for validation, the rest for model building
-		//----------------------------------------------------------------------------------------------------------------------
-		// rows counters
-		int i_tune = 0;
-		int i_evaluation = 0;
-		if  (current_gen < max_gen) {		
-			for (int i=0; i < pr->nfitcases;i++) {
-				if (i<pr->validating_lines) {
-					for (int j=0; j < pr->nvar+1; j++) 
-						pb->data_evaluation[i_evaluation][j] = pb->get_data(i,j);
-					//if (COMMENT) cout  << i  << "data_fitness (" << i_fitness << ")" << endl;
-					i_evaluation++;
-				}
-				else {
-					for (int j=0; j<pr->nvar+1; j++)
-						pb->data_tuning[i_tune][j] = pb->get_data(i,j);
-					//if (COMMENT) cout << i << ": data_tune (" << i_tune << ")" <<  endl;
-					i_tune++;
-				}	
-			}
-		}
-
-
-
-
-
-/*
-		//-------------------------------------------------------------------------------------------------------
-		// RANDOM SPLIT OF DATA BETWEEN data_validation AND data_building
-		//-------------------------------------------------------------------------------------------------------
-		// perform the split sweeping each row of the original data matrix and deciding randomly the destination
-		// the split is done for each generation except the last generation... when data_fitness and data_tune = whole subset 
-		if  (current_gen < max_gen) {
-			for (int i=0; i<n_test_cases;i++) {
-				int k = int_rand(101);
-				if (COMMENT)
-					cout << " " << k << " " << i << " -> to " ; 
-
-				if (k>49) {
-					if (i_tune<n_test_cases_tune) {
-						for (int j=0; j<num_vars+1; j++)
-							data_tune[i_tune][j] = data[i][j];
-						if (COMMENT) cout << "data_tune (" << i_tune << ")" <<  endl;
-						i_tune++;
-					}
-					else {
-						if (i_fitness<n_test_cases_fitness) {
-							for (int j=0; j<num_vars+1; j++) 
-								data_fitness[i_fitness][j] = data[i][j];
-							if (COMMENT) cout << "data_fitness (" << i_fitness << ")" << endl;
-							i_fitness++;
-						}
-					}
-				}
-			
-				else {
-					if (i_fitness<n_test_cases_fitness) {
-						for (int j=0; j<num_vars+1; j++) 
-							data_fitness[i_fitness][j] = data[i][j];
-						if (COMMENT) cout << "data_fitness (" << i_fitness << ")" << endl;
-						i_fitness++;
-					}
-					else {
-						if (i_tune<n_test_cases_tune) {	
-							for (int j=0; j<num_vars+1; j++) 
-								data_tune[i_tune][j] = data[i][j];
-							if (COMMENT) cout << "data_tune (" << i_tune << ")" <<  endl;
-							i_tune++;
-						}
-					}
-				}			
-			}
-		}
-*/
-
-		//-----------------------------------------------------------------------------------------
-		// LAST GENERATION : data_fitness and data_tune = whole data set 
-		//-----------------------------------------------------------------------------------------
-		if  (current_gen == max_gen) {
-			if (COMMENT) cout << "last evaluation and tuning done on the whole data set" << endl; 
-			pb->data_evaluation = pb->get_data_address();
-			pb->data_tuning = pb->get_data_address();
-			pb->n_evaluation = pr->nfitcases;
-			pb->n_tuning = pr->nfitcases;
-		}
-	
-		if (COMMENT) {
-			//test split : data_evaluation
-			pb->show_data_evaluation();
-			cout << "Total number of rows copied from data = " << i_evaluation << endl;
-			//test split : data_tuning
-			pb->show_data_tuning();
-			cout << "Total number of rows copied from data = " << i_tune << endl;
-			cout << endl << endl;
-		}
-
-	return 0;
-	}
-}
-
-
-
 
 
 
@@ -1493,7 +1359,6 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 			else {
 				cout << "\n\nComposition with division as root node : " << endl;
 				cout << "Division not among primitives : composition skipped." << endl;
-				//cin.get();
 				// you should delete the arrays "new trees" previously allocated...
 				return;
 			};
@@ -1563,7 +1428,6 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 		for (int k=0; k<comp_tot; k++) delete new_trees[k];
 		delete[] new_trees;
 	}
-	//cin.get();
 }
 
 
@@ -2097,6 +1961,7 @@ void Population::evaluate(int gen, int G)
 
 	// cycle through each individual in the population of size "size"
 	for (int i=0; i<size; i++) {
+
 		// print the individual without parameters
 		expr = trees[i]->print();
 		if (COMMENT)  {
@@ -2141,23 +2006,15 @@ void Population::evaluate(int gen, int G)
 
 		// 2 - tune newly generated complete trees - which means tuning all the numerical parameters in a tree
 		// tuning is done on the TRAINING (BUILDING) SET and only if the number of numerical parameters is <= a given threshold
-		// evaluation is done on the EVALUATION SET (they are the same set if SPLIT is not enabled)
+		// evaluation is done on the EVALUATION SET (they are the same set if CROSSVALIDATION is not enabled)
 		// RMSE (error) and other tree's attributes are evaluated at this stage
 		// (this is done also for trees copied as a result of reproduction - as the structure is copied, not the parameters!)
 		if (COMMENT) cout << " Tuning parameters in individual complete_trees["<< i << "]" << endl;
-		int n_param_threshold = floor(0.5*n_test_cases_tune);
-		tuning_individual(parameters->n_guesses, trees[i], complete_trees[i], i, n_param_threshold);
+		tuning_individual(parameters->n_guesses, trees[i], complete_trees[i], i);
 		if (COMMENT) {
-					expr = complete_trees[i]->print();
-					cout << "Individual in complete_trees[" << i << "]" << endl;
-					cout << " " << expr << endl;
-					delete [] expr;
-		}
-		if (COMMENT) {
-			expr = complete_trees[i]->print();
-			cout << " Individual in complete_trees[" << i << "] has " << complete_trees[i]->n_tuning_parameters <<" parameters" << endl;
-			cout << " " << expr << endl;
-			delete [] expr;
+			cout << "Individual in complete_trees[" << i << "]" << endl;
+			print_individual((Node *)complete_trees[i]);
+			cout << " Number of parameters: " << complete_trees[i]->n_tuning_parameters << endl;
 		}
 
 
@@ -2268,7 +2125,7 @@ void Population::evaluate_complete_trees()
 	int repr_tot = get_repr_tot();
 	cout << "\n\nEVALUATION of the n. " << repr_tot << " complete trees in the archive on the TEST DATA SET";
 	for (int i=0; i<repr_tot; i++) {
-		fitness_func(problem->Sy_test, problem->data_test, problem->n_test, complete_trees[i], result, parameters->normalised);   //IMPORTANT: fitness evaluated on data_test !!!
+		fitness_func(problem->Sy_test, problem->data_test, problem->n_test, complete_trees[i], result, parameters->normalised, parameters->crossvalidation);   //IMPORTANT: fitness evaluated on data_test !!!
 
 		complete_trees[i]->n_corrections_test = (int)result[2];
 		if (!(complete_trees[i]->n_corrections_test)) {
@@ -2303,16 +2160,21 @@ void Population::evaluate_complete_trees()
 // - no of hits : result_tree[1]
 // - no of corrections done by protected operations : result_tree[2]
 // - value of R2 (coefficient of determination) : result_tree[3]
-void Population::fitness_func(Val Sy, Val ** data_used, int n_cases, Node *current_tree, Val *result_tree, bool normalised)
+void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *current_tree, Val *result_tree, bool normalised, bool crossvalid)
 {
+
+	// FOR THE FUTURE: change the way you import Sy: you might implement a class for storing data sets and all the related statistics
 	int COMMENT =0;
 
 	Val error = (Val)0.;
 	Val error_norm = (Val)0.;
+	Val square_err = 0.0;
 	Val result_tree_norm = (Val)0.;
-	Val threshold = (Val)0.0001;
+	Val threshold = (Val)0.0001;   // for counting hits
+	int hits=0;
 	int n_corrections = 0;
-	// intialization (IMPORTANT!!!)
+	((Binary_Node*)current_tree)->n_corrections=0;
+	// initialization (IMPORTANT!!!)
 	result_tree[0] = (Val)0.0;  //storing fitness value
 	result_tree[1] = (Val)0.0;	// storing n of hits
 	result_tree[2] = (Val)0.0;	// storing n of corrections done by protected operations
@@ -2320,15 +2182,14 @@ void Population::fitness_func(Val Sy, Val ** data_used, int n_cases, Node *curre
 
 	if (COMMENT) {
 		cout << "\nPopulation::fitness_func" << endl;
-		char *expr;
-		expr = current_tree->print();
-		cout << "Tree to be evaluated:\n\n" << expr << endl;
-		delete [] expr;
+		cout << "Tree to be evaluated:\n\n" << endl;
+		print_individual(current_tree);
 		cout << "num_vars = " << parameters->nvar << " n_cases = " << n_cases << endl;
 		cout << " data_used: variables    given output    tree output" << endl; 
 	}
 
-	for (int i=0; i< n_cases; i++) {	// n_test_cases; i++) {	// cycle on the fitness cases (nfitcases)
+	// cycle on the fitness cases, or points in the building/tuning data set (nfitcases)
+	for (int i=0; i< n_cases; i++) {	// n_test_cases; i++) {
 		if (COMMENT) cout << i << ") ";
 		
 		// assign the right value to all the variables for the i-th fitness case
@@ -2339,49 +2200,65 @@ void Population::fitness_func(Val Sy, Val ** data_used, int n_cases, Node *curre
 		}
 		
 		// tree evaluation
-		// (here n_corrections is evaluated)
+		// (here n_corrections is evaluated) - ATTENTION if crossvalidation is enabled, corrections might be counted more than once per each tree!
 		Val treeval = tree_value((Binary_Node*)current_tree, &(((Binary_Node*)current_tree)->n_corrections));
+
 
 		// -------------------------------------------------------------------------
 		// ERROR FUNCTION
 		// -------------------------------------------------------------------------
-		// 	RMSE VERSION
-		error =  (Val)(data_used[i][parameters->nvar] - treeval);
-		result_tree[0] = result_tree[0] + error*error;   //sum of the square of the errors - for RMSE *
+		// 	RMSE versions
+		error =  (Val)(treeval - data_used[i][parameters->nvar]);
+		if (COMMENT) {
+			cout << "\nPopulation::fitness_func : actual = " << data_used[i][parameters->nvar];
+			cout << "\nPopulation::fitness_func : predicted = " << treeval;
+			cout << "\nPopulation::fitness_func : error predicted-actual = " << error;
+		}
+		square_err = square_err + error*error;   //sum of the square of the errors - SSres (https://en.wikipedia.org/wiki/Coefficient_of_determination)
 		
-		// NORMALISED RMSE VERSION
+		// normalisedD RMSE version
 		if (normalised) { 
-    			if (abs(data_used[i][parameters->nvar])>1.0e-12)   //1.0e-12
+    		if (abs(data_used[i][parameters->nvar])>1.0e-12)   //1.0e-12
 				error_norm =  (Val)abs((data_used[i][parameters->nvar] - treeval)/data_used[i][parameters->nvar]);
 			else
 				error_norm =  (Val)abs(data_used[i][parameters->nvar] - treeval);
+    		//
 			result_tree_norm = result_tree_norm + error_norm*error_norm;   //sum of the square of the errors - for RMSE *
 		}
 		//---------------------------------------
 		
-		if (abs(error) <= threshold)
-			// increase number of hits
-			(result_tree[1])++;
+		// HITS
+		if (abs(error) <= threshold) hits++;     // increase number of hits
 
-		// output and corresponding tree value	
-		if (COMMENT) { 
-			cout << data_used[i][parameters->nvar] << "  " << treeval << endl;
-		}
 	}
 	
-	// R2
-	result_tree[3] = 1.0 - result_tree[0]/Sy;   //so far result_tree[0] is the sum of the squared errors...
 
-	// SELECT FITNESS VALUE
+	//----------------------------------------------------------------------
+	// OUTPUT
+	//----------------------------------------------------------------------
+
+	// FITNESS VALUE
 	if (normalised)
-		// NORMALISED RMSE VERSION
+		// normalised RMSE version
 		result_tree[0] = sqrt(result_tree_norm/(Val)n_cases); 
-	else
-		// common RMSE VERSION
-		result_tree[0] = sqrt((Val)result_tree[0]/(Val)n_cases);  
-	
+	else {
+		if (crossvalid)
+			// root of sum of squared errors, for HyGP with crossvalidation capability
+			result_tree[0] = sqrt((Val)square_err);
+		else
+			//// common RMSE VERSION (for original HyGP, no crossvalidation)
+			result_tree[0] = sqrt((Val)square_err/(Val)n_cases);
+	}
 
+	// HITS (See result_tree[1])
+	result_tree[1] = hits;
+
+	// CORRECTIONS
+	n_corrections=((Binary_Node*)current_tree)->n_corrections;
 	result_tree[2] = n_corrections;	
+
+	// R2 - keep this command here as result_tree[0] must be the sum of the squared errors!!!
+	result_tree[3] = 1.0 - square_err/Sy;
 
 	if (COMMENT) cout << "Fitness value  = " << result_tree[0] << endl;
 
@@ -2404,7 +2281,7 @@ double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
 	update_complete_tree(ntree, x, n_param);
 
 	// evaluate tree fitness (error)
-	fitness_func(problem->Sy, problem->data_evaluation, problem->n_evaluation, ntree, result, parameters->normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
+	fitness_func(problem->Sy, problem->data_validation, problem->n_validation, ntree, result, parameters->normalised, parameters->crossvalidation);   //IMPORTANT: fitness evaluated on data_validation !!!
 	fitness = (double)result[0];
 	//hits = (int)result[1];
 	//n_corrections = (int)result[2];
@@ -2470,10 +2347,10 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 	int COMMENT = 0; //1 comments, 0 silent...
 	char* expr;
 	double F,v;
-	double F1,a1;   //used to store the main objective, (RMSE) error value, in aggregating approach
-	double F2, a2;  // second objective, related to complexity (no of tuning parameters)
-	double F3, a3; // third objective (no of corrections)
-	double F4, a4; // fourth objective (no of nodes - tree size)
+	double F1,a1;   //used to store the main objective, RMSE or PRESS value
+	double F2, a2;  // second objective, related to complexity (no of tuning parameters) - W_COMPLEXITY
+	double F3, a3; // third objective (no of corrections) - W_N_CORRECTIONS
+	double F4, a4; // fourth objective (no of nodes - tree size) - W_SIZE
 	double F5, a5;  //penalisation from inequality constraints order 0
 	double F6, a6; //penalisation from inequality constraints order 1
 	double F7, a7; // penalisation to increase factorisation (depth of first division)
@@ -2566,7 +2443,7 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 	//------------------------------------------------------------
 	complete_tree->T1 = a1*F1;
 	complete_tree->T2 = a2*F2;
-	complete_tree->T3 = a3*F3*1000000.0; 
+	complete_tree->T3 = a3*F3*1.0E6;
 	complete_tree->T4 = a4*F4;
 	complete_tree->T5 = (1000000.0)*(exp(F5*F5*F5)-1.0)*a5; //megadistexp3
 	complete_tree->T6 = F6*a6;
@@ -2618,10 +2495,11 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 		//complete_tree->F = F7*(complete_tree->T1 + complete_tree->T2 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6) + complete_tree->T3 ;
 	}
 
-	if (COMMENT) {  // && (i==0)) {
+	//if (COMMENT) {  // && (i==0)) {
 		cout << "\nPopulation::aggregate_F" << endl;
 		complete_tree->show_state();
 		cout << "\nd_lim = " <<parameters->depth_lim;
+		cout << "\ncomplete_tree->fitness = " << complete_tree->fitness;
 		cout << "\nFit_ave = " << Fit_ave;
 		cout << "\na1 = " << a1 << "  F1 = " << F1 << "  a1*F1 = " << a1*F1;
 		cout << "\na2 = " << a2 << "  F2 = " << F2 << "  a2*F2 = " << a2*F2;
@@ -2631,7 +2509,7 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 		cout << "\na7 = " << a7 << "  F7 = " << F7 << "  a7*F7 = " << a7*F7;
 		//for (int k=0; k<4; k++) cout << "\nlist[ " << k << " ] = " << list[k];
 		cout << "\nF = " << complete_tree->F << endl;
-	}
+	//}
 
 }
 
@@ -2721,13 +2599,20 @@ void Population::perform_editing(int i)
 	// check if critical operations are used
 	if (problem->division) { // add check if division is in the tree, so to skip in case this operation (editing)
 		// gets here if division is among primitives
-		char *expr;
-		if (COMMENT) expr = trees[i]->print();
-		if (COMMENT) cout << "\n\n" << i << ") Tree before editing: " << expr;
+
+		if (COMMENT) {
+			cout << "\n\n" << i << ") Tree before editing: ";
+			print_individual((Node *)trees[i]);
+		}
+
 		edit_tree((Node*)trees[i], (Node**)&trees[i]);
-		if (COMMENT) cout << "\nDone";
-		if (COMMENT) expr = trees[i]->print();
-		if (COMMENT) cout << "\n" << i << ") Tree after editing: " << expr;
+
+		if (COMMENT) {
+			cout << "\nDone";
+			cout << "\n" << i << ") Tree after editing: ";
+			print_individual((Node *)trees[i]);
+		}
+
 	}
 
 }
@@ -2736,7 +2621,7 @@ void Population::perform_editing(int i)
 // function to tune a single tree (single or more initial guesses)
 // input: address of the parameterless tree, address of the complete tree, corresponding number of the tree
 // output: integer (just to check)
-int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binary_Node *ntree, int tree_no, int n_param_threshold)
+int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binary_Node *ntree, int tree_no)
 {	
 	int COMMENT = 0;
 	int c;
@@ -2744,26 +2629,20 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	int n_param, n_nodes, hits, hits_best;
 	int IW;
 	int n_tuning_parameters, n_tuning_parameters_best, n_corrections, n_corrections_best;
-	int method =0;
-			// for MINL2.cpp: (derivatives values are used)
-			//1		->start minimization
-			//2		->start minimization and print information during the iteration	
-			//=0	-> check gradient. No iteration
-			// for MI0L2.cpp: (derivatives values are NOT used)
-			//0		->start minimization with no gradient 
-			//1		->start minimization with gradient computed using function values (no actual differentiation)	
 			
 	double node_value; 
 	double* x;	// array of tree parameters (numerical coefficients)
 	double* x_best;   // best array of tree parameters (numerical coefficients)
 	Val fitness, fitness_best, R2, R2_best;
-	Val result[4];   // result[0] is the total error (fitness value), result[1] is the number of hits scored, result[2] is the n of corrections done by protected operations
+	Val result[4];   // result[0] : error (fitness value - RMSE), result[1] : n. of hits scored, result[2]: n. of corrections done by protected operations
 	
+	// utile
+	//cin.get();
+
 	if (COMMENT) {
-		cout << "\n\nTUNING TREE n. " << tree_no;
-		expr = ntree->print();
-		cout << "\nTree before optimisation (random parameters now)\n " << expr;
-		delete [] expr;
+		cout << "\n\nPopulation::tuning_individual : TUNING TREE n. " << tree_no;
+		cout << "\nTree before optimisation (values of parameters as they happen to be after tree creation)\n ";
+		print_individual((Node *)ntree);
 		cout << "\ntuning_individual called - tree no. " << tree_no;
 	}
 /*	
@@ -2800,10 +2679,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	n_nodes = ntree->count();
 
 	if (COMMENT) {
-		cout << "\n Tree n. " << tree_no << "\n : CHECK after find_pulsation function";
-		expr = ntree->print(); 
-		cout << "\n\n " << expr;
-		delete [] expr; 
+		cout << "\n Tree n. " << tree_no << "\n : CHECK after find_pulsation function \n\n";
+		print_individual((Node *)ntree);
 		cout << "\nindex_puls = " << ntree->index_puls;
 		cout << "\nParameters:" << endl;
 		for (int k=0; k<n_param; k++)
@@ -2820,16 +2697,6 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	}
 
 
-	//--------------------------------------------------------------------
-	// set the size of vector W (see SQP_guide pag 13)
-	//--------------------------------------------------------------------
-	int m_total = n_test_cases_tune + ntree->n_pulsations;	
-	//IW = n_test_cases*(n_param+3)+93+n_param*(n_param*3+33)/2+n_param*n_test_cases+n_test_cases;
-	//IW =n_test_cases*(2*n_param+4)+(n_param/2+1)*(3*n_param+33)+93;
-	if (method>0) 
-		IW=10*(2*m_total*(n_param+1)+n_param*(n_param+3));
-	else
-		IW=10*(2*m_total*(n_param+2)+n_param+10);
 	
 	//--------------------------------------------------------------------------------------------------------------------------------
 	// Creation and initialisation of the arrays x and x_best containing the parameters to be tuned 
@@ -2842,17 +2709,17 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	}
 	else 
 		if (COMMENT) 
-			cout << "\nPopulation::tuning_population : array x successfully created : pointer = %i" << x;
+			cout << "\nPopulation::tuning_individual : array x successfully created : pointer = %i" << x;
 	
 	// Array x_best (best set of parameters)
 	x_best = new (nothrow) double [n_param];
 	if (x_best == 0) {
-		cerr << "\nPopulation::tuning_population : ERROR! Not enough memory to create x_best ";
+		cerr << "\nPopulation::tuning_individual : ERROR! Not enough memory to create x_best ";
 		exit (-1);
 	}
 	else 
 		if (COMMENT) 
-			cout << "\nPopulation::tuning_population :  array x_best successfully created : pointer = %i" << x;
+			cout << "\nPopulation::tuning_individual :  array x_best successfully created : pointer = %i" << x;
 		
 	// initialize parameters (if tuning is not successful, these are the values that show up)	
 	for (int i=0; i<n_param; i++) {
@@ -2887,19 +2754,15 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		// PARAMETERS INHERITED
 			if (COMMENT) { //start comment
 				cout << "\nbest_tree and trees[" << ntree << "] are identical:";
-				expr = best_tree->print();	
-				cout << "\nbest_tree : " << expr;
-				delete [] expr;
-				expr =tree_no_par->print();	
-				cout << "\ntree_no_par : " << expr;
-				delete [] expr;
+				cout << "\nbest_tree : ";
+				print_individual((Node *)best_tree);
+				cout << "\ntree_no_par : ";
+				print_individual((Node *)tree_no_par);
 				cout << "\nparameters inherited...";
-				expr = best_complete_tree->print();	
-				cout << "\nbest_complete_tree : " << expr;
-				delete [] expr;
-				expr = ntree->print();	
-				cout << "\ncomplete_trees[" << ntree << "] : " << expr;
-				delete [] expr;				
+				cout << "\nbest_complete_tree : ";
+				print_individual((Node *)best_complete_tree);
+				cout << "\ncomplete_trees[" << ntree << "] : ";
+				print_individual((Node *)ntree);
 				Val node_value;
 				cout << endl;
 				for (int i=0; i<n_param; i++) {
@@ -2961,19 +2824,23 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		if (COMMENT)
 			cout << "\n  ntree_fdf_c = " << ntree_fdf_c;
 
-		// IMPORTANT: data_tuning and data_evaluation need to be correctly defined here!
+		// tune and validate a single individual (RMSE or Crossvalidation PRESS), using one or more initial guesses for cofficients
+		if (parameters->crossvalidation==1)
+			tuning_individual_PRESS_single_guess(ntree, x, &n_param, &n_guess_ok, result);
+		if (parameters->crossvalidation==0)
+			tuning_individual_RMSE_single_guess(ntree, x, &n_param, &n_guess_ok, result);
 
-		tuning_individual_PRESS_single_guess(ntree, x, n_param_threshold, n_param, &method, &m_total, &IW, &n_guess_ok, result);
-
-		fitness = result[0];  // RMS error
+		// as a result of tuning result[] is updated:
+		fitness = result[0];  // RMS error (CROSSVALIDATION=0) or PressRMS error (CROSSVALIDATION=1)
 		hits = (int)result[1];
 		n_corrections = (int)result[2];
 		R2 = result[3];
+		// also the array of coefficients x is returned...
 /*
 		// SELECTION of the BEST SET of PARAMETERS (x_best update) 
 		// -------------------------------------------
 		// here you can check the derivatives, the correlation matrix, ecc, of the current individual with the best individual so far
-		// the one that gives closer result to the derivatives, correlation matric, ecc, computed from the original output data is chosen
+		// the one that gives closer result to the derivatives, correlation matrix, ecc, computed from the original output data is chosen
 		// -------------------------------------------
 		// compute the derivative of the tree in the selected point and in the direction given by get_fun_derivative(...)
 		tree_der = new double [n_der];	
@@ -3000,20 +2867,21 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		// Mind!!!! Selection is based on fitness (or RMSE), not on the aggregated error F (obvious)!!!
 		//-----------------------------------------------------------------------------------------------------
 		//if ((fitness < fitness_best) && (method>=0) && (der_check)) {
-		if (fitness < fitness_best)  {	
+		// what if the paramaters x is not acceptable (all NaN)? Implement a function to check! Here or in tuning_individual_PRESS_single_guess
+		if (fitness < fitness_best)  {	   // single-objective comparison on validation error (measured on data_validation)
 			fitness_best = fitness;
 			hits_best = hits;
 			n_tuning_parameters_best = n_param;  // n_param is always the same, so that is not needed...
 			n_corrections_best = n_corrections; 
 			R2_best = R2;
 			for (int j=0; j<n_param; j++)
-				 x_best[j] = x[j];
+				 x_best[j] = x[j];  //
 		}
 		
 		//end of the single guess
 		if (COMMENT) {
 			expr = ntree->print();
-			cout << "\nTree after optimisation n. " << i_guess << " (optimised set of parameters inserted)\n " << expr << endl;
+			cout << "\nPopulation_tuning_individual : tree after optimisation n. " << i_guess << " (optimised set of parameters inserted)\n " << expr << endl;
 			delete [] expr;			
 			cout << "\nEnd of guess n. " << i_guess << endl;	
 		}
@@ -3031,17 +2899,18 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	ntree->R2 = R2_best;
 
 	if (COMMENT) {	
-		cout << "\nTree n. " << tree_no << " TUNED (constants optimized)." << endl;
 		//  print the value of the tuned constants
 		for (int i=0; i<n_param; i++) { 
 			node_value = ((Terminal_Const *)ntree->p_par[i])->value(NULL);
-			cout << "\nPointer to " << i+1 << "-th const : " << ntree->p_par[i];
-			cout << ", Constant value = " << node_value;
+			cout << "\nPopulation::tuning_individual : Pointer to " << i+1 << "-th const : " << ntree->p_par[i];
+			cout << ", Population::tuning_individual : Constant value = " << node_value;
 		}	
 		expr = ntree->print();
-		cout << "\nTree after optimisation (best set of parameters inserted)\n " << expr << endl;
+		cout << "\n Population::tuning_individual : Tree after optimisation (best set of parameters inserted)\n " << expr << endl;
 		// free memory	
 		delete [] expr;	
+
+		cout << "\nPopulation::tuning_individual : Tree n. " << tree_no << " TUNED (constants optimized)." << endl;
 	}
 	
 	// uncomment if you use derivative estimates
@@ -3066,23 +2935,223 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		}
 	}
 
-
 	return 1;    
 }
 
-// function that performs the PRESS error evaluation on a single individual, for a single guess of the individual parameters
-void Population::tuning_individual_PRESS_single_guess(Binary_Node *ntree, double* x, int n_param_threshold, int n_param, int* p_method, int* p_m_total, int* p_IW, int* p_n_guess_ok, Val* p_result)
+
+
+//-/-/-/-/-/-/--/-/-/-/-/-/-/-/
+// function that performs standard RMS error evaluation on a single individual, for a single guess of the individual parameters
+void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double* x_original, int* p_n_param, int* p_n_guess_ok, Val* p_result)
 {
-	int COMMENT=0;
+	int COMMENT=1;
+	int m_total=0;
+	int IW=0;
+	int method=0; // method used as input in opti:
+				// for MINL2.cpp: (derivatives values are used)
+				//1		->start minimization
+				//2		->start minimization and print information during the iteration
+				//=0	-> check gradient. No iteration
+				// for MI0L2.cpp: (derivatives values are NOT used)
+				//0		->start minimization with no gradient
+				//1		->start minimization with gradient computed using function values (no actual differentiation)
+	// for tuning (*p_n_param is the number of parameters found in the tree)
+	int n_param_threshold = floor(0.5*problem->n_tuning);  // if the coefficients are too many, tuning is not performed...
+
+	if (COMMENT) cout << "\nPopulation::tuning_individual_RMSE_single_guess : enter";
+
+
+	// perform a last tuning and validation on the whole data set to get all other outputs right, including array of parameters x
+	problem->n_tuning = problem->get_n_data();
+	problem->n_validation = problem->get_n_data();
+	m_total = problem->n_tuning + ntree->n_pulsations;
+
+	//--------------------------------------------------------------------
+	// set the size of vector W (see SQP_guide pag 13)
+	//--------------------------------------------------------------------
+	if (method>0)
+		IW=10*(2*m_total*(*p_n_param+1)+*p_n_param*(*p_n_param+3));
+	else
+		IW=10*(2*m_total*(*p_n_param+2)+*p_n_param+10);
+
+
 	//-----------------------------------------------------------
-	// TREE TUNING on tuning data set: call the optimization functions: HYPSO (C++) and/or SQP (Fortran) (LINKS TO EXTERNAL FUNCTION)
+	// TREE TUNING on the whole data set
+	// call the optimization functions: HYPSO (C++) and/or SQP (Fortran) (LINKS TO EXTERNAL FUNCTION)
 	//-----------------------------------------------------------
 
 	// 25/7/2016 : HERE YOU COULD ADD A CHECK TO SKIP TUNING (AND SO LEAVE CONSTANT NODES RANDOMLY INITIALISED)
-    //             IF THE NUMBER OF PARAMETERS IS LARGER THAN SAY HALF THE QUANTITY OF THE TRAINING POINTS...
+	//             IF THE NUMBER OF PARAMETERS IS LARGER THAN SAY HALF THE QUANTITY OF THE TRAINING POINTS...
 	//             SEE BISHOP 1996 ARTICLE
 	// IF (CONDITION FOR TUNING is TRUE) THEN    - example n_param <= n_param_max = 0.5 * size training data set
-	if (n_param<=n_param_threshold) {
+	if (*p_n_param<=n_param_threshold) {
+
+		// insert here call to HyPSO (just try to run HyPSO for a couple of iterations to search for global minima)
+		// steps involved: call to HYPSO/pso_launcher, launch psominimize, internal call to objective function in model.cpp (tree evaluator and error definition with weights for pulsations...)
+		//double (*p_objfun)(double*, int, Binary_Node*);
+		//p_objfun = &Population::pso_objfunction;  // method in Population
+		//hypso_launcher(p_objfun, ntree, n_param, x); // method NOT belonging to Population
+
+		// SQP parameters optimisation
+		if (COMMENT) cout << "\nPopulation::tuning_individual_RMSE_single_guess : before optimisation ICONTR = method = " << method;
+		// to perform optimization with TINL2_mod.cpp, MINL2.cpp through f2c: DOESN'T WORK
+		//c = opti_cpp(this, &method, n_param, n_test_cases, ntree,x);
+
+		// CALL FORTRAN FUNCTION: ALWAYS USE ADDRESSES OF VARIABLES, NOT VARIABLES DIRECTLY!
+		// ALSO: DON'T USE CAPITAL LETTERS... otherwise problems during compiling ("undefined reference")
+		//to perform optimization with TINL2.FOR  - Umberto's method (copied from Andrey's)
+		//optitinl2_(&method, x, &n_param, &n_test_cases_tune, &IW);
+		if (COMMENT) cout << "\n\nPopulation::tuning_individual_RMSE_single_guess : *p_n_param = " << *p_n_param << ", n_tuning = " << problem->n_tuning;
+
+		//to perform optimization with TIOL2.FOR  - Andrey's method - WORKS PERFECTLY!
+		if (COMMENT) cout << "\nPopulation::tuning_individual : Call opti_()";
+		opti_(&method, x_original, p_n_param, &m_total, &IW);
+
+		if (COMMENT) {
+			cout << "\nPopulation::tuning_individual_RMSE_single_guess : after optimisation ICONTR = method = " << method;
+			if (method==2) cout << "\n => UPPER LIMIT FOR FUNCTION EVALUATIONS EXCEEDED.";
+			if (method==1) cout << "\n => SUM OF SQUARES FAILS TO DECREASE";
+			if (method==0) cout << "\n => successful convergence";
+			if (method<0) cout << "\n => COMPUTATION DID NOT START: see SQP_guide (pag 14) for details";
+		}
+
+	} else {
+		// if tuning is not performed, the tree coefficients stay as they are, randomly generated
+		if (COMMENT) cout << "\nPopulation::tuning_individual_RMSE_single_guess : *p_n_param>n_param_threshold : tuning not performed, tree coefficients remain randomly generated" << endl;
+	}
+
+	// update the tree with the new, optimised values of the parameters
+	update_complete_tree(ntree, x_original, *p_n_param);
+
+
+	//-----------------------------------------------------------
+	// TREE VALIDATION on the whole data set
+	//-----------------------------------------------------------
+	if (method==0) (*p_n_guess_ok)++;
+	if (COMMENT) {
+		cout << "Population::tuning_individual_PRESS_single_guess : show current data_validation" << endl;
+		cout << "problem->n_validation = " << problem->n_validation;
+		problem->show_data_validation();
+	}
+	ntree->n_corrections=0;
+	fitness_func(problem->Sy, problem->get_data_address(), problem->get_n_data(), ntree, p_result, parameters->normalised, parameters->crossvalidation);
+
+
+
+	//------------------------------------------------------------------------------------
+	// RETURN RESULTS AND UPDATE INDIVIDUAL PARAMETERS (COEFFICIENTS) AFTER CROSSVALIDATION
+	//------------------------------------------------------------------------------------
+
+	// finally, define output values
+	//p_result[0];  // error predictor if CROSSVALIDATION=1 ok, if not...?   result[0] : error (fitness value - RMSE)
+	//p_result[1] // result[1] : n. of hits scored
+	//p_result[2]	// result[2]: n. of corrections done by protected operations
+	//p_result[3]	// result[3]: R2
+	// define which array x of tree parameters... currently x obtained from the last tuning on the whole data set
+	// what if they are all NaN?! The individual expression cannot be printed... CHECK
+	for (int i=0; i<(*p_n_param); i++) {
+		if (isnan(x_original[i])) x_original[i]=1.0;   // correction in case of illegal parameter
+	}
+
+
+	if (COMMENT) {
+		cout << "\nPopulation::tuning_individual_RMSE_single_guess : tuning and validation complete" << endl;
+		cout << "Population::tuning_individual_RMSE_single_guess : parameters x chosen for insertion:" << endl;
+		cout << "\nx = [";
+		for (int j=0; j<*p_n_param-1; j++) cout << x_original[j] << " , ";
+		cout << x_original[*p_n_param-1] << "]" << endl;
+	}
+
+	if (COMMENT) cout << "\n\nPopulation::tuning_individual_RMSE_single_guess : exit";
+
+}
+
+
+
+// function that performs the PRESS error evaluation (CROSSVALIDATION) on a single individual, for a single guess of the individual parameters
+void Population::tuning_individual_PRESS_single_guess(Binary_Node *ntree, double* x_original, int* p_n_param, int* p_n_guess_ok, Val* p_result)
+{
+	int COMMENT=1;
+	int m_total=0;
+	int IW=0;
+	int method; // method used as input in opti:
+				// for MINL2.cpp: (derivatives values are used)
+				//1		->start minimization
+				//2		->start minimization and print information during the iteration
+				//=0	-> check gradient. No iteration
+				// for MI0L2.cpp: (derivatives values are NOT used)
+				//0		->start minimization with no gradient
+				//1		->start minimization with gradient computed using function values (no actual differentiation)
+
+	// for tuning (*p_n_param is the number of parameters found in the tree)
+	int n_param_threshold = floor(0.5*problem->n_tuning);  // if the coefficients are too many, tuning is not performed...
+	double* x=new double[*p_n_param];
+	double* x_out=new double[*p_n_param];
+	Val* exv;
+	double exv_tot=0.0;
+	double PressRMS=0.0;
+
+	if (COMMENT) cout << "\nPopulation::tuning_individual_PRESS_single_guess : enter";
+
+	// array containing the crossvalidation errors (see Viana "Making the most out of surrogate models:" 2010, pag.4
+	exv = new Val[problem->get_n_folds()];
+	for (int i=0; i<(*p_n_param); i++) x_out[i]=0.0;
+
+	// start crossvalidation cycle: at each iteration a erms is computed, which will be used to compute PRESS
+	for (int vf=0; vf<problem->get_n_folds(); vf++) {   // vf stands for validation fold...
+
+		// initialise method (start minimization with no gradient) to prevent changes from opti execution to change the aim of the optimisation
+		// (ex:if method is changed by opti from 0 to 1 - SUM OF SQUARES FAIL TO DECREASE - this 1 is taken as input for the opti at the next iteration, stopping the optimisation
+		method=0;
+
+		// initialise array of coefficient x = x_original (so all tuning processes starts with the identical tree)
+		for (int i=0; i<(*p_n_param); i++) x[i]=x_original[i];
+
+		// show optimised parameters after all the tuning in the different building data sets
+		if (COMMENT) {
+			cout << "\nPopulation::tuning_individual_PRESS_single_guess : vf = " << vf << "/////////////" << endl;
+			cout << "\nPopulation::tuning_individual_PRESS_single_guess : parameters BEFORE optimisation vf = " << vf << " :";
+			cout << "\nx = [";
+			for (int j=0; j<*p_n_param-1; j++) cout << x[j] << " , ";
+			cout << x[*p_n_param-1] << "]" << endl;
+		}
+
+		// set validation fold
+		problem->set_validation_fold(vf);
+		problem->n_tuning = problem->get_n_data() - problem->get_points_per_fold(vf);
+
+		// set the total number of summands in SQP error metric for tuning individuals (see Armani PhD thesis pag. 143)
+		m_total = problem->n_tuning + ntree->n_pulsations;
+
+		if (COMMENT) {
+			cout << "\nPopulation::tuning_individual_PRESS_single_guess : *p_method = " << method << endl;
+			cout << "Population::tuning_individual_PRESS_single_guess : problem->get_validation_fold(vf) = " << problem->get_validation_fold() << endl;
+			cout << "Population::tuning_individual_PRESS_single_guess : problem->n_tuning = " << problem->n_tuning << endl;
+			cout << "Population::tuning_individual_PRESS_single_guess : problem->data_tuning = " << problem->data_tuning << endl;
+			cout << "Population::tuning_individual_PRESS_single_guess : problem->data = " << problem->get_data_address() << endl;
+			cout << "Population::tuning_individual_PRESS_single_guess : problem->get_fold_from_row(0) = " << problem->get_fold_from_row(0) << endl;
+			cout << "Population::tuning_individual_PRESS_single_guess : *p_n_param = " << *p_n_param << "   n_param_threshold = " << n_param_threshold << endl;
+		}
+
+		//--------------------------------------------------------------------
+		// set the size of vector W (see SQP_guide pag 13)
+		//--------------------------------------------------------------------
+		if (method>0)
+			IW=10*(2*m_total*(*p_n_param+1)+*p_n_param*(*p_n_param+3));
+		else
+			IW=10*(2*m_total*(*p_n_param+2)+*p_n_param+10);
+
+
+		//-----------------------------------------------------------
+		// TREE TUNING on tuning data set = all data except the current validation data set
+		// call the optimization functions: HYPSO (C++) and/or SQP (Fortran) (LINKS TO EXTERNAL FUNCTION)
+		//-----------------------------------------------------------
+
+		// 25/7/2016 : HERE YOU COULD ADD A CHECK TO SKIP TUNING (AND SO LEAVE CONSTANT NODES RANDOMLY INITIALISED)
+		//             IF THE NUMBER OF PARAMETERS IS LARGER THAN SAY HALF THE QUANTITY OF THE TRAINING POINTS...
+		//             SEE BISHOP 1996 ARTICLE
+		// IF (CONDITION FOR TUNING is TRUE) THEN    - example n_param <= n_param_max = 0.5 * size training data set
+		if (*p_n_param<=n_param_threshold) {
 
 			// insert here call to HyPSO (just try to run HyPSO for a couple of iterations to search for global minima)
 			// steps involved: call to HYPSO/pso_launcher, launch psominimize, internal call to objective function in model.cpp (tree evaluator and error definition with weights for pulsations...)
@@ -3092,7 +3161,7 @@ void Population::tuning_individual_PRESS_single_guess(Binary_Node *ntree, double
 
 			// SQP parameters optimisation
 			if (COMMENT)
-				cout << "\nPopulation::tuning_individual : before optimisation ICONTR = method = " << *p_method;
+				cout << "\nPopulation::tuning_individual_PRESS_single_guess : before optimisation ICONTR = method = " << method;
 			// to perform optimization with TINL2_mod.cpp, MINL2.cpp through f2c: DOESN'T WORK
 			//c = opti_cpp(this, &method, n_param, n_test_cases, ntree,x);
 
@@ -3100,39 +3169,147 @@ void Population::tuning_individual_PRESS_single_guess(Binary_Node *ntree, double
 			// ALSO: DON'T USE CAPITAL LETTERS... otherwise problems during compiling ("undefined reference")
 			//to perform optimization with TINL2.FOR  - Umberto's method (copied from Andrey's)
 			//optitinl2_(&method, x, &n_param, &n_test_cases_tune, &IW);
-			if (COMMENT) cout << "\n\n  Population::tuning_individual : n_param = " << n_param << ", nfitcases = " << parameters->nfitcases;
+			if (COMMENT) cout << "\n\nPopulation::tuning_individual_PRESS_single_guess : *p_n_param = " << *p_n_param << ", n_tuning = " << problem->n_tuning;
 			if (1==1) {
 				//to perform optimization with TIOL2.FOR  - Andrey's method - WORKS PERFECTLY!
 				if (COMMENT) cout << "\nPopulation::tuning_individual : Call opti_()";
-				opti_(p_method, x, &n_param, p_m_total, p_IW);
+				opti_(&method, x, p_n_param, &m_total, &IW);
 			} else {
-				if (COMMENT) cout << "\nPopulation::tuning_individual : tuning through opti_() skipped ...";
+				if (COMMENT) cout << "\nPopulation::tuning_individual_PRESS_single_guess : tuning through opti_() skipped ...";
 			}
 
 
 			if (COMMENT) {
-				cout << "\nPopulation::tuning_individual : after optimisation ICONTR = method = " << *p_method;
-				if (*p_method==2) cout << "\n => UPPER LIMIT FOR FUNCTION EVALUATIONS EXCEEDED.";
-				if (*p_method==1) cout << "\n => SUM OF SQUARES FAILS TO DECREASE";
-				if (*p_method==0) cout << "\n => successful convergence";
-				if (*p_method<0) cout << "\n => COMPUTATION DID NOT START: see SQP_guide (pag 14) for details";
-			}
-			if (*p_method==0) {
-				(*p_n_guess_ok)++;
+				cout << "\nPopulation::tuning_individual_PRESS_single_guess : after optimisation ICONTR = method = " << method;
+				if (method==2) cout << "\n => UPPER LIMIT FOR FUNCTION EVALUATIONS EXCEEDED.";
+				if (method==1) cout << "\n => SUM OF SQUARES FAILS TO DECREASE";
+				if (method==0) cout << "\n => successful convergence";
+				if (method<0) cout << "\n => COMPUTATION DID NOT START: see SQP_guide (pag 14) for details";
 			}
 
-			// update the tree with the new, optimised values of the parameters
-			update_complete_tree(ntree, x, n_param);
-
+		} else {
+			// if tuning is not performed, the tree coefficients stay as they are, randomly generated
+			if (COMMENT) cout << "\nPopulation::tuning_individual_PRESS_single_guess : *p_n_param>n_param_threshold : tuning not performed, tree coefficients remain randomly generated" << endl;
 		}
 
-		// OTHERWISE THE TREE JUST STAYS AS IT IS, WITH RANDOMLY GENERATED PARAMETERS
+
+		// show optimised parameters after all the tuning in the different building data sets
+		if (COMMENT) {
+			cout << "\nPopulation::tuning_individual_PRESS_single_guess : parameters AFTER optimisation vf =" << vf << " :";
+			cout << "\nx = [";
+			for (int j=0; j<*p_n_param-1; j++) cout << x[j] << " , ";
+			cout << x[*p_n_param-1] << "]" << endl;
+		}
+
 
 		//-----------------------------------------------------------------------------------------------------
-		// TREE EVALUATION/VALIDATION on the evaluation/validation data set
+		// TREE VALIDATION on the current validation data set vf
 		// (it doesn't assign the values to the tree...wait for the final update)
 		//-----------------------------------------------------------------------------------------------------
-		fitness_func(problem->Sy, problem->data_evaluation, problem->n_evaluation, ntree, p_result, parameters->normalised);   //IMPORTANT: fitness evaluated on data_evaluation !!!
+		// define data_validation, made of points in validation fold
+		// you can either actually copy values, or use the association table and check each point during error calculation as done in tuning
+		// qui
+		int row;
+		if (parameters->crossvalidation==1) {
+			problem->data_validation = new Val*[problem->get_points_per_fold(vf)];
+			for (int i=0; i<problem->get_points_per_fold(vf); i++)
+				problem->data_validation[i]= new Val[problem->get_n_cols()];
+
+			// fill data_validation with correct values through folds_table
+			row=0;
+			for (int i=0; i<problem->get_n_data(); i++) {
+				if (problem->get_fold_from_row(i)==vf) {
+					for (int j=0; j<problem->get_n_cols(); j++)
+						problem->data_validation[row][j]=problem->get_data(i,j);
+					row++;
+				}
+			}
+
+			problem->n_validation = row;
+		}  // end cycle crossvalidation=1
+
+
+		if (COMMENT) {
+			cout << "\n\nPopulation::tuning_individual_PRESS_single_guess : tree VALIDATION" << endl;
+			cout << "Population::tuning_individual_PRESS_single_guess : show current data_validation" << endl;
+			cout << "problem->n_validation = " << row;
+			problem->show_data_validation();
+		}
+
+		// evaluate individual on validation data set
+		fitness_func(problem->Sy, problem->data_validation, problem->n_validation, ntree, p_result, parameters->normalised, parameters->crossvalidation);   //IMPORTANT: fitness evaluated on data_validation !!!
+
+		//-----------------------------------------------------------------------------------------------------
+		// STORE Exv resulting from tuning and validation on different data sets
+		//-----------------------------------------------------------------------------------------------------
+		exv[vf]=p_result[0];
+		cout << "\nPopulation::tuning_individual_PRESS_single_guess : exv[" << vf << "] = "<< exv[vf];
+
+		// delete data_validation? OK, but then you have to copy DATA in data_validation in read_input otherwise the standard execution does not work (CROSSOVALIDATION=0)...
+
+		for (int i=0; i<(*p_n_param); i++) x_out[i]=x_out[i]+x[i];
+
+	} // end cycle in folds  -------------------------------------------
+
+
+	//------------------------------------------------------------------------------------
+	// RETURN RESULTS AND UPDATE INDIVIDUAL PARAMETERS (COEFFICIENTS) AFTER CROSSVALIDATION
+	//------------------------------------------------------------------------------------
+	// compute PRESS and assign it to result[0]
+	for (int i=0; i<problem->get_n_folds(); i++) exv_tot = exv_tot + exv[i]*exv[i];
+	PressRMS=sqrt(exv_tot/problem->get_n_data());
+
+	if (COMMENT) cout << "\nPopulation::tuning_individual_PRESS_single_guess : PressRMS = " << PressRMS;
+
+///
+	// perform a last tuning and validation on the whole data set to get all other outputs right, including array of parameters x
+	problem->n_tuning = problem->get_n_data();
+	m_total = problem->n_tuning + ntree->n_pulsations;
+	method=0;
+	if (method>0)
+		IW=10*(2*m_total*(*p_n_param+1)+*p_n_param*(*p_n_param+3));
+	else
+		IW=10*(2*m_total*(*p_n_param+2)+*p_n_param+10);
+	for (int i=0; i<(*p_n_param); i++) x[i]=x_original[i];
+	if (*p_n_param<=n_param_threshold) opti_(&method, x, p_n_param, &m_total, &IW);
+	if (method==0) (*p_n_guess_ok)++;
+	// evaluate individual on validation data set
+	ntree->n_corrections=0;
+	fitness_func(problem->Sy, problem->get_data_address(), problem->get_n_data(), ntree, p_result, parameters->normalised, parameters->crossvalidation);
+
+///
+
+	// finally, define output values
+	p_result[0]=PressRMS;  // error predictor if CROSSVALIDATION=1 ok, if not...?   result[0] : error (fitness value - RMSE)
+	//p_result[1] // result[1] : n. of hits scored
+	//p_result[2]	// result[2]: n. of corrections done by protected operations
+	//p_result[3]	// result[3]: R2
+	// define which array x of tree parameters... currently x obtained from the last tuning on the whole data set
+	// what if they are all NaN?! The individual expression cannot be printed... CHECK
+	for (int i=0; i<(*p_n_param); i++) {
+		if (isnan(x[i])) x[i]=1.0;   // correction in case of illegal parameter
+		x_original[i]=x[i];  // x is the array of parameters chosen as final
+	}
+
+	// update the tree with the new, optimised values of the parameters
+	update_complete_tree(ntree, x_original, *p_n_param);
+
+
+	if (COMMENT) {
+		cout << "\nPopulation::tuning_individual_PRESS_single_guess : crossvalidation complete" << endl;
+		cout << "Population::tuning_individual_PRESS_single_guess : parameters x chosen for insertion:" << endl;
+		cout << "\nx = [";
+		for (int j=0; j<*p_n_param-1; j++) cout << x_original[j] << " , ";
+		cout << x_original[*p_n_param-1] << "]" << endl;
+	}
+
+
+	// delete
+	delete[] exv;
+	delete[] x, x_out;
+
+
+	if (COMMENT) cout << "\n\nPopulation::tuning_individual_PRESS_single_guess : exit";
 
 }
 
@@ -3797,7 +3974,7 @@ void Population::adapt_genetic_operators_rates_notused2(void)
 // training stage followed by adaptive stage
 void Population::adapt_genetic_operators_rates(void)
 {
-	int COMMENT = 1;
+	int COMMENT = 0;
 
 	int adaptive_gen_ops = 0;  //switch for adaptive approach: 1 = ON, 0 = off
 
@@ -3918,7 +4095,7 @@ void Population::compute_statistics(void)
 			af[i] = complete_trees[i]->fitness;
 			if (COMMENT) cout << "\naf[" << i << "] = " << af[i];
 	}
-	double Fit[4];      //F[0]->Fmin F[1]->ave   F[2]->max    F[3]->unb. est. of the population variance
+	double Fit[4];      //F[0]->Fmin  F[1]->ave   F[2]->max    F[3]->unb. est. of the population variance
 	basic_stat_analysis(af,Fit,trepr);
 	Fit_max = Fit[2];
 	Fit_min = Fit[0];

@@ -40,11 +40,11 @@ ProblemDefinition::ProblemDefinition(void)
 	points_per_fold=NULL;
 
 	// public members
-	folds = NULL;
+	//folds = NULL; // Val***
 	data_tuning = NULL;
 	n_tuning = -1;
-	data_evaluation = NULL;
-	n_evaluation = -1;
+	data_validation = NULL;
+	n_validation = -1;
 	// a little statistics on output (refers to the whole data set though - tuning+evaluation)
 	sum_output = -1.0;
 	y_ave = -1.0;
@@ -150,23 +150,23 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 
 
 
-	// data evaluation
-	n_evaluation = p.n_evaluation;
-	data_evaluation = new Val*[n_evaluation];
-	if (data_evaluation==NULL)  {
-		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_evaluation failed!! Input data can't be imported" << endl;
+	// data validation
+	n_validation = p.n_validation;
+	data_validation = new Val*[n_validation];
+	if (data_validation==NULL)  {
+		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_validation failed!! Input data can't be imported" << endl;
 		exit(-1);
 	}
-	for (int i=0; i<n_evaluation; i++) {
-		data_evaluation[i] = new Val[n_var+1];
-		if (data_evaluation[i]==NULL)  {
-			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_evaluation[" << i << "]  failed!! Input data can't be imported" << endl;
+	for (int i=0; i<n_validation; i++) {
+		data_validation[i] = new Val[n_var+1];
+		if (data_validation[i]==NULL)  {
+			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_validation[" << i << "]  failed!! Input data can't be imported" << endl;
 			exit(-1);
 		}
 	}
-	for (int i=0; i<n_evaluation; i++)
+	for (int i=0; i<n_validation; i++)
 			for (int j=0; j<n_var+1; j++)
-				data_evaluation[i][j]= p.data_evaluation[i][j];
+				data_validation[i][j]= p.data_validation[i][j];
 
 
 	// inequality constraints on values (order 0)
@@ -300,10 +300,19 @@ void ProblemDefinition::initialise_variables(Variable**p_Z, double max_n_periods
 
 	// here variables has not been initialised previously
 
-	// DYNAMIC DECLARATION OF VARIABLE SET: declare and initialise nvar Variable and assign their names
-	//Variable *
-	*p_Z = new Variable[n_var];  // array of Variables : its scope goes beyond the read_file function as it is allocated using new
+	// check for errors in n_var
+	if (n_var<1) {
+		cerr << "\nProblemDefinition::initialise_variables() : ERROR! Cannot initialise variables as n_var = " << n_var << endl;
+		exit(-1);
+		return;
+	}
 
+	// DYNAMIC DECLARATION OF VARIABLE SET: declare and initialise nvar Variable and assign their names
+	*p_Z = new Variable[n_var];  // array of Variables : its scope goes beyond the read_file function as it is allocated using new
+	if (*p_Z==NULL) {
+		cerr << "ProblemDefinition::initialise_variables() : ERROR ! Can't allocate *p_Z = new Variable[n_var]";
+		exit(-1);
+	}
 
 	// in the future use ProblemDefinition constructor to create v_list...
 	v_list = new Variable *[n_var]; //array of pointers to Variable
@@ -398,19 +407,19 @@ void ProblemDefinition::show_data_tuning(void) {
 	}
 }
 
-// show data_evaluation
-void ProblemDefinition::show_data_evaluation(void) {
-	cout << "\n\ndata_evaluation[][]" << endl;
+// show data_validation
+void ProblemDefinition::show_data_validation(void) {
+	cout << "\n\ndata_validation[][]" << endl;
 	cout << setw(3) << " Z"; // << symbol;
 	for (int j=0; j< n_cols - 2;  j++)
 		cout << left << setw(22) << j+1 << "Z";
 	cout << left << setw(22) << n_cols-1;
 	cout << left << setw(22) << "TARGET";
 	cout << endl;
-	for (int i=0; i< n_evaluation; i++)  {//m must be equal to n_evaluation
+	for (int i=0; i< n_validation; i++)  {//m must be equal to n_validation
 		cout << left << setw(3) << i;
 		for (int j=0; j< n_cols;  j++) {
-			cout <<  scientific <<  left << setw(22)  << data_evaluation[i][j];
+			cout <<  scientific <<  left << setw(22)  << data_validation[i][j];
 		}
 	cout << endl;
 	}
@@ -426,7 +435,7 @@ void ProblemDefinition::show_data_test(void) {
 	cout << left << setw(22) << n_cols-1;
 	cout << left << setw(22) << "TARGET";
 	cout << endl;
-	for (int i=0; i< n_test; i++)  {//m must be equal to n_evaluation
+	for (int i=0; i< n_test; i++)  {//m must be equal to n_validation
 		cout << left << setw(3) << i;
 		for (int j=0; j< n_cols;  j++) {
 			cout <<  scientific <<  left << setw(22)  << data_test[i][j];
@@ -542,7 +551,7 @@ void ProblemDefinition::show_all(void)
 	show_data();    //original whole data set (tuning+evaluation) from input_file
 
 	show_data_tuning();
-	show_data_evaluation();
+	show_data_validation();
 	show_data_test();
 
 	show_data_inequality0();
@@ -558,10 +567,34 @@ void ProblemDefinition::set_folds_table(void)
 		folds_table[i] = new int[2];
 
 	// allocate points_per_fold
-	points_per_fold = new int[n_folds];
+	if (n_folds>0) points_per_fold = new int[n_folds];
 
 }
 
+
+
+int ProblemDefinition::get_fold_from_row(int i)
+{
+	if (i>n_data-1) {
+		cerr << "ProblemDefinition::get_fold_from_row(int) error : i>(n_data-1)";
+		exit;
+	}
+
+	// return the no. of the fold the data row i belongs to
+	return folds_table[i][1];
+}
+
+
+
+int ProblemDefinition::get_points_per_fold(int i)
+{
+	if (i>(n_folds-1)) {
+		cerr << "ProblemDefinition::get_points_per_fold(int) error : i>(n_folds-1)";
+		exit;
+	}
+
+	return points_per_fold[i];
+}
 
 
 // function to randomly split the whole input data in k data sets using the k-fold technique
@@ -574,11 +607,21 @@ void ProblemDefinition::kfold_split(int split_switch)
 	cout << "n_folds = " << n_folds << endl;
 
 	if (split_switch==0) {
-		cout << "\n\nK-folds method not requested, p_folds_table not allocated. No action to be performed. Return" << endl;
+		cout << "\n\nCrossvalidation (K-folds method) not requested, p_folds_table allocated so to allow tuning on whole data set." << endl;
+
+		for (int i=0; i<n_data; i++) {
+			folds_table[i][0] = i;  	// column 0: data row number
+			folds_table[i][1] = -1;  // column 1: fold number (number starts from 0)
+		}
+		set_validation_fold(-1);
+
 		return;
 	}
 
-	// check that n_folds <= n_data (if equal, the method turns into leave one out)
+	// in the absence of explicit methods to generate/populate data_tuning for crossvalidation, set the pointer to NULL?
+
+
+	// check that n_folds is not larger than n_data (if equal, the method turns into leave one out)
 	if (n_folds > n_data) {
 		// output error message
 	    cerr << "ProblemDefinition::kfold_split : ERROR ! n_folds > n_data !!!!\n";

@@ -15,6 +15,7 @@
 // functional primitives definition
 
 #include <cmath>
+//#include <math.h>
 
 using namespace std;
 
@@ -57,8 +58,8 @@ Binary_Func Mult = {mult, mult_sign};
 // safe division
 Val sdiv(Val a, Val b, int* n_corrections)
 {
-    // if b is zero or abs(b)<MIN_VAL, add a correction (update counter)
-    if ((b==(Val)0.) || (abs(b)<MIN_VAL)) {
+    // if b is zero or abs(b)<MIN_VAL, add a correction (update counter) - protected approach
+    if ((b==(Val)0.) || (fabs(b)<MIN_VAL)) {
 		// check that n_corrections is a valid address...
 		if (n_corrections)
 			*n_corrections = *n_corrections+1;

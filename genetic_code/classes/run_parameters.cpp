@@ -51,8 +51,8 @@ void RunParameters::show(void)
 	cout << "w_n_corrections = " << w_n_corrections << endl;
 	cout << "w_size = " << w_size << endl;
 	cout << "n_guesses = " << n_guesses << endl;
-	cout << "split = " << split << endl;
-	cout << "validating_lines = " << validating_lines << endl;
+	cout << "crossvalidation = " << crossvalidation << endl;
+	cout << "folds_n = " << folds_n << endl;
 	cout << "threshold = " << threshold << endl;
 	cout << "n_inequality0 = " << n_inequality0 << endl;
 	cout << "w_pen_ord0 = " << w_pen_ord0 << endl;

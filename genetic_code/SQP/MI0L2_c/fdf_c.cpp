@@ -8,7 +8,10 @@ extern "C" {
 int  fdf_c__ (double *f,  double *x, int *m, int *n)  
 { 
 	
-	int COMMENT = 0; //if 1 comments, if 0 silent...	
+	int COMMENT = 0; //if 1 comments, if 0 silent...
+
+	if (COMMENT) cout << "\n\nfdf_c__ : enter";
+	//cin.get();
   	static int times = 1;
 	int i, mloc, nloc;
   	double z1 = 0.;
@@ -20,13 +23,14 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
    	Binary_Node *tree = Pop->complete_trees[ntree];   //address of the complete tree to be optimised
 	//---------------------------------------
    	Val g,t;
-	double sum_sq_error = 0.;    
+	double sum_sq_error = 0.0;   // the sum of half square errors is the metric used by the SQP optimiser for coefficient optimisation
 	
 	mloc =*m - tree->n_pulsations;  // no. of "distance" terms to minimise (related to no. fitness cases or records)
 	nloc = *n; // no. of parameters to optimise
 
 	if (COMMENT) {
-		cout << "\n\nfdf_c : ntree = " << ntree << "   (call n. " << times << ")";
+		cout << "\n\n----------------------- START TREE TUNING -------------------------------------------------";
+		cout << "\nfdf_c : ntree = " << ntree << "   (call n. " << times << ")";
 		cout << "\nfdf_c : Pop = " << Pop ;
 		cout << "\nfdf_c : *n = " << *n ;
 		cout << "\nfdf_c : *m = " << *m ;
@@ -69,48 +73,55 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 	//----------------------------------------------------------------------------------------------------------------------------------
 	// DEFINITION OF THE SINGLE TERM OF THE SUM (difference between tree output and actual output)
 	//----------------------------------------------------------------------------------------------------------------------------------	
-	// cycle through the fitness cases used for tuning (mloc = n_test_cases_tune)
-	for (i = 0; i <  mloc; i++) {
+	// cycle through the fitness cases used for tuning (mloc = n_test_cases_tune)... equal to the number of summands is SQP error function - see page 143 Armani PhD thesis
+	//for (i = 0; i <  mloc; i++) {	// replace mloc for crossvalidation
+	for (i = 0; i <  Pop->problem->get_n_data(); i++) {
 
-		if (COMMENT)
-			cout << "\n" << i << ") ";
+		// put a condition so that the error is computed only if the row does not belong to the current validation fold
+		if (Pop->problem->get_fold_from_row(i)!=Pop->problem->get_validation_fold()  || Pop->problem->get_fold_from_row(i)==-1) {
 
-		// retrieve the actual value of the output (g= known target value provided in the last column of the input matrix)
-		g = Pop->problem->data_tuning[i][nvar];
+			if (COMMENT) cout << "\n" << i << ") ";
+
+			// retrieve the actual value of the output (g= known target value provided in the last column of the input matrix)
+			g = Pop->problem->get_data(i, nvar);    //  if data_tuning is explicitly defined use: g = Pop->problem->data_tuning[i][nvar];
 		
-		// assign the right value to all the variables for the i-th fitness case
-		for (int j=0; j<nvar; j++) {
-			Pop->problem->v_list[j]->value = Pop->problem->data_tuning[i][j];
-			if (COMMENT)
-				cout << Pop->problem->v_list[j]->value << "  ";
-		}
+			// assign the right value to all the variables for the i-th fitness case
+			for (int j=0; j<nvar; j++) {
+				Pop->problem->v_list[j]->value = Pop->problem->data_tuning[i][j];
+				if (COMMENT)
+					cout << Pop->problem->v_list[j]->value << "  ";
+			}
 	
-		// compute tree value t for the current fitness case, point data_tune[i][j]
-		t =(Val)(Pop->tree_value(tree, NULL));
+			// compute tree value t for the current fitness case, point data_tune[i][j]
+			t =(Val)(Pop->tree_value(tree, NULL));
 		
-		//------------------------------------------------
-		// definition of the term used by MI0L2 		
-		//------------------------------------------------
-		// compute error as difference actual and predicted value
-		f[i] = g-t;  //so far : it works perfectly
-/*
-		if (abs(g)<1.0e-12)   //for normalised RMSE
-			f[i] = g-t;
-		else 
-			f[i] = abs((g-t)/g);
-//*/		
-		if (COMMENT) {
-		//check values on the screen
-			expr = Pop->print(ntree, NULL);   //trick not to write Pop->complete_trees,  that is private...
-			printf("\nfdf_ c: function number %i  corrisponding to output %i = %f",i,i,Pop->problem->data_tuning[i][Pop->problem->get_n_cols() - 1]);
-			printf ("\nfdf_c : Tree %i :   %s",ntree,expr);
-			printf("\nfdf_ c: g = %E   t = %E   g-t = %E", g, t, f[i]);
-		}
+			//------------------------------------------------
+			// definition of the term used by MI0L2
+			//------------------------------------------------
+			// compute error as difference actual and predicted value
+			f[i] = g-t;  //so far : it works perfectly
+			/*
+			if (abs(g)<1.0e-12)   //for normalised RMSE
+				f[i] = g-t;
+			else
+				f[i] = abs((g-t)/g);
+			//*/
 
-		//compute a term of fitness value
-		sum_sq_error = sum_sq_error + .5*(f[i]*f[i]); //refers to the precedent set of parameters 
-	
+			//compute a term of fitness value
+			sum_sq_error = sum_sq_error + .5*(f[i]*f[i]); //refers to the precedent set of parameters
+
+
+			if (COMMENT) {
+				//check values on the screen
+				expr = Pop->print(ntree, NULL);   //trick not to write Pop->complete_trees,  that is private...
+				printf("\nfdf_ c: function number %i  corresponding to output %i = %f",i,i,Pop->problem->data_tuning[i][Pop->problem->get_n_cols() - 1]);
+				printf ("\nfdf_c : Tree %i :   %s",ntree,expr);
+				printf("\nfdf_ c: g = %E   t = %E   g-t = %E", g, t, f[i]);
+			}
+
+		} // condition on current point (row in data) not belonging to validation fold
     }
+
 
 	//-------------------------------------------------------------------------
 	// definition of extra penalisations (i.e. for pulsation)
@@ -145,6 +156,8 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 
 	times++;
     delete[] x_shift;
+
+    if (COMMENT) cout << "\n\n----------------------- END TREE TUNING -------------------------------------------------" << endl;
 
 	return(1);
 }

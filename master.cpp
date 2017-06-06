@@ -58,7 +58,7 @@ int main (int argc, char *argv[])
 	}
 	if (argc>4) {
 		cerr << "\nERROR!!! Too many arguments!!!"	;
-		cerr << "\nUSAGE: >> ./gp  location/input_file  location/test_data existing_directory_output";
+		cerr << "\nUSAGE: >> ./gp  location/input_file  location/test_data  existing_directory_output";
 		cerr << "\nExample: >> ./gp ./input/input_file.txt ./input/test_data_file.txt ./output\n";
 		exit(-1);
 	}
@@ -103,8 +103,6 @@ int main (int argc, char *argv[])
 	RunParameters Mparam;  		// to distinguish it from parameters object in Population
 	ProblemDefinition Mprobl;	// to distinguish it from problem object in Population
 	Reporter pop_reporter;
-
-	//int n_point_evals=0;   ????
 	
 	// read inputs
 	read_input_file(FILE_INPUT, &Mparam, &Mprobl);  // also initialise parameters and problem objects
@@ -160,16 +158,19 @@ int main (int argc, char *argv[])
 		exit(-1); 
 	}
 	
+	cin.get(); // problem with int_rand in Population constructor
+
 	//as it's hard to pass Pop as a parameter to fdf_c__ through fortran functions, treat it as a global variable
 	Pop = P;
+
 
 	int n =Pop->parameters->nvar;
 	cout << "\nn= " << n;
 
 	// split the whole input dataset in k folds for cross validation
-	Mprobl.kfold_split(Mparam.split);  // test with 3 folds
+	Mprobl.kfold_split(Mparam.crossvalidation);  // test with 3 folds
 
-	cin.get();
+
 
 	///// INITIAL GENERATION (0) ///////////////////////////////////////
 	
@@ -317,6 +318,9 @@ int main (int argc, char *argv[])
 	
 	// evaluate fitness (RMSE and R2) on test data set (only if test data has been provided)
 	if (argc==4) {
+		// show data_test
+		cout << "problem->show_data_validation() : show current data_test :" << endl;
+		P->problem->show_data_test();
 		// evaluate complete individuals on test data set provided by the user
 		P->evaluate_complete_trees(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
 		// sort according to error (RMSE) - better not to use it to keep order and to recognise performance on building and test data sets...
@@ -327,7 +331,7 @@ int main (int argc, char *argv[])
 		pop_reporter.archive2file_test(P, DIR_OUTPUT, last_gen);  // insert a function to order in rmse decreasing order, leaving however the name of the run
 	}
 
-	// free memory allocated to Population, as not used anymore
+	// free memory allocated to Population, as not used anymore (in the future declare statically P, as you will always need one population...)
 	delete P;
 
 	// PARALLELISATION ... TO HERE.

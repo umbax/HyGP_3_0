@@ -17,25 +17,25 @@
 # no options is run.
 all: gp
 
-gp: master.o T.o M.o ./genetic_code/tree_functions/vector_derivative_functions.o ./genetic_code/tree_functions/tree_operations.o ./genetic_code/classes/problem_definition.o ./genetic_code/classes/run_parameters.o ./genetic_code/read_input/read_file_new.o ./genetic_code/classes/class_POPULATION.o ./genetic_code/classes/reporter.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o
+gp: master.o ./genetic_code/SQP/MI0L2_c/M.o ./genetic_code/SQP/MI0L2_c/T.o ./genetic_code/tree_functions/vector_derivative_functions.o ./genetic_code/tree_functions/tree_operations.o ./genetic_code/classes/problem_definition.o ./genetic_code/classes/run_parameters.o ./genetic_code/read_input/read_file_new.o ./genetic_code/classes/class_POPULATION.o ./genetic_code/classes/reporter.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o
 # for Linux on feng-gps1
-	gfortran -std='legacy' -o gp M.o T.o master.o ./genetic_code/tree_functions/vector_derivative_functions.o ./genetic_code/tree_functions/tree_operations.o ./genetic_code/classes/problem_definition.o ./genetic_code/classes/run_parameters.o ./genetic_code/read_input/read_file_new.o ./genetic_code/classes/class_POPULATION.o ./genetic_code/classes/reporter.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
+	gfortran -std='legacy' -o gp ./genetic_code/SQP/MI0L2_c/M.o ./genetic_code/SQP/MI0L2_c/T.o master.o ./genetic_code/tree_functions/vector_derivative_functions.o ./genetic_code/tree_functions/tree_operations.o ./genetic_code/classes/problem_definition.o ./genetic_code/classes/run_parameters.o ./genetic_code/read_input/read_file_new.o ./genetic_code/classes/class_POPULATION.o ./genetic_code/classes/reporter.o ./genetic_code/input_checks/input_check.o ./genetic_code/modules/variable.o ./genetic_code/nodes/nodes.o ./genetic_code/modules/primitives.o -L/usr/lib/gcc/x86_64-redhat-linux/4.0.2/ -lstdc++ -fopenmp
 # for Linux on pre-pc1017 (NOTE the version number! 11/2010)
 # g77 -o gp M.o T.o master.o -L/usr/lib/gcc/x86_64-redhat-linux/4.1.2/ -lstdc++ 
 # for development under Windows (Eclipse)   D:/MinGW/lib/gcc/mingw32/4.5.0/
 #	g77 -o gp M.o T.o master.o -L d:/airbus_epd_py25_v4230201/lib/site-packages/mingw-3.4.5n1-py2.5-win32.egg/EGG-INFO/usr/bin/../lib/gcc/mingw32/3.4.5/ -lstdc++ 
 
-M.o: ./genetic_code/SQP/MI0L2_c/MI0L2.FOR
-	gfortran -std='legacy' -c ./genetic_code/SQP/MI0L2_c/MI0L2.FOR -o M.o
-
-T.o: ./genetic_code/SQP/MI0L2_c/TI0L2.FOR
-	gfortran -fsecond-underscore -c ./genetic_code/SQP/MI0L2_c/TI0L2.FOR  -o T.o
-	
 master.o: master.cpp
 	# parallel compilation (OpenMP)
 	#g++ -c -g parallel_master.cpp -o master.o -fopenmp
 	# normal compilation
 	g++ -c -g master.cpp -o master.o
+
+./genetic_code/SQP/MI0L2_c/M.o: 
+	gfortran -std='legacy' -c ./genetic_code/SQP/MI0L2_c/MI0L2.FOR -o ./genetic_code/SQP/MI0L2_c/M.o
+
+./genetic_code/SQP/MI0L2_c/T.o: 
+	gfortran -fsecond-underscore -c ./genetic_code/SQP/MI0L2_c/TI0L2.FOR  -o ./genetic_code/SQP/MI0L2_c/T.o
 
 vector_derivative_functions.o: ./genetic_code/tree_functions/vector_derivative_functions.cpp
 	g++ -c -g ./genetic_code/tree_functions/vector_derivative_functions.cpp -o ./genetic_code/tree_functions/vector_derivative_functions.o
@@ -72,15 +72,15 @@ primitives.o:
 	# use extern to define Add, Sub, etc also mind the typedef struct renomination... use a class?
 
 clean :
-	rm T.o
-	rm M.o
+	rm ./genetic_code/SQP/MI0L2_c/T.o
+	rm ./genetic_code/SQP/MI0L2_c/M.o
 	rm ./genetic_code/input_checks/input_check.o
 	rm ./genetic_code/modules/variable.o
 	rm ./genetic_code/nodes/nodes.o
 	rm ./genetic_code/modules/primitives.o
 	rm ./genetic_code/classes/reporter.o
 	rm ./genetic_code/classes/class_POPULATION.o
-	rm /genetic_code/read_input/read_file_new.o
+	rm ./genetic_code/read_input/read_file_new.o
 	rm ./genetic_code/classes/run_parameters.o
 	rm ./genetic_code/classes/problem_definition.o
 	rm ./genetic_code/tree_functions/tree_operations.o

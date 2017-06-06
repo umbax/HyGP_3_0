@@ -220,10 +220,10 @@ Binary_Node::~Binary_Node(void)
 }
 
 
-// adds a node to the left
+// set the left child
 void Binary_Node::set_left(Node *l) {left = l;}
 
-// adds a node to the right
+// set the right child
 void Binary_Node::set_right(Node *r) {right = r;}
 
 // accesses the left child

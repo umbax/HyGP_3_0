@@ -54,8 +54,8 @@ class RunParameters
 			double w_size;					 //weight given to the number of nodes a tree is made of
 			double w_factorisation;  //penalisation for lack of factorisation
 			int n_guesses;			 // no. of guesses for the SQP optimization
-			int split;							// 1 if data set is split each generation, 0 if not
-			int validating_lines;		//number of rows containing validating points (from the upper row of the matrix) 
+			int crossvalidation;							// 1 if data set is split each generation, 0 if not
+			int folds_n;		//number of rows containing validating points (from the upper row of the matrix)
 			double threshold;				//value of fitness (RMSE) under which the evolution stops
 			int n_inequality0;  	 	//total number of order 0 inequality constraints (number of points constrained) 
 			double w_pen_ord0;  	//weight for the penalisation on order 0 inequality constraint

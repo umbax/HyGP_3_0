@@ -17,7 +17,8 @@
 #define PROBLEMDEFINITION_H_
 
 // dependencies
-#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed, cerr
+#include <cstdlib>   // NULL, exit, EXIT_FAILURE
 #include <iomanip>  // manipulators (text format): setw
 #include <cstdlib>   // NULL, exit, EXIT_FAILURE
 #include <cstdio>   // sprintf
@@ -43,9 +44,9 @@ class ProblemDefinition
 		int n_cols;			// number of columns in data (n_var+1)
 		// cross validation purposes
 		int n_folds;		// number of folds for crossvalidation
-		int** folds_table; // association table between fold and data row (array of int n_datax2)
-		int* points_per_fold; // array of int containing the number of points (records) per fold (n_foldsx1)
-
+		int** folds_table; // association table between fold and data row (n_datax2), used in model tuning
+		int* points_per_fold; // array of int containing the number of points (records) per fold (n_foldsx1) - so the n. of validation points
+		int validation_fold; // current fold (int) used for validation
 		
 	public:
 
@@ -60,16 +61,16 @@ class ProblemDefinition
 		// (the one containing HyGP hyperparameters)
 		Val sum_output;
 		Val y_ave;
-		Val Sy;
+		Val Sy;  // defined in read_input_file function (read_file_new.cpp)
 
 		// folds for crossvalidation
-		Val*** folds; // pointer to a 3d array (no of fold x row x column) - initialised in kfold_split
+		//Val*** folds; // pointer to a 3d array (no of fold x row x column) - initialised in kfold_split
 
 		// data tuning and evaluation (tuning = building data, evaluation = cross validation data)
-		Val** data_tuning;		// BUILDING DATA SET
+		Val** data_tuning;		// BUILDING/TUNING DATA SET : not defined explicitly
 		int  n_tuning;
-		Val** data_evaluation;	// CROSS VALIDATION DATA SET (coincides with building data if split = 0)
-		int n_evaluation;	
+		Val** data_validation;	// CROSS VALIDATION DATA SET (coincides with building data if split = 0)
+		int n_validation;	 //ex n_evaluation;
 		Val** data_test;		// TEST DATA SET
 		int n_test;
 		Val	sum_output_test;
@@ -91,13 +92,13 @@ class ProblemDefinition
 		//Andrey's idea to avoid dynamic allocation of functions list
 		// in the future use a vector
 		Unary_Func dummy_uni[15];  
-		Unary_Func *u_func_list[15];
+		Unary_Func *u_func_list[15];   // max of binary functions allowed is 15!
 		int num_u_funcs;
 		
 		//Andrey's idea to avoid dynamic allocation of functions list
 		// in the future use a vector
 		Binary_Func dummy_bin[7];  
-		Binary_Func *b_func_list[7];
+		Binary_Func *b_func_list[7];   // max of binary functions allowed is 7!
 		Binary_Func *division;
 		int num_b_funcs;
 
@@ -108,20 +109,26 @@ class ProblemDefinition
 		void set_n_cols(int tot_cols) {n_cols = tot_cols;};
 		void set_n_folds(int n_f) {n_folds=n_f;};
 		void set_folds_table(void); // used in read_file_new.cpp line 568
+		void set_validation_fold(int i) {validation_fold=i;};  //add feasibility checks!!!!
 		// getter methods for private members
 		Val get_data(int row, int column) {return data[row][column];};
 		Val** get_data_address(void) {return data;};
+		int get_n_data(void) {return n_data;};
 		int get_n_var(void) {return n_var;};
 		int get_n_cols(void) {return n_cols;};
+		int get_n_folds(void) {return n_folds;};
+		int get_points_per_fold(int i);
+		int get_fold_from_row(int i);
+		int get_validation_fold(void) {return validation_fold;};
 		
-		//function to initialise varibles (see v_list)
+		//function to initialise variables (see v_list)
 		int variables_initialised;
 		void initialise_variables(Variable** , double);
 
 		// function to display data on the screen
 		void show_data(void);
 		void show_data_tuning(void);
-		void show_data_evaluation(void);
+		void show_data_validation(void);
 		void show_data_test(void);
 
 		void show_data_inequality0(void);

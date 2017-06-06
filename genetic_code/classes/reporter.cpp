@@ -185,6 +185,8 @@ void Reporter::best2file_test(Population *P, string DIR_OUTPUT, int gi)
 			f_max = P->complete_trees[i]->fitness_test;
 		}
 	}
+	// safety check on value of i_best_test not to leave best_gp_TEST empty?
+
 
 	ofstream fout;
 
@@ -194,17 +196,22 @@ void Reporter::best2file_test(Population *P, string DIR_OUTPUT, int gi)
 
 
 	// fetch the expression of the best individual
-	expr = P->print(0, P->complete_trees);  //0 is the position in the array "complete_trees" of the individual with minimum F, not fitness!
+	//expr = P->print(0, P->complete_trees);  //0 is the position in the array "complete_trees" of the individual with minimum F, not fitness!
 
 	// print state variables and expression of the best individual
-	expr = P->print(i_best_test, P->complete_trees);
-	fout << gi << " " << scientific << P->complete_trees[i_best_test]->fitness_test;
-	fout << " " << scientific << P->complete_trees[i_best_test]->R2_test;
-	fout << " "  << P->complete_trees[i_best_test]->hits_test;
-	fout << "  \"" << expr << "\"" << endl;
+	if (i_best_test>=0) {
+		expr = P->print(i_best_test, P->complete_trees);
+		fout << gi << " " << scientific << P->complete_trees[i_best_test]->fitness_test;
+		fout << " " << scientific << P->complete_trees[i_best_test]->R2_test;
+		fout << " "  << P->complete_trees[i_best_test]->hits_test;
+		fout << "  \"" << expr << "\"" << endl;
+	}
+	if (i_best_test==-1) {
+		fout << "Reporter::best2file_test has not been able to select the best individual evaluated on the test data set" << endl;
+	}
 
 	// free memory
-	delete [] expr;
+	if (expr!=NULL) delete [] expr;
 
 	// close stream (at each call is open and then closed)
 	fout.close();

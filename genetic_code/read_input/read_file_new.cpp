@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// function to read the main input file, containing the HyGP hyperparameters and the building data set
-// (the building data set can be split in tuning data set and evaluation data set (cross validation data set),
-// but this is done later with the function SPLIT
-
 #include "./read_file_new.h"
 
-
+// function that
+// - reads the main input file, containing the HyGP hyperparameters and the building data set
+// (the building data set can be split in tuning data set and validation data set (crossvalidation approach),
+// but this is done later with the function kfolds_split (see ProblemDefinition)
+// - initialise a few member variables of ProblemDefinition (see Sy, y_ave, etc)
 void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* pb)
 {
 
 	int COMMENT=0;
+
+	cout << "\n\nread_input_file : enter" << endl;
 
 	// declare the name
 	string file;
@@ -83,8 +85,8 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 															"W_SIZE=",
 															"W_FACTORISATION=",
 															"N_GUESSES=",
-															"SPLIT=",
-															"VALIDATING_LINES=",
+															"CROSSVALIDATION=",
+															"FOLDS_N=",
 															"THRESHOLD=",
 															"N_INEQUALITY0=",
 															"W_PEN_ORD0=",
@@ -178,8 +180,8 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	pr->w_size = p_par_values[23];
 	pr->w_factorisation = p_par_values[24];  // switch between standard approach (<0) and factorisation bonus (>0)
 	pr->n_guesses = (int)(p_par_values[25]);
-	pr->split = (int)(p_par_values[26]);
-	pr->validating_lines = (int)(p_par_values[27]);
+	pr->crossvalidation = (int)(p_par_values[26]);
+	pr->folds_n = (int)(p_par_values[27]);
 	pr->threshold = p_par_values[28];
 	pr->n_inequality0 = (int)p_par_values[29];
 	pr->w_pen_ord0 = p_par_values[30];
@@ -494,6 +496,7 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	}
 	pb->num_b_funcs = NUM_B_FUNCS;
 
+	//cout << "\n read_file_new CHECK: pb->num_b_funcs = " << pb->num_b_funcs << endl;
 
 
 	// UNARY FUNCTIONS : the names to be inserted in the input file are between " "
@@ -566,15 +569,19 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	pb->set_n_data(pr->nfitcases);
 	pb->set_n_var(pr->nvar);
 	pb->set_n_cols(pr->nvar + 1);
-	if (pr->split>0) {
-		pb->set_n_folds(pr->validating_lines);
+	if (pr->crossvalidation==1) {
+		pb->set_n_folds(pr->folds_n);
+		pb->set_folds_table();  // dynamically allocate folds_table (see ProblemDefinition.h) for crossvalidation
+	}
+	if (pr->crossvalidation==0) {
+		pb->set_n_folds(0);
 		pb->set_folds_table();  // dynamically allocate folds_table (see ProblemDefinition.h) for crossvalidation
 	}
 
 	pb->data_tuning = DATA;			// as a default, tuning and evaluation data are set identical
 	pb->n_tuning = pr->nfitcases;
-	pb->data_evaluation = DATA;		// as a default, tuning and evaluation data are set identical
-	pb->n_evaluation = pr->nfitcases;
+	pb->data_validation = DATA;		// as a default, tuning and evaluation data are set identical
+	pb->n_validation = pr->nfitcases;
 
 	pb->data_inequality0 = DATA_INEQUALITY0;
 	pb->n_inequality0 = pr->n_inequality0;
@@ -594,14 +601,14 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	pb->sum_output = sum_output;
 	pb->y_ave = y_ave/(double)(pr->nfitcases);
 	
-	// Mind that DATA is the whole data set imported as building data set,
-	// so if you use cross validation on a subset of DATA (see data_evaluation) you need to recompute Sy
-	// on data_evaluation
+	// Sy=sum((output- average_output)^2)=(n-1)*output variance on the whole dataset
 	Val Sy = 0.;
 	for (int k=0; k < pr->nfitcases; k++)
 		Sy = Sy + (pb->get_data(k,pr->nvar) - pb->y_ave)*(pb->get_data(k,pr->nvar) - pb->y_ave);
 	pb->Sy = Sy;
+
 	
+	cout << "\n\nread_input_file : data correctly imported. Exit \n" << endl;
 }
 
 
@@ -611,6 +618,8 @@ void read_test_data(string FILE_TEST_DATA,  RunParameters* pr, ProblemDefinition
 {
 
 	int COMMENT=0;
+
+	cout << "\n\nread_test_data : enter" << endl;
 
 	// declare the name
 	string file;
@@ -625,11 +634,11 @@ void read_test_data(string FILE_TEST_DATA,  RunParameters* pr, ProblemDefinition
 
 	// check that the file exists and opened in the right mode
 	if (!fin.is_open()) {   //open attempt failed
-		cerr << "\n\nread_test_data() : ERROR: The test data file " << FILE_TEST_DATA << " doesn't exist!!!" << endl;
+		cerr << "read_test_data() : ERROR: The test data file " << FILE_TEST_DATA << " doesn't exist!!!" << endl;
 		exit(-1);
 	}
 	else {
-		cout << "\n\nread_test_data() : Reading from file " << FILE_TEST_DATA << "  : ..." << endl;
+		cout << "read_test_data() : Reading from file " << FILE_TEST_DATA << "  : ..." << endl;
 	}
 
 
@@ -781,7 +790,9 @@ void read_test_data(string FILE_TEST_DATA,  RunParameters* pr, ProblemDefinition
 	pb->Sy_test = Sy_test;
 	//
 
-	cout << "Ok";
+	cout << "read_test_data : points correctly imported = " << row << endl;
+	cout << "read_test_file : test data correctly imported. Exit \n" << endl;
+
 }
 
 
