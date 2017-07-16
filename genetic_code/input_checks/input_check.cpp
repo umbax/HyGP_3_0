@@ -107,13 +107,13 @@ void input_check(RunParameters *pr, ProblemDefinition *pb)
 	}
 
 	if ((pr->crossvalidation<0) || (pr->crossvalidation>1)) {
-		cerr << "\nError: split can be enabled (CROSSVALIDATION = 1) or disabled (CROSSVALIDATION = 0). No other values!!!\n";
+		cerr << "\nError: Crossvalidation can be enabled (CROSSVALIDATION = 1) or disabled (CROSSVALIDATION = 0). No other values!!!\n";
 		exit(-1); 
 	}
 	
 	if (pr->crossvalidation==1) {
-		if ((pr->folds_n>pr->nfitcases) || (pr->folds_n<1)) {
-			cerr << "\nError: the number of folds cannot be larger than the total no of fitness cases!!!\n";
+		if ((pr->folds_n>pr->nfitcases) || (pr->folds_n<2)) {
+			cerr << "\nError: the number of folds cannot be larger than the total no of fitness cases nor smaller than 2!!!\n";
 			cerr << "0 < validating_lines < nfitcases\n";
 			exit(-1); 
 		}

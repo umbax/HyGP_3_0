@@ -86,10 +86,14 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 			g = Pop->problem->get_data(i, nvar);    //  if data_tuning is explicitly defined use: g = Pop->problem->data_tuning[i][nvar];
 		
 			// assign the right value to all the variables for the i-th fitness case
+			//cout << "\nfdf_c__ : Tuning data set : ";
 			for (int j=0; j<nvar; j++) {
 				Pop->problem->v_list[j]->value = Pop->problem->data_tuning[i][j];
-				if (COMMENT)
+
+				if (COMMENT) {
+					cout << Pop->problem->data_tuning[i][j];
 					cout << Pop->problem->v_list[j]->value << "  ";
+				}
 			}
 	
 			// compute tree value t for the current fitness case, point data_tune[i][j]
@@ -157,8 +161,10 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 	times++;
     delete[] x_shift;
 
-    if (COMMENT) cout << "\n\n----------------------- END TREE TUNING -------------------------------------------------" << endl;
-
+    if (COMMENT) {
+    	cout << "\n\n----------------------- END TREE TUNING -------------------------------------------------" << endl;
+    	cout << "\n\nfdf_c__ : exit";
+    }
 	return(1);
 }
 }  //extern C ...

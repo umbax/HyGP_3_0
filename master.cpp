@@ -158,7 +158,8 @@ int main (int argc, char *argv[])
 		exit(-1); 
 	}
 	
-	cin.get(); // problem with int_rand in Population constructor
+	// pause execution
+	//cin.get(); // problem with int_rand in Population constructor
 
 	//as it's hard to pass Pop as a parameter to fdf_c__ through fortran functions, treat it as a global variable
 	Pop = P;

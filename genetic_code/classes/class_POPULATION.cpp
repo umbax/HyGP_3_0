@@ -1279,7 +1279,7 @@ int Population::tournament(int first, int last, int tournament_size)
 
 void Population::kill_and_fill (ProblemDefinition *pb)
 {
-	int COMMENT = 1;
+	int COMMENT = 0;
 	int kill_tot = comp_tot+new_tot;
 	cout << "\nPopulation::kill_and_fill" << endl;
 	cout << "comp_tot = " << comp_tot << " , new_tot = " << new_tot << " , kill_tot = " << kill_tot << endl;
@@ -2362,8 +2362,11 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 	//double nt = (double)n_test_cases;
 	//F1 = (double)((complete_tree->fitness)*(complete_trees[i]->fitness)*nt/sum_output);   //Alvarez's version - too SMALL!
 	//F1 = 1.-1./(1.+complete_tree->fitness); 
-	F1 = complete_tree->fitness/average_err;	//average_err is the av. fitness in the archive of the previous gen. THE TERM VARIES DURING THE EVOLUTION!!!  
 	//F1 = complete_tree->fitness/sum_output;	 //the term is constant, but does not give great results...
+	if (pr->crossvalidation==0)
+		F1 = complete_tree->fitness/average_err;	//average_err is the av. fitness in the archive of the previous gen. THE TERM VARIES DURING THE EVOLUTION!!!
+	else
+		F1 = complete_tree->fitness;
 
 	//---------------------------------------------------------------------
 	// second objective: NUMBER OF TUNING PARAMETERS
@@ -2495,7 +2498,7 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 		//complete_tree->F = F7*(complete_tree->T1 + complete_tree->T2 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6) + complete_tree->T3 ;
 	}
 
-	//if (COMMENT) {  // && (i==0)) {
+	if (COMMENT) {  // && (i==0)) {
 		cout << "\nPopulation::aggregate_F" << endl;
 		complete_tree->show_state();
 		cout << "\nd_lim = " <<parameters->depth_lim;
@@ -2509,7 +2512,7 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 		cout << "\na7 = " << a7 << "  F7 = " << F7 << "  a7*F7 = " << a7*F7;
 		//for (int k=0; k<4; k++) cout << "\nlist[ " << k << " ] = " << list[k];
 		cout << "\nF = " << complete_tree->F << endl;
-	//}
+	}
 
 }
 
@@ -2944,7 +2947,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 // function that performs standard RMS error evaluation on a single individual, for a single guess of the individual parameters
 void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double* x_original, int* p_n_param, int* p_n_guess_ok, Val* p_result)
 {
-	int COMMENT=1;
+	int COMMENT=0;
 	int m_total=0;
 	int IW=0;
 	int method=0; // method used as input in opti:
@@ -3031,7 +3034,7 @@ void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double*
 	if (COMMENT) {
 		cout << "Population::tuning_individual_PRESS_single_guess : show current data_validation" << endl;
 		cout << "problem->n_validation = " << problem->n_validation;
-		problem->show_data_validation();
+		//problem->show_data_validation();
 	}
 	ntree->n_corrections=0;
 	fitness_func(problem->Sy, problem->get_data_address(), problem->get_n_data(), ntree, p_result, parameters->normalised, parameters->crossvalidation);
@@ -3484,7 +3487,7 @@ void  Population::get_tree_derivative_given_points(Val **data_used,Binary_Node *
 //		overall score of the tree with regard to 1st order inequality constraints
 double Population::get_tree_derivative_given_norm_vector(ProblemDefinition pb, Binary_Node* c_tree)
 {
-	int COMMENT = 1;
+	int COMMENT = 0;
 
 	if (COMMENT) cout << "\nget_tree_derivative_given_norm_vector : enter" << endl;
 
@@ -3702,7 +3705,7 @@ int Population::identical_nodes(Node*p_n1, Node*p_n2)
 // INPUT: address of tree with fitness value already evaluated
 void Population::measure_genetic_op_performance(Binary_Node* tree)
 {
-	int COMMENT = 1;
+	int COMMENT = 0;
 
 
 	// compute variation in error (accuracy)
@@ -3808,7 +3811,7 @@ void Population::adapt_genetic_operators_rates_notused(void)
   // of alterated genetic operators rates everything goes back to original rates
   
   
-  int COMMENT = 1;
+  int COMMENT = 0;
 
 	int adaptive_gen_ops = 0;  //switch for adaptive approach: 1 = ON, 0 = off
 
@@ -3866,7 +3869,7 @@ void Population::adapt_genetic_operators_rates_notused(void)
 // training stage followed by adaptive stage
 void Population::adapt_genetic_operators_rates_notused2(void)
 {
-	int COMMENT = 1;
+	int COMMENT = 0;
 
 	int adaptive_gen_ops = 1;  //switch for adaptive approach: 1 = ON, 0 = off
 

@@ -176,11 +176,15 @@ void Reporter::best2file_test(Population *P, string DIR_OUTPUT, int gi)
 	expr1 = s.c_str();
 
 	// find the best individual on the test data set
-	double f_max = 999999.0e+10;
+	double f_max = 999999.0e+10; // too low? See MAX_VAL
 	int i_best_test = -1;
 	int i;
-	for (i=0; i<repr_tot; i++) {
-		if ((P->complete_trees[i]->fitness_test <= f_max) && (P->complete_trees[i]->n_corrections_test==0)) {
+	// there must be at least one individual in the archive
+	f_max=P->complete_trees[0]->fitness_test;
+	i_best_test=0;
+	// check if there is another individual in the archive that is better than the first one
+	for (i=0; i<repr_tot-1; i++) {
+		if (P->complete_trees[i]->fitness_test <= f_max) { // && (P->complete_trees[i]->n_corrections_test==0)) {
 			i_best_test = i;
 			f_max = P->complete_trees[i]->fitness_test;
 		}
@@ -192,7 +196,9 @@ void Reporter::best2file_test(Population *P, string DIR_OUTPUT, int gi)
 
 	// open file for writing, truncating
 	fout.open(expr1, ios_base::out | ios_base::trunc);
-	fout << "# " <<  "Final generation " << " Fitness(RMSE) " << " R2(adim.)" << "Hits" << " Expression " << endl;
+	// follow the same data pattern used to report results on the tuning/building data set
+	// # gen  F    RMSE   R2(adim)  Hits  Expr
+	fout << "# " <<  "Final gen " << "F " << "RMSE " << "R2(adim.) " << "Hits " << "Expression " << endl;
 
 
 	// fetch the expression of the best individual
@@ -201,13 +207,15 @@ void Reporter::best2file_test(Population *P, string DIR_OUTPUT, int gi)
 	// print state variables and expression of the best individual
 	if (i_best_test>=0) {
 		expr = P->print(i_best_test, P->complete_trees);
-		fout << gi << " " << scientific << P->complete_trees[i_best_test]->fitness_test;
-		fout << " " << scientific << P->complete_trees[i_best_test]->R2_test;
-		fout << " "  << P->complete_trees[i_best_test]->hits_test;
-		fout << "  \"" << expr << "\"" << endl;
+		fout << gi;  // Generation
+		fout << " " << scientific << "not_implemented_yet_Reporter::best2file_test";// P->complete_trees[i_best_test]->F_test;   // F... SHOULD BE F_TEST!!!! Not implemented yet
+		fout << " " << scientific << P->complete_trees[i_best_test]->fitness_test;  // ATTENTION: with fitness is meant "error" (RMSE or PRESS), different from F
+		fout << " " << scientific << P->complete_trees[i_best_test]->R2_test; // R2
+		fout << " "  << P->complete_trees[i_best_test]->hits_test; // Hits
+		fout << "  \"" << expr << "\"" << endl;  // Expression
 	}
-	if (i_best_test==-1) {
-		fout << "Reporter::best2file_test has not been able to select the best individual evaluated on the test data set" << endl;
+	else {
+		fout << "Reporter::best2file_test not able to select the best individual evaluated on the test data set : repr_tot=" << repr_tot << endl;
 	}
 
 	// free memory
