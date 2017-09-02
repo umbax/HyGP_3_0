@@ -42,7 +42,7 @@ class ProblemDefinition
 		int n_data;			// total number of rows in data (nfitcases in RunParameters)
 		int n_var;			// number of variables
 		int n_cols;			// number of columns in data (n_var+1)
-		// cross validation purposes
+		// cross validation (PRESS evaluation) purposes
 		int n_folds;		// number of folds for crossvalidation
 		int** folds_table; // association table between fold and data row (n_datax2), used in model tuning
 		int* points_per_fold; // array of int containing the number of points (records) per fold (n_foldsx1) - so the n. of validation points

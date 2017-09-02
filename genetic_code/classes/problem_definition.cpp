@@ -104,7 +104,8 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 	// here the instructions to make a deep copy
 	if (COMMENT) cout << "\n\ncopy constructor entered" << endl;
 
-	// copy private members
+	// COPY PRIVATE MEMBERS
+	// copy n_data, n_var, n_cols, data
 	n_data = p.n_data;			//total number of rows in data
 	n_var = p.n_var;			// number of variables
 	n_cols = p.n_cols;			//number of columns in data (n_var+1)
@@ -124,10 +125,37 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 		for (int j=0; j<n_var+1; j++)
 			data[i][j]= p.data[i][j];
 
-	// copy n_folds, folds_table, points_per_fold?
+	// copy n_folds, validation_fold, folds_table (matrix n_datax2), points_per_fold (n_foldsx1)
+	n_folds = p.n_folds;
+	validation_fold = p.validation_fold;
+	folds_table = new int*[n_data];
+	if (folds_table==NULL)  {
+		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of folds_table failed!!" << endl;
+		exit(-1);
+	}
+	for (int i=0; i<n_data; i++) {
+		folds_table[i] = new int[2];
+		if (folds_table[i]==NULL)  {
+			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of folds_table[" << i << "]  failed!!" << endl;
+			exit(-1);
+		}
+	}
+	for (int i=0; i<n_data; i++)
+		for (int j=0; j<2; j++)
+			folds_table[i][j]= p.folds_table[i][j];
+
+	points_per_fold = new int[n_folds];
+	if (points_per_fold==NULL)  {
+		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of points_per_fold failed!!" << endl;
+		exit(-1);
+	}
+	for (int i=0; i<n_folds; i++)
+		points_per_fold[i]= p.points_per_fold[i];
 
 
-	// copy public members
+
+
+	// COPY PUBLIC MEMBERS
 
 	// data_tuning and evaluation
 	// data tuning
@@ -262,7 +290,7 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 ProblemDefinition::~ProblemDefinition(void)
 {
 	// delete all the dynamically allocated variables!!!
-	// still to understand why this destructor is called_
+	// still to understand why this destructor is called:
 	// - after Population::get_tree_derivative_given_norm_vector
 	// - Population::new_spawn and Population_evaluate()
 
@@ -575,6 +603,7 @@ void ProblemDefinition::set_folds_table(void)
 
 int ProblemDefinition::get_fold_from_row(int i)
 {
+
 	if (i>n_data-1) {
 		cerr << "ProblemDefinition::get_fold_from_row(int) error : i>(n_data-1)";
 		exit;

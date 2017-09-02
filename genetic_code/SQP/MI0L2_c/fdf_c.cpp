@@ -71,10 +71,11 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 	}
 
 	//----------------------------------------------------------------------------------------------------------------------------------
-	// DEFINITION OF THE SINGLE TERM OF THE SUM (difference between tree output and actual output)
+	// DEFINITION OF THE RMSE OF THE MODEL WITH RESPECT TO GIVEN OUTPUT (main metrics)
 	//----------------------------------------------------------------------------------------------------------------------------------	
-	// cycle through the fitness cases used for tuning (mloc = n_test_cases_tune)... equal to the number of summands is SQP error function - see page 143 Armani PhD thesis
+	// cycle through the fitness cases (building data set) used for tuning (mloc = n_test_cases_tune)... equal to the number of summands is SQP error function - see page 143 Armani PhD thesis
 	//for (i = 0; i <  mloc; i++) {	// replace mloc for crossvalidation
+
 	for (i = 0; i <  Pop->problem->get_n_data(); i++) {
 
 		// put a condition so that the error is computed only if the row does not belong to the current validation fold
@@ -111,7 +112,7 @@ int  fdf_c__ (double *f,  double *x, int *m, int *n)
 				f[i] = abs((g-t)/g);
 			//*/
 
-			//compute a term of fitness value
+			//compute a term of the sum of square errors (mind that there is an additional factor 0.5...)
 			sum_sq_error = sum_sq_error + .5*(f[i]*f[i]); //refers to the precedent set of parameters
 
 

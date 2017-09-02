@@ -1976,7 +1976,7 @@ void Population::evaluate(int gen, int G)
 		// Doing this on the array of parameterless trees allow the modification to be transmitted throughout the evolution.
 		// Strategy adopted: Ed2 - if a variable is found as divisor (right child of a division),
 		// such variable is either replaced with 1 (Strategy : Ed) or might be summed with 1 (Strategy: Ed2)
-		perform_editing(i);
+		//perform_editing(i);
 
 
 		// 0 - copy the parameterless trees in a new array (complete_trees)

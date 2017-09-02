@@ -54,41 +54,23 @@
 
 using namespace std;
 
-// global variables - numeric settings
-const double PI = 4.0*atan(1.0);
-//double MAX_VAL = 1.8e+19;   // can be defined in Val_type.h
-//double MIN_VAL = 1.8e-19;		// can be defined in Val_type.h
-
-// HEADERS
-// do not change the order of the following include commands!
-//Otherwise you may have undeclared objects //
+// headers
 #include "./genetic_code/I_O_functions/split_file_name.cpp"
 #include "./genetic_code/I_O_functions/copy_file.cpp"
+#include "./genetic_code/run_seeding/seed_generator.cpp"
 
-#include "./genetic_code/modules/nodes_types.h"
-#include "./genetic_code/modules/Val_type.h"
-#include "./genetic_code/modules/variable.h"
-#include "./genetic_code/modules/func_primitives_prototypes.h"
+
 #include "./genetic_code/classes/run_parameters.h"
 #include "./genetic_code/classes/problem_definition.h"
-#include "./genetic_code/read_input/show_loaded_data.h"
-#include "./genetic_code/read_input/read_file_new.h"
+#include "./genetic_code/read_input/read_file_new.h" // read test data not implemented yet in OpenMP version
 #include "./genetic_code/input_checks/input_check.h"
-#include "./genetic_code/classes/class_NODE_base.h"
-#include "./genetic_code/tree_functions/tree_operations.h"
-#include "./genetic_code/tree_functions/vector_derivative_functions.h"
-#include "./genetic_code/modules/primitives.h"
-#include "./genetic_code/classes/class_BINARY_NODE.h"
-#include "./genetic_code/classes/class_UNARY_NODE.h"
-#include "./genetic_code/classes/class_TERMINAL_VAR.h"
-#include "./genetic_code/classes/class_TERMINAL_CONST.h"
-#include "./genetic_code/classes/class_POPULATION.h"
 #include "./genetic_code/classes/reporter.h"
-#include "./genetic_code/single_run.h"
-#include "./genetic_code/run_seeding/seed_generator.h"
+#include "./genetic_code/classes/class_POPULATION.h"
 
-extern "C" {extern void opti_(int*, double*, int*, int*, int*);}  //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
-extern "C" {int  fdf_c__ (double *,  double *, int *,int *); }
+#include "./genetic_code/single_run.h"
+
+//extern "C" {extern void opti_(int*, double*, int*, int*, int*);}  //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
+//extern "C" {int  fdf_c__ (double *,  double *, int *,int *); }
 
 
 // primitives.h : list of primitives, made of functions declarations but also of variables (that are global).
@@ -97,6 +79,10 @@ extern "C" {int  fdf_c__ (double *,  double *, int *,int *); }
 
 // global variables - population purposes
 //-------------------------------------------------------------------------------------------------------------------------
+// global variables - numeric settings
+//const double PI = 4.0*atan(1.0);
+//double MAX_VAL = 1.8e+19;   // can be defined in Val_type.h
+//double MIN_VAL = 1.8e-19;		// can be defined in Val_type.h
 // list of Populations (one for each run)
 Population *Pop;// = NULL; //  Simple way to make fdf_c able to get the values of the tree
 # pragma omp threadprivate(Pop)
@@ -109,13 +95,13 @@ int VERBOSE = 0;     //set to 1 if you want to print on the screen all the comme
 int main (int argc, char *argv[])
 {
 	// check the number of arguments
-	if (argc!=5) {
+	if (argc!=6) {
 		cerr << "\nERROR!!! Too few/ too many arguments!!!"	;
 		cerr << "\nUSAGE: >> ./gp  location/name_input  existing_directory_output n_runs  mode";
 		cerr << "\nExample: >> ./gp ./input/input_file.txt ./output 10 p\n";
 		exit(-1);
 	}
-	if (strcmp(argv[4],"p") && strcmp(argv[4],"s")) {
+	if (strcmp(argv[5],"p") && strcmp(argv[5],"s")) {
 		cerr << "\nERROR : mode must be p (parallel) or s (sequential)" << endl;
 		exit(-1);
 	}
@@ -124,20 +110,29 @@ int main (int argc, char *argv[])
 
 	cout << "\n\n FIRST SIMPLE PARALLEL GP IMPLEMENTATION\n";
 
-	// input arguments and environment variables
+	// input arguments and environment variables (argument 0 is the name of the program...)
+	// argument 1
 	string INPUT_STRING=argv[1];
 	string INPUT_DIR, INPUT_FILE;
 	split_file_name(INPUT_STRING, INPUT_DIR, INPUT_FILE);
 
-	string OUTPUT_STRING=argv[2];
+	// argument 2
+	string TEST_STRING=argv[2];
+	string TEST_DIR, TEST_FILE;
+	split_file_name(TEST_STRING, TEST_DIR, TEST_FILE);
+
+	// argument 3
+	string OUTPUT_STRING=argv[3];
 	string DESTINATION, OUTPUT_DIR;
 	split_file_name(OUTPUT_STRING, DESTINATION, OUTPUT_DIR);
 
+	// argument 4
 	int N_RUNS = 0;
-	sscanf(argv[3], "%d", &N_RUNS);
+	sscanf(argv[4], "%d", &N_RUNS);
 
+	// argument 5
 	int PARALLEL_EX;
-	if (!strcmp(argv[4],"p"))
+	if (!strcmp(argv[5],"p"))
 		PARALLEL_EX = 1;
 	else
 		PARALLEL_EX = 0;
@@ -145,6 +140,10 @@ int main (int argc, char *argv[])
 	cout << "\nINPUT_STRING = " << INPUT_STRING;
  	cout << "\nINPUT_DIR = " <<  INPUT_DIR;
  	cout << "\nINPUT_FILE = " <<  INPUT_FILE;
+
+ 	cout << "\nTEST_STRING = " << TEST_STRING;
+ 	cout << "\nTEST_DIR = " <<  TEST_DIR;
+ 	cout << "\nTEST_FILE = " <<  TEST_FILE;
 
  	cout << "\nOUTPUT_STRING = " << OUTPUT_STRING;
  	cout << "\nDESTINATION = " << DESTINATION;
@@ -161,22 +160,22 @@ int main (int argc, char *argv[])
 
  	// MANAGE INPUT FILE and DATA ACQUISITION
 	// other classes instantiations
-	RunParameters parameters;
-	ProblemDefinition problem;
-	Reporter pop_reporter;
+ 	RunParameters Mparam;  		// to distinguish it from parameters object in Population
+ 	ProblemDefinition Mprobl;	// to distinguish it from problem object in Population
+ 	Reporter pop_reporter;
 
 	// read input and check for errors in loaded data
-	read_input_file(INPUT_FILE_PATH, &parameters, &problem);
+	read_input_file(INPUT_FILE_PATH, &Mparam, &Mprobl);
 	// check for errors in loaded data
-	input_check(&parameters, &problem); //pass by reference, otherwise copy constructor is called...
+	input_check(&Mparam, &Mprobl); //pass by reference, otherwise copy constructor is called...
 	// show the results
-	show_loaded_data(&parameters, &problem);
-
+	Mparam.show();
+	Mprobl.show_all();
 
 	// RANDOM SEEDS GENERATOR
 	cout << "\nSetting seeds for random number generator...";
 	int* SEED;
-	seed_generator(&SEED, N_RUNS, parameters.seed);
+	seed_generator(&SEED, N_RUNS, Mparam.seed);
 
 
 	// TIME VARIABLE DECLARATION
@@ -191,9 +190,9 @@ int main (int argc, char *argv[])
 				default(none) \
 				shared(cout, cin) \
 				private(finish, delta_t) \
-				firstprivate(start,SEED, parameters, problem, pop_reporter,\
-									N_RUNS,OUTPUT_STRING)  //,MAX_VAL,MIN_VAL)
-				// firstprivate created copies of the variable using copy constructor for ProblemDefinition
+				firstprivate(start,SEED, Mparam, Mprobl, pop_reporter,\
+									N_RUNS,OUTPUT_STRING, argc)  //,MAX_VAL,MIN_VAL)
+				// firstprivate creates copies of the variable using copy constructor for ProblemDefinition
 	{
 		# pragma omp for
 		for (int cur_run=0; cur_run < N_RUNS; cur_run++) {
@@ -212,8 +211,8 @@ int main (int argc, char *argv[])
 
 			// in the future pass parameters and problem by reference (address) so a copy constructor is not called...
 			int r = single_run(id,cur_run, SEED, OUTPUT_STRING,\
-					&parameters, &problem, pop_reporter,\
-					start, finish, delta_t);
+					&Mparam, &Mprobl, pop_reporter,\
+					start, finish, delta_t, argc);
 
 
 		// end #pragma omp for
@@ -241,15 +240,17 @@ int main (int argc, char *argv[])
 }
 
 
-#include "./genetic_code/read_input/read_file_new.cpp"
-#include "./genetic_code/read_input/show_loaded_data.cpp"
-#include "./genetic_code/classes/class_POPULATION.cpp"
-#include "./genetic_code/tree_functions/tree_operations.cpp"
+//#include "./genetic_code/read_input/read_file_new.cpp"
+//#include "./genetic_code/read_input/show_loaded_data.cpp"
+//#include "./genetic_code/classes/class_POPULATION.cpp"
+//#include "./genetic_code/tree_functions/tree_operations.cpp"
+
 //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
 #include "./genetic_code/SQP/MI0L2_c/fdf_c.cpp"
-#include "./genetic_code/tree_functions/vector_derivative_functions.cpp"
-#include "./genetic_code/classes/run_parameters.cpp"
-#include "./genetic_code/classes/problem_definition.cpp"
-#include "./genetic_code/classes/reporter.cpp"
+
+//#include "./genetic_code/tree_functions/vector_derivative_functions.cpp"
+//#include "./genetic_code/classes/run_parameters.cpp"
+//#include "./genetic_code/classes/problem_definition.cpp"
+//#include "./genetic_code/classes/reporter.cpp"
 #include "./genetic_code/single_run.cpp"
-#include "./genetic_code/run_seeding/seed_generator.cpp"
+//#include "./genetic_code/run_seeding/seed_generator.cpp"

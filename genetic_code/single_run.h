@@ -26,6 +26,6 @@ int single_run (int, int , int* , string , \
 		RunParameters* ,\
 		ProblemDefinition*,\
 		Reporter ,\
-		time_t, time_t , double);
+		time_t, time_t , double, int);
 
 #endif /* SINGLE_RUN_H_ */

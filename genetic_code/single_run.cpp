@@ -14,8 +14,7 @@
 
 /*
  * single_run.cpp
-* it is basically the independet thread that can be launched
-* independently
+* it is basically the independent thread that can be launched independently
  *  Created on: Mar 2, 2011
  *      Author: cnua
  */
@@ -23,7 +22,7 @@ int single_run (int run_id, int cur_run, int* SEED, string OUTPUT_STRING, \
 		RunParameters* p_parameters,\
 		ProblemDefinition* p_problem, \
 		Reporter pop_reporter,\
-		time_t start, time_t finish, double delta_t)
+		time_t start, time_t finish, double delta_t, int argc)
 {
 	// create directory run_k
 	char num_field[10];
@@ -66,7 +65,7 @@ int single_run (int run_id, int cur_run, int* SEED, string OUTPUT_STRING, \
 
 			/// split the data set in tuning set (data_tuning) and validation set (data_validation). See SPLIT and VALIDATING_LINES in input file
 			//this function will also allow to increase the number of fitness cases during the run...
-			P->split_data(p_parameters, p_problem, 0,1);
+			//P->split_data(p_parameters, p_problem, 0,1);
 			// here or before parallel section begins?
 			// Depends if you want to change fitness cases during the evolution...
 
@@ -148,14 +147,14 @@ int single_run (int run_id, int cur_run, int* SEED, string OUTPUT_STRING, \
 				check_end=P->terminate(p_parameters->threshold);
 				last_gen = i;
 
-				// for the split data set, re-tune and re-evaluate the individuals on the merged data set
-				if (p_parameters->split) {
-					if ((check_end) || (i==p_parameters->G)) {
-						cout << "\nBest Individual re-tuning and re-evaluation on the whole dataset" << endl;
-						P->split_data(p_parameters, p_problem,last_gen,last_gen);
-						P->evaluate(i,p_parameters->G);
-					}
-				}
+				// for the split data set, re-tune and re-evaluate the individuals on the merged data set (2017:REPLACED BY CROSSVALIDATION!!)
+//				//if (p_parameters->split) {
+//				//	if ((check_end) || (i==p_parameters->G)) {
+//				//		cout << "\nBest Individual re-tuning and re-evaluation on the whole dataset" << endl;
+//				//		P->split_data(p_parameters, p_problem,last_gen,last_gen);
+//				//		P->evaluate(i,p_parameters->G);
+//				//	}
+//				//}
 
 				// PRINT TO FILE OPERATIONS (in case of crash, data is saved)  -------------------------
 				// print to file (if termination criterion met, it closes the stream of data to file )
@@ -192,11 +191,29 @@ int single_run (int run_id, int cur_run, int* SEED, string OUTPUT_STRING, \
 			// just for test
 			//P->get_tree_derivative_given_norm_vector(problem, P->complete_trees[0]);
 
-			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+			//---------------------------------------------------------------------
+			// END OPERATIONS
+			//---------------------------------------------------------------------
 			// write node statistics to file
 			pop_reporter.node_stats2file(p_parameters, P, DIR_RUN_K);
+
+
+			//here operations to evaluate error on TEST DATA SET
+			// evaluate fitness (RMSE and R2) on test data set (only if test data has been provided)
+			if (argc==4) {
+				// show data_test
+				cout << "problem->show_data_validation() : show current data_test :" << endl;
+				P->problem->show_data_test();
+				// evaluate complete individuals on test data set provided by the user
+				P->evaluate_complete_trees(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
+				// sort according to error (RMSE) - better not to use it to keep order and to recognise performance on building and test data sets...
+				//P->sort(last_gen,tree_comp_fitness); // non va: ordina in ordine decrescente e alcune volte pone a 0 RMSE e R2. Perché?
+				// find and print best individual on test data set to file
+				pop_reporter.best2file_test(P, DIR_RUN_K, last_gen);
+				// print archive evaluated on the test data set to file
+				pop_reporter.archive2file_test(P, DIR_RUN_K, last_gen);  // insert a function to order in rmse decreasing order, leaving however the name of the run
+			}
+
 
 			// end - free memory allocated to Population
 			delete P;
