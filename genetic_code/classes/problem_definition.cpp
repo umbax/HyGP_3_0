@@ -157,7 +157,7 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 
 	// COPY PUBLIC MEMBERS
 
-	// data_tuning and evaluation
+	// data_tuning, validation and test
 	// data tuning
 	n_tuning = p.n_tuning;
 	data_tuning = new Val*[n_tuning];
@@ -176,7 +176,10 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 		for (int j=0; j<n_var+1; j++)
 			data_tuning[i][j]= p.data_tuning[i][j];
 
-
+	// a little statistics on tuning data corresponding output
+	sum_output = p.sum_output;
+	y_ave = p.y_ave;
+	Sy = p.Sy;
 
 	// data validation
 	n_validation = p.n_validation;
@@ -195,6 +198,29 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 	for (int i=0; i<n_validation; i++)
 			for (int j=0; j<n_var+1; j++)
 				data_validation[i][j]= p.data_validation[i][j];
+
+	// data test
+	n_test = p.n_test;
+	data_test = new Val* [n_test];
+	if (data_test==NULL)  {
+		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_test failed!! Test data can't be imported" << endl;
+		exit(-1);
+	}
+	for (int i=0; i<n_test; i++) {
+		data_test[i] = new Val[n_var+1];
+		if (data_test[i]==NULL)  {
+			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_test[" << i << "]  failed!! Input data can't be imported" << endl;
+			exit(-1);
+		}
+	}
+	for (int i=0; i<n_test; i++)
+			for (int j=0; j<n_var+1; j++)
+				data_test[i][j]= p.data_test[i][j];
+
+	// a little statistics on testing data corresponding output
+	sum_output_test = p.sum_output_test;
+	y_ave_test = p.y_ave_test;
+	Sy_test = p.Sy_test;
 
 
 	// inequality constraints on values (order 0)
@@ -273,11 +299,6 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 
 	division = p.division;
 
-
-	// a little statistics on output
-	sum_output = p.sum_output;
-	y_ave = p.y_ave;
-	Sy = p.Sy;
 
 	variables_initialised = p.variables_initialised;
 

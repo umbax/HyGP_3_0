@@ -200,7 +200,7 @@ int single_run (int run_id, int cur_run, int* SEED, string OUTPUT_STRING, \
 
 			//here operations to evaluate error on TEST DATA SET
 			// evaluate fitness (RMSE and R2) on test data set (only if test data has been provided)
-			if (argc==4) {
+			if (argc==6) {
 				// show data_test
 				cout << "problem->show_data_validation() : show current data_test :" << endl;
 				P->problem->show_data_test();
@@ -213,6 +213,7 @@ int single_run (int run_id, int cur_run, int* SEED, string OUTPUT_STRING, \
 				// print archive evaluated on the test data set to file
 				pop_reporter.archive2file_test(P, DIR_RUN_K, last_gen);  // insert a function to order in rmse decreasing order, leaving however the name of the run
 			}
+
 
 
 			// end - free memory allocated to Population

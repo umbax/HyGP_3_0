@@ -153,10 +153,12 @@ int main (int argc, char *argv[])
 
  	// create directory OUTPUT_DIR
  	mkdir(OUTPUT_STRING.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
-	// copy input file in DESTINATION/OUTPUT_DIR and reassign INPUT_FILE
+
+ 	// copy input file in DESTINATION/OUTPUT_DIR and reassign INPUT_FILE
  	string INPUT_FILE_PATH =  OUTPUT_STRING + "/input_file.txt";
  	copy_file(INPUT_STRING, INPUT_FILE_PATH);
-
+ 	string TEST_FILE_PATH =  OUTPUT_STRING + "/test_file.txt";
+ 	copy_file(TEST_STRING, TEST_FILE_PATH);
 
  	// MANAGE INPUT FILE and DATA ACQUISITION
 	// other classes instantiations
@@ -164,13 +166,17 @@ int main (int argc, char *argv[])
  	ProblemDefinition Mprobl;	// to distinguish it from problem object in Population
  	Reporter pop_reporter;
 
-	// read input and check for errors in loaded data
+	// read input (hyperparameters plus data sets) and check for errors in loaded data
 	read_input_file(INPUT_FILE_PATH, &Mparam, &Mprobl);
+	read_test_data(TEST_FILE_PATH, &Mparam, &Mprobl);
 	// check for errors in loaded data
-	input_check(&Mparam, &Mprobl); //pass by reference, otherwise copy constructor is called...
+	input_check(&Mparam, &Mprobl); // MIND!! Pass by reference, otherwise copy constructor is called...
 	// show the results
 	Mparam.show();
 	Mprobl.show_all();
+
+	Mprobl.show_data_test();
+	cin.get();
 
 	// RANDOM SEEDS GENERATOR
 	cout << "\nSetting seeds for random number generator...";
@@ -212,7 +218,7 @@ int main (int argc, char *argv[])
 			// in the future pass parameters and problem by reference (address) so a copy constructor is not called...
 			int r = single_run(id,cur_run, SEED, OUTPUT_STRING,\
 					&Mparam, &Mprobl, pop_reporter,\
-					start, finish, delta_t, argc);
+					start, finish, delta_t, argc);  // Add pointer to array of results so that you can print the overall best
 
 
 		// end #pragma omp for
@@ -225,7 +231,8 @@ int main (int argc, char *argv[])
 	// let all the threads catch up...
 	# pragma omp barrier
 
-	// operations to collect data ? Now done by ./posteriori
+	// final operations involving the results from all runs
+	// Now these operations are done by the shell script "./posteriori"
 	// for now just create a file to tell that the execution has finished
 	string SUCCESS_FILE =  OUTPUT_STRING + "/end_OK.txt";
 	ofstream fout;
