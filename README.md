@@ -22,3 +22,5 @@ Termination criteria:
 Evolution ends when the best individual root mean square error goes below a user defined threshold or the maximum number of generations is reached
 
 The hybrid approach is implemented using a sequential quadratic programming (SQP) algorithm to tune the numerical coefficients of the individuals. The number of random initial guesses of the numerical coefficients can be set by the user.
+
+Execution: sequential or parallel (OpenMP or SGE array job)
