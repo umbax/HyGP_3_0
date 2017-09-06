@@ -165,6 +165,7 @@ int main (int argc, char *argv[])
  	RunParameters Mparam;  		// to distinguish it from parameters object in Population
  	ProblemDefinition Mprobl;	// to distinguish it from problem object in Population
  	Reporter pop_reporter;
+ 	double* test_performance = new double[N_RUNS];  // array containing best individual R2 on test data set for each run
 
 	// read input (hyperparameters plus data sets) and check for errors in loaded data
 	read_input_file(INPUT_FILE_PATH, &Mparam, &Mprobl);
@@ -197,7 +198,7 @@ int main (int argc, char *argv[])
 				shared(cout, cin) \
 				private(finish, delta_t) \
 				firstprivate(start,SEED, Mparam, Mprobl, pop_reporter,\
-									N_RUNS,OUTPUT_STRING, argc)  //,MAX_VAL,MIN_VAL)
+									N_RUNS,OUTPUT_STRING, argc, test_performance)  //,MAX_VAL,MIN_VAL)
 				// firstprivate creates copies of the variable using copy constructor for ProblemDefinition
 	{
 		# pragma omp for
@@ -218,7 +219,7 @@ int main (int argc, char *argv[])
 			// in the future pass parameters and problem by reference (address) so a copy constructor is not called...
 			int r = single_run(id,cur_run, SEED, OUTPUT_STRING,\
 					&Mparam, &Mprobl, pop_reporter,\
-					start, finish, delta_t, argc);  // Add pointer to array of results so that you can print the overall best
+					start, finish, delta_t, argc, test_performance);  // Add pointer to array of results so that you can print the overall best
 
 
 		// end #pragma omp for
@@ -231,7 +232,9 @@ int main (int argc, char *argv[])
 	// let all the threads catch up...
 	# pragma omp barrier
 
-	// final operations involving the results from all runs
+	//--------------------------------------------------------------------------------
+	// final operations involving the results from all the runs (overall best, statistics, etc)
+	//--------------------------------------------------------------------------------
 	// Now these operations are done by the shell script "./posteriori"
 	// for now just create a file to tell that the execution has finished
 	string SUCCESS_FILE =  OUTPUT_STRING + "/end_OK.txt";
@@ -241,23 +244,49 @@ int main (int argc, char *argv[])
 	fout << "End.";
 	fout.close();
 
-	cout << "\n\n END" << endl;
+	// create file with best individual out of all the runs - future: create a function!!!
+	// PLus a data structure to analyse the overall results of the experiments comparing runs data
+	double best_perf_test = -1.0E+99;
+	int best_run_test=-1;
+	for (int i=0; i<N_RUNS; i++) {
+		if (test_performance[i]>best_perf_test) {
+			best_run_test=i+1;
+			best_perf_test=test_performance[i];
+		}
 
+	}
+	cout << "Best run : " << best_run_test << " , R2 = " << scientific << best_perf_test << endl;
+
+	// operations on files (in the future put them in a function)
+	string file,r,s;
+	const char *expr1;
+	//char *expr;
+	// string to char conversion
+	file = "best_run_TEST.txt";
+	r = "/";
+	s =  OUTPUT_STRING+r+file;
+	expr1 = s.c_str();
+
+	//ofstream fout;
+	// open file for writing, truncating
+	fout.open(expr1, ios_base::out | ios_base::trunc);
+	if (best_run_test>0) {
+		fout << "# Run of the best individual as evaluated on the data set and corresponding R2 value: " << endl;
+		fout << best_run_test << "  " << scientific << best_perf_test;
+	} else {
+		fout << "parallel_master : not able to select the best run" << endl;
+	}
+	// close stream (at each call is open and then closed)
+	fout.close();
+
+
+
+	cout << "\n\n END" << endl;
  	return 0;
 }
 
 
-//#include "./genetic_code/read_input/read_file_new.cpp"
-//#include "./genetic_code/read_input/show_loaded_data.cpp"
-//#include "./genetic_code/classes/class_POPULATION.cpp"
-//#include "./genetic_code/tree_functions/tree_operations.cpp"
 
 //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
 #include "./genetic_code/SQP/MI0L2_c/fdf_c.cpp"
-
-//#include "./genetic_code/tree_functions/vector_derivative_functions.cpp"
-//#include "./genetic_code/classes/run_parameters.cpp"
-//#include "./genetic_code/classes/problem_definition.cpp"
-//#include "./genetic_code/classes/reporter.cpp"
 #include "./genetic_code/single_run.cpp"
-//#include "./genetic_code/run_seeding/seed_generator.cpp"

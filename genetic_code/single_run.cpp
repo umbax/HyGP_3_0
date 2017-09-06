@@ -22,7 +22,7 @@ int single_run (int run_id, int cur_run, int* SEED, string OUTPUT_STRING, \
 		RunParameters* p_parameters,\
 		ProblemDefinition* p_problem, \
 		Reporter pop_reporter,\
-		time_t start, time_t finish, double delta_t, int argc)
+		time_t start, time_t finish, double delta_t, int argc, double* test_perf)
 {
 	// create directory run_k
 	char num_field[10];
@@ -208,10 +208,29 @@ int single_run (int run_id, int cur_run, int* SEED, string OUTPUT_STRING, \
 				P->evaluate_complete_trees(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
 				// sort according to error (RMSE) - better not to use it to keep order and to recognise performance on building and test data sets...
 				//P->sort(last_gen,tree_comp_fitness); // non va: ordina in ordine decrescente e alcune volte pone a 0 RMSE e R2. Perché?
-				// find and print best individual on test data set to file
+				// find and print best individual on test data set to file - future: split the algorithm from the file operation
 				pop_reporter.best2file_test(P, DIR_RUN_K, last_gen);
 				// print archive evaluated on the test data set to file
 				pop_reporter.archive2file_test(P, DIR_RUN_K, last_gen);  // insert a function to order in rmse decreasing order, leaving however the name of the run
+
+
+				// find the best individual on the test data set
+				double best_perf = -9.0E+99; // too low? See MAX_VAL
+				int i_best_test = -1;
+				int i;
+				// there must be at least one individual in the archive
+				best_perf=P->complete_trees[0]->R2_test;
+				i_best_test=0;
+				// check if there is another individual in the archive that is better than the first one
+				for (i=0; i<P->get_repr_tot()-1; i++) {
+					if (P->complete_trees[i]->R2_test > best_perf) { // && (P->complete_trees[i]->n_corrections_test==0)) {
+						i_best_test = i;
+						best_perf = P->complete_trees[i]->R2_test;
+					}
+				}
+				// update best performance
+				test_perf[cur_run]=P->complete_trees[i_best_test]->R2_test;
+
 			}
 
 
