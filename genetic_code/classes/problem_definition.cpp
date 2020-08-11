@@ -61,13 +61,13 @@ ProblemDefinition::ProblemDefinition(void)
 	// inequality constraints on values (order 0)
 	data_inequality0 = NULL;
 	n_inequality0 = -1;
-	constraints0 = ""; //previous version
-	//strcpy(constraints0, "" );
+	constraints0 = NULL;
+
 	// inequality constraints on first derivatives (order 1)
 	data_inequality1 = NULL;
 	n_inequality1 = -1;
-	constraints1 = ""; //previous version
-	//strcpy(constraints1, "" );
+	constraints1 = NULL;
+
 
 
 	variables_initialised = 0;

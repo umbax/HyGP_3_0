@@ -80,6 +80,9 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 	r = "/";
 	s =  DIR_OUTPUT+r+file;
 	expr1 = s.c_str();
+	Val target=0.0;
+	Val tree=0.0;
+	Val residual=0.0;
 
 	
 	//declare stream
@@ -100,7 +103,7 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 	fout << "Elapsed_time(sec)= " << delta_t << endl;
 	fout << "Used_seed= " << seed << endl;
 	
-	fout << left <<setw(w_c1) << " " << setw(w_c) << "g_obj"<< setw(w_c) << "tree"<< endl;  
+	fout << left <<setw(w_c1) << " " << setw(w_c) << "target"<< setw(w_c) << "tree" << setw(w_c) << "residual (tree-target)" << endl;
 	
 	for (int i=0; i< pr->nfitcases; i++) {
 		//print # of column
@@ -111,11 +114,14 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 			(*(pb->v_list[j])).value = pb->get_data(i,j);
 		}
 		
-		//print data relating to the first individual in tree (the best one)
-		fout <<  " " << scientific  << pb->get_data(i,pr->nvar) << " " << scientific << P->complete_trees[0]->value(NULL) << endl;
+		//print data relating to the first individual in tree (the best one): target, tree, residual=tree-target
+		target=pb->get_data(i,pr->nvar);
+		tree=P->complete_trees[0]->value(NULL);
+		residual=tree-target;
+		fout <<  " " << scientific  << target << " " << scientific << tree << " " << scientific << residual << endl;
 	}
 
-	fout << endl;
+	//fout << endl;
 	// close stream (at each call is open and then closed)
 	fout.close();
 }
