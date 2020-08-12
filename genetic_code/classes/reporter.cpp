@@ -95,13 +95,15 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 	static int w_c1 = 4;
 	static int w_c = 14;
 	//first line
-	fout <<"# Training set and corresponding values of objective function (g_obj) and best individual" << endl;
+	fout <<"# Training set and corresponding values of objective function (target) and best individual (tree) " << endl;
 	fout << "M= " << pr->M << endl;
 	fout << "G= " << pr->G << endl;
 	fout << "Method= " << pr->method << endl;
 	fout << "Generation= " << gi << endl; 
 	fout << "Elapsed_time(sec)= " << delta_t << endl;
 	fout << "Used_seed= " << seed << endl;
+	fout << "Tree average value on training data set= " << P->complete_trees[0]->tree_mean << endl;
+	fout << "Tree variance on training data set= " << P->complete_trees[0]->tree_variance << endl;
 	
 	fout << left <<setw(w_c1) << " " << setw(w_c) << "target"<< setw(w_c) << "tree" << setw(w_c) << "residual (tree-target)" << endl;
 	
