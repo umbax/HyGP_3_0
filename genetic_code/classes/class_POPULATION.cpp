@@ -2121,7 +2121,7 @@ void Population::evaluate_complete_trees()
 	// result[0] = RMSE error (fitness value), result[1] = no. of hits scored,
 	// result[2] = no. of corrections done by protected operations, result[3] = R2
 
-	Val result[4];
+	Val result[6];
 	int repr_tot = get_repr_tot();
 	cout << "\n\nEVALUATION of the n. " << repr_tot << " complete trees in the archive on the TEST DATA SET";
 	for (int i=0; i<repr_tot; i++) {
@@ -2133,18 +2133,22 @@ void Population::evaluate_complete_trees()
 			complete_trees[i]->fitness_test = result[0];  // basically RMSE, see fitness_func
 			complete_trees[i]->hits_test = (int)result[1];
 			complete_trees[i]->R2_test = result[3];
+			// 11/8/20 tree_mean_test and tree_variance_test to be added!! Now mean and variance only computed on training data set
 		} else {
 			// individual NOT defined on the test data set - to be thrown away!
 			complete_trees[i]->fitness_test = 9.999e99;  // basically RMSE, see fitness_func
 			complete_trees[i]->hits_test = -1;
 			complete_trees[i]->R2_test = -9.999e99;
+			// 11/8/20 tree_mean_test and tree_variance_test to be added!! Now mean and variance only computed on training data set
 		}
 
 		if (COMMENT) cout << "\n complete_trees[" << i << "]->n_corrections_test = " << scientific << complete_trees[i]->n_corrections_test;
 		if (COMMENT) cout << "\n complete_trees[" << i << "]->fitness_test = " << scientific << complete_trees[i]->fitness_test;
 		if (COMMENT) cout << "\n complete_trees[" << i << "]->R2_test = " << scientific << complete_trees[i]->R2_test << endl;
+
 	}
 	//-----------------------------------------------------------------
+	if (COMMENT) cout << "\n Exiting Population::evaluate_complete_trees()";
 }
 
 
@@ -2169,7 +2173,9 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	Val error = (Val)0.;
 	Val error_norm = (Val)0.;
 	Val square_err = 0.0;
-	Val result_tree_norm = (Val)0.;
+	Val sum_values = 0.0;
+	Val sum_square_values = 0.0;
+	Val result_tree_norm = (Val)0.0;
 	Val threshold = (Val)0.0001;   // for counting hits
 	int hits=0;
 	int n_corrections = 0;
@@ -2179,6 +2185,8 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	result_tree[1] = (Val)0.0;	// storing n of hits
 	result_tree[2] = (Val)0.0;	// storing n of corrections done by protected operations
 	result_tree[3] = (Val)0.0; // storing value of R squared (R2)
+	result_tree[4] = (Val)0.0;	// storing mean tree value on building data set
+	result_tree[5] = (Val)0.0;	// storing variance of tree values on building data set
 
 	if (COMMENT) {
 		cout << "\nPopulation::fitness_func" << endl;
@@ -2215,6 +2223,8 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 			cout << "\nPopulation::fitness_func : error predicted-actual = " << error;
 		}
 		square_err = square_err + error*error;   //sum of the square of the errors - SSres (https://en.wikipedia.org/wiki/Coefficient_of_determination)
+		sum_values = sum_values + treeval; 				// sum of the errors - will be used to compute average
+		sum_square_values = sum_square_values + treeval*treeval;
 		
 		// normalisedD RMSE version
 		if (normalised) { 
@@ -2245,20 +2255,28 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 		if (crossvalid)
 			// root of sum of squared errors, for HyGP with crossvalidation capability
 			result_tree[0] = sqrt((Val)square_err);
-		else
+		else {
 			//// common RMSE VERSION (for original HyGP, no crossvalidation)
 			result_tree[0] = sqrt((Val)square_err/(Val)n_cases);
+		}
+
 	}
 
-	// HITS (See result_tree[1])
+	// HITS - result_tree[1]
 	result_tree[1] = hits;
 
-	// CORRECTIONS
+	// CORRECTIONS - result_tree[2]
 	n_corrections=((Binary_Node*)current_tree)->n_corrections;
 	result_tree[2] = n_corrections;	
 
-	// R2 - keep this command here as result_tree[0] must be the sum of the squared errors!!!
+	// R2 - result_tree[3]
 	result_tree[3] = 1.0 - square_err/Sy;
+
+	// average value of the tree on building data set - result_tree[4]
+	result_tree[4] = sum_values/((Val)n_cases);
+
+	// variance of tree values on building data set - result_tree[5] (see reformulation in http://datagenetics.com/blog/november22017/index.html)
+	result_tree[5] = sum_square_values/((Val)n_cases)-result_tree[4]*result_tree[4];
 
 	if (COMMENT) cout << "Fitness value  = " << result_tree[0] << endl;
 
@@ -2355,6 +2373,8 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 	double F6, a6; //penalisation from inequality constraints order 1
 	double F7, a7; // penalisation to increase factorisation (depth of first division)
 
+	double F8, a8; // ADDED 11/8/20: penalisation on statistical properties of the tree (average and variance)
+
 	//-------------------------------------------------------------
 	// first objective: FITNESS
 	//-------------------------------------------------------------
@@ -2431,6 +2451,13 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 			F7 = 1.0;
 	}
 
+	//-------------------------------------------------------------------------
+	// eighth objective : statistical properties of the tree (mean and variance)
+	//-------------------------------------------------------------------------
+	// first attempt only valid for target function with zero mean and zero variance
+	F8 = (double)(fabs(complete_tree->tree_mean) + sqrt(complete_tree->tree_variance));
+
+
 	// weights
 	//-------------------------------------------------------------
 	a2 = pr->w_complexity;
@@ -2439,7 +2466,8 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 	a5 = pr->w_pen_ord0;		// penalisation of unsatisfied inequality constraint, order 0 (value)
 	a6 = pr->w_pen_ord1;		// penalisation of unsatisfied inequality constraint, order 1 (first derivative)
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
-	a1= double(1.-a2-a3-a4-a5-a6); //-a7);
+	a8 = 0.0000001; // 11/8/20 TEMPORARY, until the corresponding keyword in input file is implemented
+	a1= double(1.-a2-a3-a4-a5-a6-a8); //-a7); // The sum of all a_i coefficients must be 1!!
 	
 	//------------------------------------------------------------
 	// objectives multiplied by weights
@@ -2449,8 +2477,9 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 	complete_tree->T3 = a3*F3*1.0E6;
 	complete_tree->T4 = a4*F4;
 	complete_tree->T5 = (1000000.0)*(exp(F5*F5*F5)-1.0)*a5; //megadistexp3
-	complete_tree->T6 = F6*a6;
+	complete_tree->T6 = a6*F6;
 	complete_tree->T7 = 0.0; // not used in the standard approach
+	complete_tree->T8 = a8*F8;
 
 	//------------------------------------------------------------
 	// fitness function definition
@@ -2484,8 +2513,8 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 		//F = a1*F1+a2*F2+a3*F3*1000000.0+a4*F4+(1000000.0)*(exp(F5*F5)-1.0)*a5;
 		
 		if (pr->w_factorisation<=0) {
-			// STANDARD APPROACH (HyGP, GIPPO or structural GP)
-			complete_tree->F = complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6;  // removed "+ complete_tree->T7;"
+			// STANDARD APPROACH (HyGP)
+			complete_tree->F = complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T8;  // removed "+ complete_tree->T7;"
 		}
 			// adaptive approach
 			//	complete_tree->F = complete_tree->T1 + (-1.0*((double)learning_on-1.0))*complete_tree->T2 + complete_tree->T3 + ((double)learning_on+1.0)*complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T7;
@@ -2510,6 +2539,7 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 		cout << "\na4 = " << a4 << "  F4 = " << F4 << "  a4*F4 = " << a4*F4;
 		cout << "\na5 = " << a5 << "  F5 = " << F5 << "  a5*F5 = " << a5*F5;
 		cout << "\na7 = " << a7 << "  F7 = " << F7 << "  a7*F7 = " << a7*F7;
+		cout << "\na8 = " << a8 << "  F8 = " << F8 << "  a8*F8 = " << a8*F8 << " ATTENTION! Hardcoded target: zero mean and zero variance on training data!";
 		//for (int k=0; k<4; k++) cout << "\nlist[ " << k << " ] = " << list[k];
 		cout << "\nF = " << complete_tree->F << endl;
 	}
@@ -2636,8 +2666,14 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	double node_value; 
 	double* x;	// array of tree parameters (numerical coefficients)
 	double* x_best;   // best array of tree parameters (numerical coefficients)
-	Val fitness, fitness_best, R2, R2_best;
-	Val result[4];   // result[0] : error (fitness value - RMSE), result[1] : n. of hits scored, result[2]: n. of corrections done by protected operations
+	Val fitness, fitness_best, R2, R2_best, tree_mean, tree_mean_best, tree_variance, tree_variance_best;
+	Val result[6];
+	// result[0] : error (fitness value - RMSE),
+	// result[1] : n. of hits scored,
+	// result[2]: n. of corrections done by protected operations
+	// result[3]: R2 value
+	// result[4]: average of tree values on training data set
+	// result[5]: variance of tree values on training data set
 	
 	// utile
 	//cin.get();
@@ -2737,7 +2773,9 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	hits_best = 0;
 	n_tuning_parameters_best = 999999;
 	n_corrections_best = 999999;
-	R2_best = 999999;	
+	R2_best = 999999;
+	tree_mean = 999999;
+	tree_variance = 999999;
 	
 	//--------------------------------------------------------------------------------------------------------------------------------
 	// HERE THE MULTIPLE GUESSES CYCLE STARTS 
@@ -2833,11 +2871,13 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		if (parameters->crossvalidation==0)
 			tuning_individual_RMSE_single_guess(ntree, x, &n_param, &n_guess_ok, result);
 
-		// as a result of tuning result[] is updated:
+		// as a result of tuning result[] is used to update tree properties:
 		fitness = result[0];  // RMS error (CROSSVALIDATION=0) or PressRMS error (CROSSVALIDATION=1)
 		hits = (int)result[1];
 		n_corrections = (int)result[2];
 		R2 = result[3];
+		tree_mean = result[4];
+		tree_variance = result[5];
 		// also the array of coefficients x is returned...
 /*
 		// SELECTION of the BEST SET of PARAMETERS (x_best update) 
@@ -2877,6 +2917,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			n_tuning_parameters_best = n_param;  // n_param is always the same, so that is not needed...
 			n_corrections_best = n_corrections; 
 			R2_best = R2;
+			tree_mean_best = tree_mean;
+			tree_variance_best = tree_variance;
 			for (int j=0; j<n_param; j++)
 				 x_best[j] = x[j];  //
 		}
@@ -2900,6 +2942,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	ntree->n_tuning_parameters = n_tuning_parameters_best;	
 	ntree->n_corrections = n_corrections_best;	
 	ntree->R2 = R2_best;
+	ntree->tree_mean = tree_mean_best;
+	ntree->tree_variance = tree_variance_best;
 
 	if (COMMENT) {	
 		//  print the value of the tuned constants
@@ -3050,6 +3094,8 @@ void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double*
 	//p_result[1] // result[1] : n. of hits scored
 	//p_result[2]	// result[2]: n. of corrections done by protected operations
 	//p_result[3]	// result[3]: R2
+	//p_result[4]	// result[4]: tree mean on building data set
+	//p_result[5]	// result[5]: tree variance on building data set
 	// define which array x of tree parameters... currently x obtained from the last tuning on the whole data set
 	// what if they are all NaN?! The individual expression cannot be printed... CHECK
 	for (int i=0; i<(*p_n_param); i++) {
