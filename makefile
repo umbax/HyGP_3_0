@@ -27,9 +27,9 @@ gp: master.o ./genetic_code/SQP/MI0L2_c/M.o ./genetic_code/SQP/MI0L2_c/T.o ./gen
 
 master.o: master.cpp
 	# parallel compilation (OpenMP)
-	g++ -c -g parallel_master.cpp -o master.o -fopenmp
+	#g++ -c -g parallel_master.cpp -o master.o -fopenmp
 	# normal compilation
-	#g++ -c -g master.cpp -o master.o
+	g++ -c -g master.cpp -o master.o
 
 ./genetic_code/SQP/MI0L2_c/M.o: 
 	gfortran -std='legacy' -c ./genetic_code/SQP/MI0L2_c/MI0L2.FOR -o ./genetic_code/SQP/MI0L2_c/M.o
