@@ -189,6 +189,8 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	n_tuning_parameters = 0;
 	n_corrections = 0;
 	n_corrections_test = 0;
+	tree_mean = 0.0;
+	tree_variance = 0.0;
 	index_puls = NULL; 		//address of the array containing the position of the pulsations in x[]
 	index_var = NULL;	 	//address of the array containing the position of the variable (in v_list) the corresponding pulsation in index_puls refers to
 	n_pulsations = -1;  // see find_pulsations(...)
@@ -202,6 +204,7 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	T5 = 1.0e+10;
 	T6 = 1.0e+10;
 	T7 = 1.0e+10;
+	T8 = 1.0e+10;
 	twin = 0;
 }
 
@@ -534,6 +537,11 @@ void Binary_Node::show_state(void)
 	cout << setw(27) << "O7 : depth_first_op = " << scientific << setw(12) << depth_first_op;
 	cout << setw(6) << "  T7 = " << scientific << setw(12) << T7;
 	cout << "% = " << fixed << setw(12) << 100.0*T7/F << endl;
+	//
+	cout << setw(27) << "O8 : tree mean (train. data) = " << scientific << setw(12) << tree_mean;
+	cout << " tree variance (train. data) = " << scientific << setw(12) << tree_variance;
+	cout << setw(6) << "  T8 = " << scientific << setw(12) << T8;
+	cout << "% = " << fixed << setw(12) << 100.0*T8/F << endl;
 
 }
 

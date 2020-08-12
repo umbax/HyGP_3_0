@@ -122,6 +122,8 @@ class Binary_Node : public Node {
     Val F;					// value of the aggregative function used for multiobjective approach (see Population::evaluate(void), point 4)
 	Val R2; 				// coefficient of determination, useful to compare qualities (see Understanding Statistics pag. 553 in pencil...)
 	Val R2_test;
+	double tree_mean;		// mean of the values returned by the complete tree on the building data set
+	double tree_variance;	// variance of the values returned by the complete tree on the building data set
 	int hits;				// number of hits of the tree (if this is the root). Building data set
 	int hits_test;			// number of hits of the tree (if this is the root). Test data set
 	int n_tuning_parameters;   	//number of tuning parameters (holds only for complete trees - with parameters...)
@@ -140,6 +142,7 @@ class Binary_Node : public Node {
 	double T5;
 	double T6;
 	double T7;      // factorisation term
+	double T8;
 
 	int twin;										// if twin = 1, the current tree structure is identical to another tree structure (perhaps the best tree in the previous gen)
 
