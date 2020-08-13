@@ -2455,7 +2455,7 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 	// eighth objective : statistical properties of the tree (mean and variance)
 	//-------------------------------------------------------------------------
 	// first attempt only valid for target function with zero mean and zero variance
-	F8 = (double)(fabs(complete_tree->tree_mean) + sqrt(complete_tree->tree_variance));
+	F8 = (double)(fabs(complete_tree->tree_mean)); // + sqrt(complete_tree->tree_variance));
 
 
 	// weights
@@ -2466,7 +2466,7 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 	a5 = pr->w_pen_ord0;		// penalisation of unsatisfied inequality constraint, order 0 (value)
 	a6 = pr->w_pen_ord1;		// penalisation of unsatisfied inequality constraint, order 1 (first derivative)
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
-	a8 = 0.0000001; // 11/8/20 TEMPORARY, until the corresponding keyword in input file is implemented
+	a8 = 0.00000001; // 11/8/20 TEMPORARY, until the corresponding keyword in input file is implemented
 	a1= double(1.-a2-a3-a4-a5-a6-a8); //-a7); // The sum of all a_i coefficients must be 1!!
 	
 	//------------------------------------------------------------
