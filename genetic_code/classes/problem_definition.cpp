@@ -49,6 +49,7 @@ ProblemDefinition::ProblemDefinition(void)
 	sum_output = -1.0;
 	y_ave = -1.0;
 	Sy = -1.0;
+	y_var = -1.0;
 
 	data_test = NULL;
 	n_test = -1;

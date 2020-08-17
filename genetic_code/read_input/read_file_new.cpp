@@ -606,6 +606,7 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	for (int k=0; k < pr->nfitcases; k++)
 		Sy = Sy + (pb->get_data(k,pr->nvar) - pb->y_ave)*(pb->get_data(k,pr->nvar) - pb->y_ave);
 	pb->Sy = Sy;
+	pb->y_var = Sy/(double)(pr->nfitcases);
 
 	
 	cout << "\n\nread_input_file : data correctly imported. Exit \n" << endl;

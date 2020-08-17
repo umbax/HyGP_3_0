@@ -116,7 +116,7 @@ class Population {
 	// input: address to matrix of data to be used for evaluation, no of records, address of a tree (root node), address of array of result)
 	void fitness_func(Val, Val**, int, Node*, Val*, bool, bool);
 	// parameters and function to evaluate aggregate function F (see variable in Binary Node)
-	void aggregate_F(RunParameters*, Val, Binary_Node*, int, int);
+	void aggregate_F(ProblemDefinition*, RunParameters*, Val, Binary_Node*, int, int);
 
 	int get_size(void);    // returns the population size
 	double get_repr_rate(void);  // returns repr_rate

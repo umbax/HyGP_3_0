@@ -59,9 +59,10 @@ class ProblemDefinition
 
 		// a little statistics on output on the WHOLE data set (DATA) contained in the main input file
 		// (the one containing HyGP hyperparameters)
-		Val sum_output;
-		Val y_ave;
-		Val Sy;  // defined in read_input_file function (read_file_new.cpp)
+		Val sum_output; // sum of the input data (used in cycles on n_cases)
+		Val y_ave; // average value of input data
+		Val Sy;  // SStot total sum of squares of (observed data - average observed data) // defined in read_input_file function (read_file_new.cpp)
+		Val y_var; // variance of input data
 
 		// folds for crossvalidation
 		//Val*** folds; // pointer to a 3d array (no of fold x row x column) - initialised in kfold_split
@@ -71,6 +72,7 @@ class ProblemDefinition
 		int  n_tuning;
 		Val** data_validation;	// CROSS VALIDATION DATA SET (coincides with building data if split = 0)
 		int n_validation;	 //ex n_evaluation;
+
 		Val** data_test;		// TEST DATA SET
 		int n_test;
 		Val	sum_output_test;
