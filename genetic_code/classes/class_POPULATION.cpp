@@ -2049,7 +2049,7 @@ void Population::evaluate(int gen, int G)
 		// must be added here to fitness
 		// assign the F value to the corresponding tree without parameters 
 		if (COMMENT) cout << " Assigning F value to tree trees["<< i << "]" << endl;
-		aggregate_F(parameters, Fit_ave,  complete_trees[i], gen, G);
+		aggregate_F(problem, parameters, Fit_ave, complete_trees[i], gen, G);
 		trees[i]->F = complete_trees[i]->F;
 
 
@@ -2360,7 +2360,7 @@ double Population::constraint_evaluation(Val**data, int n_cases, char* constrain
 // function to compute the aggregate version of fitness (called F)
 // input: number of the tree in trees[]  (and complete_trees[])
 // output: value of the aggregate function F
-void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *complete_tree, int gen, int G)
+void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val average_err, Binary_Node *complete_tree, int gen, int G)
 {	
 	int COMMENT = 0; //1 comments, 0 silent...
 	char* expr;
@@ -2454,9 +2454,11 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 	//-------------------------------------------------------------------------
 	// eighth objective : statistical properties of the tree (mean and variance)
 	//-------------------------------------------------------------------------
-	// first attempt only valid for target function with zero mean and zero variance
-	F8 = (double)(fabs(complete_tree->tree_mean)); // + sqrt(complete_tree->tree_variance));
-
+	// first attempt only valid for target function with zero mean and similar variance to input data
+	F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance))/(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean))); // Strategy 4
+	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance)); // Strategy 2
+	//F8 = fabs(complete_tree->tree_mean) // Strategy 1
+	//F8 = fabs(complete_tree->tree_mean) + sqrt(fabs(ppd->y_var - complete_tree->tree_variance)); // Strategy 3
 
 	// weights
 	//-------------------------------------------------------------
@@ -2466,7 +2468,7 @@ void Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *co
 	a5 = pr->w_pen_ord0;		// penalisation of unsatisfied inequality constraint, order 0 (value)
 	a6 = pr->w_pen_ord1;		// penalisation of unsatisfied inequality constraint, order 1 (first derivative)
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
-	a8 = 0.00000001; // 11/8/20 TEMPORARY, until the corresponding keyword in input file is implemented
+	a8 = 0.000001; // 11/8/20 TEMPORARY, until the corresponding keyword in input file is implemented
 	a1= double(1.-a2-a3-a4-a5-a6-a8); //-a7); // The sum of all a_i coefficients must be 1!!
 	
 	//------------------------------------------------------------
