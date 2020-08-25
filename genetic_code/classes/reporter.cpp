@@ -102,6 +102,8 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 	fout << "Generation= " << gi << endl; 
 	fout << "Elapsed_time(sec)= " << delta_t << endl;
 	fout << "Used_seed= " << seed << endl;
+	fout << "Input data average value = " << pb->y_ave << endl;
+	fout << "Input data variance = " << pb->y_var << endl;
 	fout << "Tree average value on training data set= " << P->complete_trees[0]->tree_mean << endl;
 	fout << "Tree variance on training data set= " << P->complete_trees[0]->tree_variance << endl;
 	
