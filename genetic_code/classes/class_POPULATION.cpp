@@ -2455,10 +2455,15 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	// eighth objective : statistical properties of the tree (mean and variance)
 	//-------------------------------------------------------------------------
 	// first attempt only valid for target function with zero mean and similar variance to input data
-	F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance))/(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean))); // Strategy 4
 	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance)); // Strategy 2
 	//F8 = fabs(complete_tree->tree_mean) // Strategy 1
 	//F8 = fabs(complete_tree->tree_mean) + sqrt(fabs(ppd->y_var - complete_tree->tree_variance)); // Strategy 3
+	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance))/(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean))); // Strategy 4
+	//F8 = fabs(ppd->y_var - complete_tree->tree_variance)/pow(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean)),2); // Strategy 5
+	// strategies below still under testing
+	F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3);// /(exp((fabs(ppd->y_ave-complete_tree->tree_mean)))-1.0); // Strategy 6
+	//F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2); //Strategy 7
+
 
 	// weights
 	//-------------------------------------------------------------
@@ -2468,7 +2473,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	a5 = pr->w_pen_ord0;		// penalisation of unsatisfied inequality constraint, order 0 (value)
 	a6 = pr->w_pen_ord1;		// penalisation of unsatisfied inequality constraint, order 1 (first derivative)
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
-	a8 = 0.000001; // 11/8/20 TEMPORARY, until the corresponding keyword in input file is implemented
+	a8 = 0.000000001; // 11/8/20 TEMPORARY, until the corresponding keyword in input file is implemented
 	a1= double(1.-a2-a3-a4-a5-a6-a8); //-a7); // The sum of all a_i coefficients must be 1!!
 	
 	//------------------------------------------------------------
