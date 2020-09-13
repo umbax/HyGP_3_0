@@ -1,0 +1,49 @@
+# Copyright 2016 Dr Umberto Armani
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#!/bin/csh
+# script to run a GP experiment compiled in OpenMP mode. 
+# Runs are launched in parallel using OpenMP: this script is only used to set memory parameters (qsub script embedded in this script)
+# SETTINGS : from here >
+#$ -A user_name
+#$ -q all.q
+#$ -cwd
+#$ -V
+#$ -pe smp 10
+#$ -l h_rt=24:00:00
+#$ -l h_vmem=2G                
+INPUT_STRING=./input/200720_Elnaz/Mode1_input.txt
+TEST_STRING=./input/200720_Elnaz/Mode1_input_TEST.txt
+OUTPUT_STRING=./output/200720_Elnaz/Mode1/200720_Elnaz_QMULOpenMP_M1000G50g2_Str6_000000001
+# to here <.
+
+
+# ----- don't touch what follows! -------------------------
+INPUT_DIR=${INPUT_STRING%/*} 
+INPUT_FILE=${INPUT_STRING##*/}  
+echo INPUT_DIR = $INPUT_DIR
+echo INPUT_FILE = $INPUT_FILE
+
+TEST_DIR=${TEST_STRING%/*} 
+TEST_FILE=${TEST_STRING##*/}  
+echo TEST_DIR = $TEST_DIR
+echo TEST_FILE = $TEST_FILE
+
+DESTINATION=${OUTPUT_STRING%/*} 
+OUTPUT_DIR=${OUTPUT_STRING##*/}
+echo DESTINATION = $DESTINATION
+echo OUTPUT_DIR = $OUTPUT_DIR
+
+# launch single run (normal compilation)
+./gp $INPUT_STRING $TEST_STRING $OUTPUT_STRING 10 p    # make 10 a input parameter from the user
