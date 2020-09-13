@@ -177,7 +177,7 @@ int main (int argc, char *argv[])
 	Mprobl.show_all();
 
 	Mprobl.show_data_test();
-	cin.get();
+	//cin.get();
 
 	// RANDOM SEEDS GENERATOR
 	cout << "\nSetting seeds for random number generator...";
