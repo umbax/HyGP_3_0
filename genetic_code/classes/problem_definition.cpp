@@ -181,6 +181,7 @@ ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
 	sum_output = p.sum_output;
 	y_ave = p.y_ave;
 	Sy = p.Sy;
+	y_var = p.y_var;
 
 	// data validation
 	n_validation = p.n_validation;
