@@ -19,6 +19,7 @@
 #include <iomanip>  // manipulators (text format): setw
 //#include <sstream>    // for stringstream
 #include <fstream>  // file I/O
+#include <string>
 
 #include "../nodes/nodes_types.h"    //just a header, no source file
 #include "./run_parameters.h"
