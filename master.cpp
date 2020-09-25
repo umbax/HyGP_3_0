@@ -15,7 +15,7 @@
 
 #include <iostream>  // basic i/o commands: cout, cin, scientific, fixed, cerr
 #include <iomanip>  // manipulators (text format): setw
-#include <string>    // to manipulate strings (C)
+#include <string>    // to manipulate strings (C++)
 #include <cstring>   // to manipulate strings (C) (strcpy, strcmp)
 #include <cstdlib>   // NULL, exit, EXIT_FAILURE
 #include <cmath>	// pow, sqrt
