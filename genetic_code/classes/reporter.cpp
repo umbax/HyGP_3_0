@@ -20,7 +20,7 @@
 void Reporter::stats2file(RunParameters *pr, Population *P, string DIR_OUTPUT, int gi, int check_end)
 { 
 
-	string file, r,s;
+	string file,r,s;
 	const char *expr1;
 	// string to char conversion
 	file = "data_gp.txt";
