@@ -744,9 +744,9 @@ void Unary_Node::check_allocation(Node **p_tree, int number_op)
 
 	// SCALE
 	// if unary function is COS, SIN or EXP insert a parameter for the amplitude
-	if ((&Sin) || (&Cos) || (&Exp))   //check if these primitives are used... to avoid run-time errors
+	if ((&Sin) || (&Cos) || (&Exp) || (&RectWave))   //check if these primitives are used... to avoid run-time errors
 		//if  ((!strcmp(f->sign,"sin")) || (!strcmp(f->sign,"cos")) || (!strcmp(f->sign,"exp")))  {	// WORKS
-		if  ((!strcmp(f->sign,Sin.sign)) || (!strcmp(f->sign,Cos.sign)) || (!strcmp(f->sign,Exp.sign)))  {
+		if  ((!strcmp(f->sign,Sin.sign)) || (!strcmp(f->sign,Cos.sign)) || (!strcmp(f->sign,Exp.sign)) || (!strcmp(f->sign,RectWave.sign)))  {
 		// AMPLITUDE PARAMETER
 			//choose random value
 			//value = constant_generation();

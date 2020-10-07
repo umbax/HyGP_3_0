@@ -560,6 +560,10 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
       	pb->dummy_uni[NUM_U_FUNCS]=Tanh;
 		NUM_U_FUNCS++;
 	}
+	if (func_uni.find("rectwave") != string::npos) {
+	      	pb->dummy_uni[NUM_U_FUNCS]=RectWave;
+			NUM_U_FUNCS++;
+	}
 	
 	pb->num_u_funcs = NUM_U_FUNCS;
 
