@@ -190,7 +190,7 @@ void Reporter::best2file_test(Population *P, string DIR_OUTPUT, int gi)
 	int i_best_test = -1;
 	int i;
 	// there must be at least one individual in the archive
-	f_max=P->complete_trees[0]->fitness_test;
+	f_max=P->complete_trees[0]->fitness_test;   // ATTENTION: with fitness is meant "error" (RMSE or PRESS), different from F
 	i_best_test=0;
 	// check if there is another individual in the archive that is better than the first one
 	for (i=0; i<repr_tot-1; i++) {
