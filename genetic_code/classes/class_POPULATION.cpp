@@ -1845,7 +1845,7 @@ void Population::new_spawn(RunParameters pr, ProblemDefinition pb, int n_test_ca
     }
 
 	
-	// SORTING both trees and complete_trees first (with respect to F, no simple error value)
+	// SORTING both trees and complete_trees first (with respect to F, not simple error value)
    sort(gen, tree_comp_F);
 
    // genetic operations
@@ -2109,7 +2109,7 @@ void Population::evaluate(int gen, int G)
 		cout << "\np_mutation_perf=" << p_mutation_perf[0] << ", " << p_mutation_perf[1] << ", " << p_mutation_perf[2] << ", " << " : tot_pmut = " << tot_pmut;
 	}
 
-
+	cout << "\n\nPopulation :: evaluate() : exit" << endl;
 
 }
 
@@ -2461,8 +2461,8 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance))/(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean))); // Strategy 4
 	//F8 = fabs(ppd->y_var - complete_tree->tree_variance)/pow(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean)),2); // Strategy 5
 	// strategies below still under testing
-	F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3); // Strategy 6
-	//F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2); //Strategy 7
+	//F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3); // Strategy 6
+	F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2); //Strategy 7
 	//F8 = pow(sqrt(fabs((ppd->y_var - complete_tree->tree_variance)/ppd->y_var)),3)+pow(fabs((ppd->y_ave-complete_tree->tree_mean)/ppd->y_ave),3); // Strategy 8
 	//(exp((fabs(ppd->y_ave-complete_tree->tree_mean)))-1.0);
 
