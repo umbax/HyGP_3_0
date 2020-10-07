@@ -88,8 +88,8 @@ int main (int argc, char *argv[])
 	printf("\n			****************************			");
 	cout << "\n\nAvailable operations:";
 	cout << "\nBINARY: add , sub, mult, sdiv, spow";
-	cout << "\nUNARY: shift, neg, square, cube, exp, nxp, sin, cos, inv, abs, log, sinh, cosh, tanh";
-	cout << "\n(list updated 20/10/2010)";
+	cout << "\nUNARY: shift, neg, square, cube, exp, nxp, sin, cos, inv, abs, log, sinh, cosh, tanh, rectwave";
+	cout << "\n(list updated 1/10/2020)";
 	cout << "\n\nATTENTION! If you use more than 15 unary operations or 7 binary operations";
 	cout << "\nincrease the size of u_func_list or b_func_list (see problem_definition.h)";
 	cout << "\n(FUTURE solution : use vectors to read primitives...)";
@@ -196,50 +196,17 @@ int main (int argc, char *argv[])
 		if (i) {   //skip generation 0
 			// split the data for the current generation (this function will also allow to increase the number of fitness cases during the run...)
 			//P->split_data(i,G,split); // not used...
-/*
-			// KILLING and FILLING
-			if ((i%6)==0) P->kill_and_fill(&Mprobl); else
-//*/
-				// GENETIC OPERATORS: sorting, reproduction, crossover, mutation, pruning
-				P->new_spawn(Mparam, Mprobl, Mparam.nfitcases,i);
 
-			// print population WITHOUT parameters after genetic operations
-			//if (COMMENT) {
-			//	printf("\n\n***********Generation %d after genetic operations (not sorted, new trees marked with f9.999999E+99)************\n", i-1);
-			//	P->print_population_without_parameters(i-1);
-			//	printf("\n***********************************************************************\n");
-			//}
+			// GENETIC OPERATORS: sorting, reproduction, crossover, mutation, pruning
+			P->new_spawn(Mparam, Mprobl, Mparam.nfitcases,i);
+
 		}
 
 		// evaluate fitness function (in structural GP parameters are added and tuned first, then the evaluation is performed)
 		P->evaluate(i,Mparam.G);
-		
 
-			//----------------------------------------------------------------------------------
-			// extfitness - keeping the individual with least fitness value -------
-			// sort according to fitness (error)
-			//P->sort(i,tree_comp_fitness);
-
-			///printf("\n\n***********Generation %d after genetic operations (not sorted, new trees marked with f9.999999E+99)************\n", i-1);
-			//P->print_population_without_parameters(i-1);
-			//printf("\n***********************************************************************\n");
-
-			// update the best individual - structure and complete tree (for PARAMETER INHERITANCE)
-			//P->update_ext_archive();
-			//---------------------------------------------------------------------------------------------
-
-
-		//// temporary
-		//cout << "\n+++++++++++++++ POPULATION EVALUATED BUT NOT SORTED+++++++++++++";
-		//P->print_population_without_parameters(i);
-		//cout << "\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-
-		// sort according to F : VITAL! Both populations must be sorted, trees[] and complete_trees[]...
+		// sort according to F (aggregate fitness, not RMSE!) : VITAL! Both populations must be sorted, trees[] and complete_trees[]
 		P->sort(i,tree_comp_F);
-	 	
-			///printf("\n\n***********Generation %d after genetic operations (not sorted, new trees marked with f9.999999E+99)************\n", i-1);
-			///P->print_population_without_parameters(i-1);
-			///printf("\n***********************************************************************\n");
 
 		// update the best individual - structure and complete tree (for PARAMETER INHERITANCE)
 		P->update_ext_archive();
@@ -269,6 +236,7 @@ int main (int argc, char *argv[])
 
 
 		// PRINT TO FILE OPERATIONS (in case of crash, data is saved)  -------------------------
+		cout << "\nPrint generation results to file...";
 		// print to file (stream of data to file opened and closed within the function)
 		pop_reporter.stats2file(&Mparam, P, DIR_OUTPUT, i, check_end);
 		// write the test-points (training set), and the corresponding values of g_obj and the best individual (only one)
@@ -281,6 +249,7 @@ int main (int argc, char *argv[])
 		pop_reporter.n_tree_eval2file(P, DIR_OUTPUT, i, check_end);
 		// write adaptive approach data
 		pop_reporter.adaptive_gen_ops_data2file(P, DIR_OUTPUT, i, check_end);
+		cout << "OK";
 		// -------------------------------------------------------------------------------------
 		
 		if (check_end)
