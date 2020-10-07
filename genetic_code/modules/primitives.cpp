@@ -282,4 +282,12 @@ int hypertan_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
 Unary_Func Tanh = {hypertan, hypertan_sign, &hypertan_pos};
 
 
-
+Val rect_wave(Val a, int* n_corrections)
+{
+	// a is expressed in radians!!!;
+	Val c=1/99;
+	return (Val)pow(sin(a),c);
+}
+char rect_wave_sign[] = "rectwave";
+int rect_wave_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
+Unary_Func RectWave = {rect_wave, rect_wave_sign, &rect_wave_pos};
