@@ -63,7 +63,9 @@ int main (int argc, char *argv[])
 		exit(-1);
 	}
 	
-	string FILE_INPUT, FILE_TEST_DATA, DIR_OUTPUT;
+	string FILE_INPUT;
+	string FILE_TEST_DATA;
+	string DIR_OUTPUT;
 	FILE_TEST_DATA = "Not defined";
 	FILE_INPUT=argv[1];
 	if (argc == 3) {
@@ -113,10 +115,15 @@ int main (int argc, char *argv[])
 	
 	// compute additional attributes or set up structures in Problem Definition (variables, for example)
 	// now all is done in read_input_file (but it's too messy there...)
+	Mprobl.compute_inputdata_stats();
 	
+	// print to file input data statistics
+	pop_reporter.inputdatastats2file(&Mprobl, DIR_OUTPUT);
+
 	// show the results
 	Mparam.show();
 	Mprobl.show_all();
+
 		
 	// to stop the execution
 	//cout << "Have a go?" << endl;

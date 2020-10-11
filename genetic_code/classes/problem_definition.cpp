@@ -25,8 +25,6 @@ using namespace std;
 #include "./problem_definition.h"
 
 
-
-
 // ProblemDefinition constructor
 ProblemDefinition::ProblemDefinition(void)
 {
@@ -38,6 +36,7 @@ ProblemDefinition::ProblemDefinition(void)
 	n_folds=0;
 	folds_table=NULL;
 	points_per_fold=NULL;
+	validation_fold=0;
 
 	// public members
 	//folds = NULL; // Val***
@@ -45,19 +44,21 @@ ProblemDefinition::ProblemDefinition(void)
 	n_tuning = -1;
 	data_validation = NULL;
 	n_validation = -1;
-	// a little statistics on output (refers to the whole data set though - tuning+evaluation)
-	sum_output = -1.0;
-	y_ave = -1.0;
-	Sy = -1.0;
-	y_var = -1.0;
 
+	// statistics of corresponding output (target) of the WHOLE data set (DATA) contained in the main input file (refers to the whole data set - tuning+evaluation)
+	sum_output = 0.0;	// sum of the squares of each target value
+	y_ave = 0.0;		// average value of input (target) data
+	Sy = 0.0;			// SStot total sum of squares of (observed data - average observed data) // defined in read_input_file function (read_file_new.cpp)
+	y_var = 0.0;		// variance of target data
+	y_max = 0.0;			// max value of target
+	y_min = 0.0;			// min value of target
+
+	// statistics of corresponding output (target) of the TEST data set (TEST DATA SET)
 	data_test = NULL;
 	n_test = -1;
 	sum_output_test = -1.0;
 	y_ave_test = -1.0;
 	Sy_test = -1;
-
-
 
 	// inequality constraints on values (order 0)
 	data_inequality0 = NULL;
@@ -412,7 +413,55 @@ void ProblemDefinition::initialise_variables(Variable**p_Z, double max_n_periods
 }
 
 
+// function to compute input data statistics (mainly statistical properties of target values set)
+void ProblemDefinition::compute_inputdata_stats(void)
+{
+	// check that the data has been correctly imported
+	if (n_var==-1) {  // number of variables
+		cerr << "\nProblemDefinition::compute_inputdata_stats : ERROR : n_var=-1, stats cannot be computed!!! Data correctly imported?";
+		exit (-1);
+	}
+	if (n_data==-1) {  //total number of rows (fitness cases) in data
+		cerr << "\nProblemDefinition::compute_inputdata_stats : ERROR : n_data=-1, stats cannot be computed!!! Data correctly imported?";
+		exit (-1);
+	}
+	if (data==NULL) {  //original data provided by the user (NOT to be touched)
+		cerr << "\nProblemDefinition::compute_inputdata_stats : ERROR : data=NULL, stats cannot be computed!!! Data correctly imported?";
+		exit (-1);
+	}
 
+	// compute the following properties of target values
+	//sum_output;	// sum of the squares of each target value
+	//y_ave;		// average value of input (target) data
+	//Sy;			// SStot total sum of squares of (observed data - average observed data) // defined in read_input_file function (read_file_new.cpp)
+	//y_var;		// variance of target data
+	//y_max;			// max value of target
+	//y_min;			// min value of target
+
+	// sum_output, y_ave, Y_min and y_max
+	Val y_ave_temp = .0;
+	Val a=.0;
+	Val a_max=.0;
+	Val a_min=.0;
+	sum_output=.0;
+	for (int k=0; k < n_data; k++) {
+		a=data[k][n_var];
+		sum_output = sum_output + a*a;
+		y_ave_temp = y_ave_temp + a;
+		if (a>=a_max) a_max=a;
+		if (a<=a_min) a_min=a;
+	}
+	y_ave = y_ave_temp/(double)(n_data);
+	y_min=a_min;
+	y_max=a_max;
+
+	// Sy=sum((output- average_output)^2)=(n-1)*output variance on the whole dataset
+	// and y_var
+	Sy=.0;
+	for (int k=0; k < n_data; k++) Sy = Sy + (data[k][n_var] - y_ave)*(data[k][n_var] - y_ave);
+	y_var = Sy/(double)(n_data-1);
+
+}
 
 
 // show data

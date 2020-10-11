@@ -594,25 +594,6 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	pb->n_inequality1 = pr->n_inequality1;
 	pb->constraints1 = CONSTRAINTS1;
 
-	// compute stats on the whole input data set (tuning+evaluation)
-	// in the future write a class "data set" with the following as a member function
-	Val sum_output = .0;
-	Val y_ave = .0;
-	for (int k=0; k < pr->nfitcases; k++) {
-		sum_output = sum_output + pb->get_data(k,pr->nvar)*pb->get_data(k,pr->nvar);
-		y_ave = y_ave + pb->get_data(k,pr->nvar);
-	}
-	pb->sum_output = sum_output;
-	pb->y_ave = y_ave/(double)(pr->nfitcases);
-	
-	// Sy=sum((output- average_output)^2)=(n-1)*output variance on the whole dataset
-	Val Sy = 0.;
-	for (int k=0; k < pr->nfitcases; k++)
-		Sy = Sy + (pb->get_data(k,pr->nvar) - pb->y_ave)*(pb->get_data(k,pr->nvar) - pb->y_ave);
-	pb->Sy = Sy;
-	pb->y_var = Sy/(double)(pr->nfitcases);
-
-	
 	cout << "\n\nread_input_file : data correctly imported. Exit \n" << endl;
 }
 
@@ -778,6 +759,7 @@ void read_test_data(string FILE_TEST_DATA,  RunParameters* pr, ProblemDefinition
 	pb->data_test = TEST_DATA;
 	pb->n_test = N_TEST_CASES;
 
+//*/*/*/*/ to be moved to ProblemDefinition
 	// compute test data set statistical properties
 	// in the future write a class "data set" with the following as a member function
 	Val sum_output_test = .0;
@@ -793,7 +775,7 @@ void read_test_data(string FILE_TEST_DATA,  RunParameters* pr, ProblemDefinition
 	for (int k=0; k < pb->n_test; k++)
 		Sy_test = Sy_test + (pb->data_test[k][pr->nvar] - pb->y_ave_test)*(pb->data_test[k][pr->nvar] - pb->y_ave_test);
 	pb->Sy_test = Sy_test;
-	//
+//*/*/*/*/
 
 	cout << "read_test_data : points correctly imported = " << row << endl;
 	cout << "read_test_file : test data correctly imported. Exit \n" << endl;

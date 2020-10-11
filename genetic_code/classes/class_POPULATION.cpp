@@ -2463,7 +2463,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	// strategies below still under testing
 	//F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3); // Strategy 6
 	F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2); //Strategy 7
-	//F8 = pow(sqrt(fabs((ppd->y_var - complete_tree->tree_variance)/ppd->y_var)),3)+pow(fabs((ppd->y_ave-complete_tree->tree_mean)/ppd->y_ave),3); // Strategy 8
+	//F8 = ; // Strategy 8
 	//(exp((fabs(ppd->y_ave-complete_tree->tree_mean)))-1.0);
 
 	// weights

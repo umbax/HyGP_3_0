@@ -32,6 +32,12 @@ int int_rand(int max)
 	return v;
 }
 
+// function that computes basic statistical parameters of the set of values provided
+// Output:
+// out[3] = unbiased estimate of variance (so division by n-1)
+// out[2] = max value
+// out[1] = mean value
+// out[0] = min value
 void basic_stat_analysis(double* af,double* out,int n_el)
 {
 	int COMMENT = 0;

@@ -35,9 +35,10 @@ class Reporter
 {
 	public:
 		
-		// functions to print data
+		// functions to print input data statistics to file
+		void inputdatastats2file(ProblemDefinition*, string);
 		//function to print generation statistics to file  - SINGLE RUN
-		void stats2file(RunParameters*, Population *, string, int, int);
+		void stats2file(RunParameters*, Population*, string, int, int);
 		//function to print points of the best tree to file - SINGLE RUN
 		void points2file(RunParameters*, ProblemDefinition*, Population* , string, int, int, time_t, time_t, double, int);
 		// function to print the expression of the best individual to file - SINGLE RUN

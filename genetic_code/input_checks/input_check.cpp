@@ -19,6 +19,7 @@
 
 void input_check(RunParameters *pr, ProblemDefinition *pb)
 {
+	// checks on method
 	if ((pr->method<1) || (pr->method>4)) {
 		cerr << "\nError: initialization : it MUST be  1<=method<=4 !!!\n";
 		exit(-1); 
@@ -106,6 +107,7 @@ void input_check(RunParameters *pr, ProblemDefinition *pb)
 		exit(-1); 
 	}
 
+	// check on crossvalidation
 	if ((pr->crossvalidation<0) || (pr->crossvalidation>1)) {
 		cerr << "\nError: Crossvalidation can be enabled (CROSSVALIDATION = 1) or disabled (CROSSVALIDATION = 0). No other values!!!\n";
 		exit(-1); 
@@ -119,6 +121,7 @@ void input_check(RunParameters *pr, ProblemDefinition *pb)
 		}
 	}	
 
+	// check on loaded primitives
 	if ((pb->num_b_funcs==0) && (pb->num_u_funcs==0)) {
 		cerr << "\nError: NO available functions!!! num_b_funcs = " << pb->num_b_funcs << ", num_u_funcs = " << pb->num_u_funcs << "\n";
 		exit(-1); 

@@ -57,12 +57,14 @@ class ProblemDefinition
 		// destructor
 		~ProblemDefinition(void);
 
-		// a little statistics on output on the WHOLE data set (DATA) contained in the main input file
+		// a little statistics of corresponding output of the WHOLE data set (DATA) contained in the main input file
 		// (the one containing HyGP hyperparameters)
-		Val sum_output; // sum of the input data (used in cycles on n_cases)
-		Val y_ave; // average value of input data
-		Val Sy;  // SStot total sum of squares of (observed data - average observed data) // defined in read_input_file function (read_file_new.cpp)
-		Val y_var; // variance of input data
+		Val sum_output; // sum of the squares of each target value
+		Val y_ave; 		// average value of input data
+		Val Sy;  		// SStot total sum of squares of (observed data - average observed data) // defined in read_input_file function (read_file_new.cpp)
+		Val y_var; 		// variance of input data
+		Val y_max;		// max value of target
+		Val y_min;		// min value of target
 
 		// folds for crossvalidation
 		//Val*** folds; // pointer to a 3d array (no of fold x row x column) - initialised in kfold_split
@@ -126,6 +128,9 @@ class ProblemDefinition
 		//function to initialise variables (see v_list)
 		int variables_initialised;
 		void initialise_variables(Variable** , double);
+
+		// function to compute input data statistics
+		void compute_inputdata_stats(void);
 
 		// function to display data on the screen
 		void show_data(void);

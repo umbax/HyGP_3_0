@@ -16,6 +16,45 @@
 #include "./reporter.h"
 
 
+// function to print evaluated points of the best individual (shape) to file "points_gp.txt"
+void Reporter::inputdatastats2file(ProblemDefinition *pb, string DIR_OUTPUT)
+{
+	string file, r,s;
+	const char *expr1;
+	// string to char conversion
+	file = "inputdata_stats.txt";
+	r = "/";
+	s =  DIR_OUTPUT+r+file;
+	expr1 = s.c_str();
+	Val target=0.0;
+	Val tree=0.0;
+	Val residual=0.0;
+
+
+	//declare stream
+	ofstream fout;  //NOT static, so every time (each new generation) a new "fout" is opened! This let the function overwrite the previous file (otherwise too big!)
+
+	// open file: output stream
+	fout.open(expr1, ios_base::out | ios_base::trunc);    //it doesn't append...
+
+	static int w_c1 = 4;
+	static int w_c = 14;
+	//first line
+	fout <<"# Input data (whole - see input file) statistics" << endl;
+	fout << "Number of record/fitness cases: n_data = " << pb->get_n_data() << endl;
+	fout << "Number of input variables: n_var = " << pb->get_n_var() << endl;
+	fout << "Sum of target values: sum_output = "<< pb->sum_output << endl;
+	fout << "Average target value: y_ave = " << pb->y_ave << endl;
+	fout << "SStot Total sum of squares of (target- y_ave) : Sy = " << pb->Sy << endl;
+	fout << "Target variance: y_var = " << pb->y_var << endl;
+	fout << "Max value of target: y_max = " << pb->y_max << endl; // usa basic_stat_analysis.cpp
+	fout << "Min value of target: y_min = " << pb->y_min << endl; // usa basic_stat_analysis.cpp
+
+	// close stream (at each call is open and then closed)
+	fout.close();
+}
+
+
 // function to print statistical data to file "data_gp.txt"
 void Reporter::stats2file(RunParameters *pr, Population *P, string DIR_OUTPUT, int gi, int check_end)
 { 
@@ -102,8 +141,6 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 	fout << "Generation= " << gi << endl; 
 	fout << "Elapsed_time(sec)= " << delta_t << endl;
 	fout << "Used_seed= " << seed << endl;
-	fout << "Input data average value = " << pb->y_ave << endl;
-	fout << "Input data variance = " << pb->y_var << endl;
 	fout << "Tree average value on training data set= " << P->complete_trees[0]->tree_mean << endl;
 	fout << "Tree variance on training data set= " << P->complete_trees[0]->tree_variance << endl;
 	
