@@ -456,16 +456,6 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	// all that follows is operations on read data (operations on file finished...)
 	//-----------------------------------------------------------------------------------------------------
 
-
-	// set problem definition attributes
-		
-//-+-+-+-+-+-+-+-+-+-+-+
-
-
-
-
-//-+-+-+-+-+-+-+-+-+-+-+
-
 	// BINARY FUNCTIONS : the names to be inserted in the input file are between " "
 	pb->division = NULL;   //address of the "sdiv" operation, if among primitives
 	for (int k=0; k<7; k++)   //the number (7) is the number of dummy operations set in Problem Definition class
@@ -752,7 +742,7 @@ void read_test_data(string FILE_TEST_DATA,  RunParameters* pr, ProblemDefinition
 		}
 
 	//-----------------------------------------------------------------------------------------------------
-	// all that follows is operations on read data (operations on file finished...)
+	// all that follows is operations on imported data (operations on file finished...)
 	//-----------------------------------------------------------------------------------
 
 	// set ProblemDefinition pointers so that test data can be retrieved
@@ -760,21 +750,21 @@ void read_test_data(string FILE_TEST_DATA,  RunParameters* pr, ProblemDefinition
 	pb->n_test = N_TEST_CASES;
 
 //*/*/*/*/ to be moved to ProblemDefinition
-	// compute test data set statistical properties
-	// in the future write a class "data set" with the following as a member function
-	Val sum_output_test = .0;
-	Val y_ave_test = .0;
-	for (int k=0; k < pb->n_test; k++) {
-		sum_output_test = sum_output_test + pb->data_test[k][pr->nvar]*pb->data_test[k][pr->nvar];
-		y_ave_test = y_ave_test + pb->data_test[k][pr->nvar];
-	}
-	pb->sum_output_test = sum_output_test;
-	pb->y_ave_test = y_ave_test/(double)(pb->n_test);
-
-	Val Sy_test = .0;
-	for (int k=0; k < pb->n_test; k++)
-		Sy_test = Sy_test + (pb->data_test[k][pr->nvar] - pb->y_ave_test)*(pb->data_test[k][pr->nvar] - pb->y_ave_test);
-	pb->Sy_test = Sy_test;
+//	// compute test data set statistical properties
+//	// in the future write a class "data set" with the following as a member function
+//	Val sum_output_test = .0;
+//	Val y_ave_test = .0;
+//	for (int k=0; k < pb->n_test; k++) {
+//		sum_output_test = sum_output_test + pb->data_test[k][pr->nvar]*pb->data_test[k][pr->nvar];
+//		y_ave_test = y_ave_test + pb->data_test[k][pr->nvar];
+//	}
+//	pb->sum_output_test = sum_output_test;
+//	pb->y_ave_test = y_ave_test/(double)(pb->n_test);
+//
+//	Val Sy_test = .0;
+//	for (int k=0; k < pb->n_test; k++)
+//		Sy_test = Sy_test + (pb->data_test[k][pr->nvar] - pb->y_ave_test)*(pb->data_test[k][pr->nvar] - pb->y_ave_test);
+//	pb->Sy_test = Sy_test;
 //*/*/*/*/
 
 	cout << "read_test_data : points correctly imported = " << row << endl;
