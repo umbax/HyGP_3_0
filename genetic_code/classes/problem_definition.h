@@ -75,11 +75,16 @@ class ProblemDefinition
 		Val** data_validation;	// CROSS VALIDATION DATA SET (coincides with building data if split = 0)
 		int n_validation;	 //ex n_evaluation;
 
-		Val** data_test;		// TEST DATA SET
+		// TEST DATA SET
+		Val** data_test;
 		int n_test;
 		Val	sum_output_test;
 		Val	y_ave_test;
 		Val Sy_test;
+		Val y_var_test;
+		Val y_test_min;
+		Val y_test_max;
+
 		// inequality constraints on values (order 0)
 		Val** data_inequality0;
 		int n_inequality0;

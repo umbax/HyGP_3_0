@@ -430,13 +430,7 @@ void ProblemDefinition::compute_inputdata_stats(void)
 		exit (-1);
 	}
 
-	// compute the following properties of target values
-	//sum_output;	// sum of the squares of each target value
-	//y_ave;		// average value of input (target) data
-	//Sy;			// SStot total sum of squares of (observed data - average observed data) // defined in read_input_file function (read_file_new.cpp)
-	//y_var;		// variance of target data
-	//y_max;			// max value of target
-	//y_min;			// min value of target
+	// compute statistical properties of DATA target values
 
 	// sum_output, y_ave, Y_min and y_max
 	Val y_ave_temp = .0;
@@ -460,6 +454,28 @@ void ProblemDefinition::compute_inputdata_stats(void)
 	Sy=.0;
 	for (int k=0; k < n_data; k++) Sy = Sy + (data[k][n_var] - y_ave)*(data[k][n_var] - y_ave);
 	y_var = Sy/(double)(n_data-1);
+
+
+	// compute statistical properties of TEST DATA target values
+	Val y_ave_test_temp = .0;
+	a=.0;
+	a_max=.0;
+	a_min=.0;
+	sum_output_test = .0;
+	for (int k=0; k < n_test; k++) {
+		a=data_test[k][n_var];
+		sum_output_test = sum_output_test + a*a;
+		y_ave_test_temp = y_ave_test_temp + a;
+		if (a>=a_max) a_max=a;
+		if (a<=a_min) a_min=a;
+	}
+	y_ave_test = y_ave_test_temp/(double)(n_test);
+	y_test_min=a_min;
+	y_test_max=a_max;
+
+	Sy_test = .0;
+	for (int k=0; k < n_test; k++) Sy_test = Sy_test + (data_test[k][n_var] - y_ave_test)*(data_test[k][n_var] - y_ave_test);
+	y_var_test=Sy_test/(double)(n_test-1);
 
 }
 
