@@ -209,7 +209,7 @@ int main (int argc, char *argv[])
 
 		}
 
-		// evaluate fitness function (in structural GP parameters are added and tuned first, then the evaluation is performed)
+		// evaluate fitness function (in hybrid/memetic GP parameters are added and tuned first, then the evaluation is performed)
 		P->evaluate(i,Mparam.G);
 
 		// sort according to F (aggregate fitness, not RMSE!) : VITAL! Both populations must be sorted, trees[] and complete_trees[]

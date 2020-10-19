@@ -153,7 +153,47 @@ Node *Node::get_parent(void)
 	return parent;
 }
 
+// function that checks the functions of the ancestor nodes linked upstream to the given node.
+// Returns 1 if the node corresponding to the given pointer is a root node: so all checks have been passed up to reach root node
+int Node::check_nodal_functions_upstream(void)
+{
+	int COMMENT=0;
 
+	if (COMMENT) cout << "\n\nBinary_Node::check_nodal_functions_upstream : START" << endl;
+
+	// if root node, return 1 as all check have been passed
+	if (parent==NULL) return 1;
+
+	// here p_node is not a root node, so check its parent which is necessarily a functional node and in case call recursively this function
+	string parent_fun="";
+
+	if (parent->type == NODE_UNARY) {
+		parent_fun=((Unary_Node*)parent)->get_func()->sign;
+		if (COMMENT) cout << "\nFunction of parent node: " << parent_fun;
+		// check that the parent function belongs to a specific subset=[shift, neg]
+		if ( (!strcmp(parent_fun.c_str(),"^1")) || (!strcmp(parent_fun.c_str(),"(-1.0)*")) ) {
+			if (COMMENT) cout << "\nOK go upstream!" << endl;
+			return parent->check_nodal_functions_upstream();
+		} else
+			return 0;
+	}
+
+	if (parent->type == NODE_BINARY) {
+		parent_fun=((Binary_Node*)parent)->get_func()->sign;
+		if (COMMENT) cout << "\nFunction of parent node: " << parent_fun;
+		// check that the parent function belongs to a specific subset=[add, sub]
+		if ( (!strcmp(parent_fun.c_str()," + ")) || (!strcmp(parent_fun.c_str()," - ")) || (!strcmp(parent_fun.c_str()," * "))) {
+			if (COMMENT) cout << "\nOK go upstream!" << endl;
+			return parent->check_nodal_functions_upstream();
+		} else
+			return 0;
+
+	}
+
+	return 0; // the function should never reach this point...
+
+	if (COMMENT) cout<<"\n\nBinary_Node::check_nodal_functions_upstream : END";
+}
 
 
 /*
@@ -443,6 +483,7 @@ void Binary_Node::check_allocation(Node **p_tree, int number_op)
 
 	}
 }
+
 
 
 // function to find the addresses of the terminal_const nodes (parameters)

@@ -285,7 +285,7 @@ Unary_Func Tanh = {hypertan, hypertan_sign, &hypertan_pos};
 Val rect_wave(Val a, int* n_corrections)
 {
 	// a is expressed in radians!!!;
-	Val c=1/99;
+	Val c=1.0/99.0;
 	return (Val)pow(sin(a),c);
 }
 char rect_wave_sign[] = "rectwave";

@@ -70,6 +70,9 @@ class Node {
     virtual int op_check(void) = 0;      //check the operations in the subtree
 	virtual void check_allocation(Node **,int) = 0;   //performs the parameter allocation, if a terminal_var node
 
+	// function that checks the functions of the ancestor nodes linked upstream to the given node.
+	// Returns 1 if the node corresponding to the given pointer is a root node: so all checks have been passed up to reach root node
+	int check_nodal_functions_upstream(void);
 	// resets the parent node
     //void set_parent(Node *n) {parent = n;};
 	void set_parent(Node *);
@@ -241,6 +244,7 @@ class Terminal_Var : public Node {
 	// function to allocate parameters
 	int op_check(void);
 	void check_allocation(Node **, int);
+
 
 };
 

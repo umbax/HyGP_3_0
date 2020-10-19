@@ -145,7 +145,7 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
     		trees[k] = NULL;
 
 
-    // go through the list and create new top level nodes.
+    // go through the list and create new top level (root) nodes, which by definition have no parent (parent=NULL).
     // Currently root nodes can be binary functions only.
     // In the future allow any kind of node to be root node
     for (int i=0;i<size;i++) {
@@ -1922,7 +1922,7 @@ void Population::new_spawn(RunParameters pr, ProblemDefinition pb, int n_test_ca
 
 
 
-// structuralGP : here evaluate() carries out more tasks than it does in classic GP:
+// for hybrid/memetic GP evaluate() carries out more tasks than it does in classic (not hybrid) GP:
 // EDITING - if needed
 // 0 - copies the parameterless trees in a new array (complete_trees)
 // 1 - inserts parameters in the trees (otherwise without)
@@ -2978,7 +2978,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	delete[] x;
 	delete[] x_best;
 	
-	// free array with indexes of pulsations (index_puls and index_var are allocated dynamically in find_pulsations)
+	// free array with indexes of pulsations (index_puls and index_var are allocated dynamically in Population::find_pulsations)
 	if (ntree->n_pulsations) {
  		if (ntree->n_pulsations == 1) { 
 			delete ntree->index_puls;
@@ -4303,16 +4303,18 @@ void Population::update_ext_archive(void)
 
 
 
-// function to find the addresses of the terminal_const nodes (parameters)
+// function to find the addresses of the terminal_const nodes that are "pulsation" or circular frequencies to be optimised in a specific way
+// This function is called by Population::tuning_individual
 // input: nothing
 // output: no of pulsations (vector_puls is updated with the addresses of the pulsations)
 void Population::find_pulsations(Binary_Node *tree)
 {
-	int COMMENT = 0; 
+	int COMMENT = 0;
+
 	tree->n_pulsations = 0;  // n_pulsations is a member of Binary_Node
 
 	if (COMMENT) {
-		cout << "\n\n find_pulsations() : START";
+		cout << "\n\nPopulation::find_pulsations() : START";
 		char *expr = tree->print();	
 		cout << "\ntree : " << expr;
 		delete [] expr;
@@ -4326,45 +4328,52 @@ void Population::find_pulsations(Binary_Node *tree)
 		tree->n_pulsations = 0;
 		if (COMMENT) cout << "\nfind_pulsations : n_pulsations = 0";
 	}
-	
 	// if you are here, sin and cos are among primitives
 	else {
-
 		if (COMMENT) cout << "\n Sin or Cos are used";
 		Node *grandpa;
 		Node *brother;
-		string gs;
+		string grandpa_fun;
 		vector < int > vector_puls; // vector containing the indexes of the pulsations in p_par	
 		vector < int > vector_var; // vector containing the indexes of the variables corresponding to pulsations
 		int i_var;
 
 		//searching among parameters' addresses in p_par
 		for (int i=0; i< tree->p_par.size(); i++) {	
-				// retrieve grandparent's address (don't go further now...)		
+				// retrieve grandparent's address: if a is the parameter in sin(a*x), then sin is the grandpa unary function, x is the brother
 				grandpa = ((tree->p_par[i])->get_parent())->get_parent();	
 				// retrieve brother's address (parent's right child...)
 				brother = ((Binary_Node*)(tree->p_par[i])->get_parent())->get_right();
 
 				if (grandpa)  {   //make sure that grandpa exists (not the case for additional shift term...)	
 					if (grandpa->type == NODE_UNARY) {
-					
-						gs = ((Unary_Node*)grandpa)->get_func()->sign;
-				
-						if (((!strcmp(gs.c_str(),"sin")) || (!strcmp(gs.c_str(),"cos"))) && (brother->type==NODE_VAR)) { 
-							// here you are sure that the pulsation belongs to a term like sin(omega*Zi) ...
-							// PULSATION : append the index i of the pulsation to vector_puls		
-							vector_puls.push_back(i);
+
+						// check grandpa function
+						grandpa_fun = ((Unary_Node*)grandpa)->get_func()->sign;
+						// check operations of all grandpa's ancestors
+
+						// check that the parameter has all the features to be considered a "pulsation"
+						if (((!strcmp(grandpa_fun.c_str(),"sin")) || (!strcmp(grandpa_fun.c_str(),"cos"))) && (brother->type==NODE_VAR)) {
+							// check that all the functions upstream the multplication of a1*sinusoidal f. are add,sub,shift,neg
+							if ((grandpa->get_parent())->check_nodal_functions_upstream()==1) {
+								//&/&/&/&/&/&/&/&/&/&/
+								// here you are sure that the pulsation belongs to a term like sin(omega*Zi) ...
+								// PULSATION : append the index i of the pulsation to vector_puls
+								vector_puls.push_back(i);
 							
-							// VARIABLE INDEX in v_list : append the variable no. of the pulsation to vector_var	
-							// correct the number to get the index in v_list first
-							i_var = (((Terminal_Var*)brother)->get_var_number()) - 1;
-							//check that i_var< num_vars
-							if (i_var>=parameters->nvar) {
-								cerr << "\nPopulation::find_pulsations : ERROR : i_var >= num_vars !!!";
-								exit (-1);
+								// VARIABLE INDEX in v_list : append the variable no. of the pulsation to vector_var
+								// correct the number to get the index in v_list first
+								i_var = (((Terminal_Var*)brother)->get_var_number()) - 1;
+								//check that i_var< num_vars
+								if (i_var>=parameters->nvar) {
+									cerr << "\nPopulation::find_pulsations : ERROR : i_var >= num_vars !!!";
+									exit (-1);
+								}
+								// update vector_var with the index
+								vector_var.push_back(i_var);
+
+								//&/&/&/&/&/&/&/&/&/&/
 							}
-							// update vector_var with the index							
-							vector_var.push_back(i_var);	
 						}
 					}
 				}
@@ -4379,8 +4388,8 @@ void Population::find_pulsations(Binary_Node *tree)
 		}
 		else	{  // here you are sure there are pulsations
 			// initialise arrays with pulsation information			
-			tree->index_puls = new int[tree->n_pulsations];
-			tree->index_var = new int[tree->n_pulsations];
+			tree->index_puls = new int[tree->n_pulsations];   // content deleted at the end of Population::tuning_individual
+			tree->index_var = new int[tree->n_pulsations];	// content deleted at the end of Population::tuning_individual
 			for (int k=0; k < tree->n_pulsations; k++) {
 				tree->index_puls[k] = vector_puls[k];
 				tree->index_var[k] = vector_var[k];			
@@ -4400,8 +4409,8 @@ void Population::find_pulsations(Binary_Node *tree)
 	
 	}  // end else
 
-	if (COMMENT) cout << "\n find_pulsations : END" << endl;
-
+	if (COMMENT) cout << "\nPopulation::find_pulsations : END" << endl;
+	//cin.get();
 }
 
 
