@@ -120,9 +120,9 @@ int main (int argc, char *argv[])
 	// print to file input data statistics
 	pop_reporter.inputdatastats2file(&Mprobl, DIR_OUTPUT);
 
-	// show the results
-	Mparam.show();
-	Mprobl.show_all();
+	// show imported data (input parameters and input data)
+	Mparam.show();  // run hyperparameters
+	//Mprobl.show_all();    // input data matrix and other data
 
 		
 	// to stop the execution
