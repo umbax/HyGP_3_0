@@ -49,16 +49,36 @@ void Reporter::inputdatastats2file(ProblemDefinition *pb, string DIR_OUTPUT)
 	fout << "Target variance: y_var = " << pb->y_var << endl;
 	fout << "Max value of target: y_max = " << pb->y_max << endl;
 	fout << "Min value of target: y_min = " << pb->y_min << endl;
+	fout << "First 5 record/fitness cases with target:" << endl;
+	for (int i=0; i<5; i++) {
+		for (int j=0; j<pb->get_n_var()+1; j++) {
+			fout << pb->get_data(i, j) << " ";
+		}
+		fout << endl;
+	}
 	fout << "###" << endl;
-	fout <<"# Test data statistics" << endl;
-	fout << "Number of record/fitness cases: n_test = " << pb->n_test << endl;
-	//fout << "Number of input variables: n_var = " << pb-> << endl; //n of input variables not checked in test data?
-	fout << "Sum of target values: sum_output_test = "<< pb->sum_output_test << endl;
-	fout << "Average target value: y_ave_test = " << pb->y_ave_test << endl;
-	fout << "SStot Total sum of squares of (target- y_ave) : Sy_test = " << pb->Sy_test << endl;
-	fout << "Target variance: y_var_test = " << pb->y_var_test << endl;
-	fout << "Max value of target: y_max_test = " << pb->y_test_max << endl;
-	fout << "Min value of target: y_min_test = " << pb->y_test_min << endl;
+
+	if (pb->data_test) {
+		fout <<"# Test data statistics" << endl;
+		fout << "Number of record/fitness cases: n_test = " << pb->n_test << endl;
+		//fout << "Number of input variables: n_var = " << pb-> << endl; //n of input variables not checked in test data?
+		fout << "Sum of target values: sum_output_test = "<< pb->sum_output_test << endl;
+		fout << "Average target value: y_ave_test = " << pb->y_ave_test << endl;
+		fout << "SStot Total sum of squares of (target- y_ave) : Sy_test = " << pb->Sy_test << endl;
+		fout << "Target variance: y_var_test = " << pb->y_var_test << endl;
+		fout << "Max value of target: y_max_test = " << pb->y_test_max << endl;
+		fout << "Min value of target: y_min_test = " << pb->y_test_min << endl;
+		fout << "First 5 record/fitness cases with target:" << endl;
+		for (int i=0; i<5; i++) {
+			for (int j=0; j<pb->get_n_var()+1; j++) {
+				fout << pb->data_test[i][j] << " ";
+			}
+			fout << endl;
+		}
+	} else {
+		fout <<"# No Test data imported" << endl;
+	}
+
 
 	// close stream (at each call is open and then closed)
 	fout.close();
