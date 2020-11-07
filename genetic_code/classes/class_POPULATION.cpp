@@ -777,13 +777,13 @@ int Population::point_mutation(Binary_Node *tree, int nm)
 			t = NODE_UNARY;
 			// select randomly a function different from the current one and get the pointer 
 			if (COMMENT) {
-				cout << "\nCurrent f: p_nm->f = " << p_u_node->get_func() << " Sign = " << (p_u_node->get_func())->sign; 
+				cout << "\nCurrent f: p_nm->f = " << p_u_node->get_func() << " Sign = " << (p_u_node->get_func())->pre_sign << (p_u_node->get_func())->post_sign;
 			}
 			p_u_fun = p_u_node->get_func();
 			while ((p_u_node->get_func()) == p_u_fun) {
 				// select the pointer to the new function
 				p_u_fun = problem->u_func_list[int_rand(problem->num_u_funcs)];
-				if (COMMENT)  cout << "\nChosen f: p_u_fun = " << p_u_fun << " Sign = " << p_u_fun->sign; 
+				if (COMMENT)  cout << "\nChosen f: p_u_fun = " << p_u_fun << " Sign = " << p_u_fun->pre_sign << p_u_fun->post_sign;
 			}
 			// call the function in Unary Node class to change the function of the node 
 			((Unary_Node *)p_nm)->change_f(p_u_fun); 
@@ -1895,7 +1895,7 @@ void Population::new_spawn(RunParameters pr, ProblemDefinition pb, int n_test_ca
 			cout << "\nERROR! THE ROOT NODE OF new_trees[" << i << "] IS NOT BINARY!!!!" << endl;
 			exit(-1);
 		}
-		// shall I delete trees[i] to avoid increasing memory usage??! YES, REALLY IMPORTANT!!!
+		// delete trees[i] to avoid increasing memory usage: REALLY IMPORTANT!!!
 		delete trees[i]; //old_tree; 
 		//
 		trees[i] = (Binary_Node *)tree_copy(new_trees[i],NULL); 
@@ -2181,7 +2181,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	int n_corrections = 0;
 	((Binary_Node*)current_tree)->n_corrections=0;
 	// initialization (IMPORTANT!!!)
-	result_tree[0] = (Val)0.0;  //storing fitness value
+	result_tree[0] = (Val)0.0;  //storing fitness value (error - RMSE)
 	result_tree[1] = (Val)0.0;	// storing n of hits
 	result_tree[2] = (Val)0.0;	// storing n of corrections done by protected operations
 	result_tree[3] = (Val)0.0; // storing value of R squared (R2)
@@ -2238,7 +2238,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 		//---------------------------------------
 		
 		// HITS
-		if (abs(error) <= threshold) hits++;     // increase number of hits
+		if (fabs(error) <= threshold) hits++;     // increase number of hits
 
 	}
 	
@@ -2247,7 +2247,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	// OUTPUT
 	//----------------------------------------------------------------------
 
-	// FITNESS VALUE
+	// FITNESS VALUE (RMSE error) - result_tree[0]
 	if (normalised)
 		// normalised RMSE version
 		result_tree[0] = sqrt(result_tree_norm/(Val)n_cases); 
@@ -2281,6 +2281,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	if (COMMENT) cout << "Fitness value  = " << result_tree[0] << endl;
 
 }
+
 
 
 // Function that defines the objective to minimise for PSO algorithm (coarse tree's parameters optimisation)
@@ -2384,7 +2385,8 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//F1 = 1.-1./(1.+complete_tree->fitness); 
 	//F1 = complete_tree->fitness/sum_output;	 //the term is constant, but does not give great results...
 	if (pr->crossvalidation==0)
-		F1 = complete_tree->fitness/average_err;	//average_err is the av. fitness in the archive of the previous gen. THE TERM VARIES DURING THE EVOLUTION!!!
+		F1 = complete_tree->fitness/average_err;	//used in the PhD Thesis: average_err is the av. fitness in the archive of the previous gen. THE TERM VARIES DURING THE EVOLUTION!!!
+		//F1 = complete_tree->fitness;	// test 1/11/2018
 	else
 		F1 = complete_tree->fitness;
 
@@ -2461,8 +2463,8 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance))/(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean))); // Strategy 4
 	//F8 = fabs(ppd->y_var - complete_tree->tree_variance)/pow(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean)),2); // Strategy 5
 	// strategies below still under testing
-	//F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3); // Strategy 6
-	F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2); //Strategy 7
+	F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3); //Strategy 6
+	//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2); //Strategy 7
 	//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),1)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),1); //Strategy 8
 	//(exp((fabs(ppd->y_ave-complete_tree->tree_mean)))-1.0);
 
@@ -2592,7 +2594,7 @@ char *Population::print (int n, Binary_Node** tree_array)
 
 
 
-// inserts parameters (terminal_const nodes with value=1) according to ALVAREZ's rules
+// inserts parameters (terminal_const nodes with value=1) according to rules defined in Table 5.1 page 132 and at page 142 Armani's thesis
 //input: pointer to tree root, pointer to pointer to tree root
 void Population::parameters_allocation(Binary_Node *tree, Binary_Node**p_tree)
 {
@@ -2602,7 +2604,7 @@ void Population::parameters_allocation(Binary_Node *tree, Binary_Node**p_tree)
 		cout << "\nParameters_allocation called";
 	
 	
-		//INNER PARAMETERS (call the "check_allocation" function of the root node (binary_Node))
+		//INNER PARAMETERS (call function Binary_Node::check_allocation of the root node (binary_Node))
 		tree->check_allocation(((Node **)&tree),10);    //10 is a fake number...
 		if (COMMENT) 
 			cout << "\nAllocation completed";
@@ -4349,7 +4351,7 @@ void Population::find_pulsations(Binary_Node *tree)
 					if (grandpa->type == NODE_UNARY) {
 
 						// check grandpa function
-						grandpa_fun = ((Unary_Node*)grandpa)->get_func()->sign;
+						grandpa_fun = ((Unary_Node*)grandpa)->get_func()->pre_sign;  //31/10/20 improvement: better to use a internal code for operations
 						// check operations of all grandpa's ancestors
 
 						// check that the parameter has all the features to be considered a "pulsation"
@@ -4462,17 +4464,17 @@ void Population::search_first_op(Binary_Node *tree, Node *cur_node, int cur_dept
 		// check reciprocal 
     //found_inv = strcmp((((Unary_Node*)cur_node)->get_func())->sign,Inverse.sign);
 		// check sin
-    found_sin = strcmp((((Unary_Node*)cur_node)->get_func())->sign,Sin.sign);
+    found_sin = strcmp((((Unary_Node*)cur_node)->get_func())->pre_sign,Sin.pre_sign);
     // check cos
-    found_cos  = strcmp((((Unary_Node*)cur_node)->get_func())->sign,Cos.sign);
+    found_cos  = strcmp((((Unary_Node*)cur_node)->get_func())->pre_sign,Cos.pre_sign);
     // check exp
-    found_exp = strcmp((((Unary_Node*)cur_node)->get_func())->sign,Exp.sign);
+    found_exp = strcmp((((Unary_Node*)cur_node)->get_func())->pre_sign,Exp.pre_sign);
     // check nxp
     //found_nxp = strcmp((((Unary_Node*)cur_node)->get_func())->sign,Negexp.sign);
     // check tanh
-    found_tanh = strcmp((((Unary_Node*)cur_node)->get_func())->sign,Tanh.sign);
+    found_tanh = strcmp((((Unary_Node*)cur_node)->get_func())->pre_sign,Tanh.pre_sign);
     // check log   
-    found_log = strcmp((((Unary_Node*)cur_node)->get_func())->sign,Logn.sign);
+    found_log = strcmp((((Unary_Node*)cur_node)->get_func())->pre_sign,Logn.pre_sign);
     
     //if ((found_inv==0) || (found_sin==0) || (found_cos==0)) {
 		if ((found_sin==0) || (found_cos==0) || (found_exp==0) ||  (found_tanh==0) || (found_log==0)) { //|| (found_nxp==0)

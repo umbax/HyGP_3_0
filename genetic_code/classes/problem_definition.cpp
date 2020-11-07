@@ -56,9 +56,12 @@ ProblemDefinition::ProblemDefinition(void)
 	// statistics of corresponding output (target) of the TEST data set (TEST DATA SET)
 	data_test = NULL;
 	n_test = -1;
-	sum_output_test = -1.0;
-	y_ave_test = -1.0;
-	Sy_test = -1;
+	sum_output_test = 0.0;
+	y_ave_test = 0.0;
+	Sy_test = 0.0;
+	y_var_test = 0.0;
+	y_test_max = 0.0;
+	y_test_min = 0.0;
 
 	// inequality constraints on values (order 0)
 	data_inequality0 = NULL;
@@ -434,7 +437,7 @@ void ProblemDefinition::compute_inputdata_stats(void)
 
 	// sum_output, y_ave, Y_min and y_max
 	Val y_ave_temp = .0;
-	Val a=.0;
+	Val a=data[0][n_var];
 	Val a_max=.0;
 	Val a_min=.0;
 	sum_output=.0;
@@ -458,7 +461,7 @@ void ProblemDefinition::compute_inputdata_stats(void)
 
 	// compute statistical properties of TEST DATA target values
 	Val y_ave_test_temp = .0;
-	a=.0;
+	a=data_test[0][n_var];
 	a_max=.0;
 	a_min=.0;
 	sum_output_test = .0;
@@ -649,9 +652,9 @@ void ProblemDefinition::show_unary_functions(void)
 	int k;
 	if (num_u_funcs>0) {
 		for (k=0; k < num_u_funcs-1; k++) {
-			cout << u_func_list[k]->sign << ", ";
+			cout << u_func_list[k]->pre_sign << u_func_list[k]->post_sign << ", ";
 		}
-		cout << u_func_list[k]->sign;
+		cout << u_func_list[k]->pre_sign << u_func_list[k]->post_sign;
 		cout << endl;
 	}
 	else

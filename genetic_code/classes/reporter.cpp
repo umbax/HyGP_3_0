@@ -198,6 +198,7 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 }
 
 
+// function that writes to file the best (complete) individual as per aggregate function F (not RMSE or R2) on training data set
 void Reporter::update_best2file_build(Population *P, string DIR_OUTPUT, int gi, int check_end)
 { 
 	string file, r,s;
@@ -222,7 +223,7 @@ void Reporter::update_best2file_build(Population *P, string DIR_OUTPUT, int gi, 
 	}
 
 	// fetch the expression of the best individual
-	expr = P->print(0, P->complete_trees);  //0 is the position in the array "complete_trees" of the individual with minimum F, not fitness!
+	expr = P->print(0, P->complete_trees);  //0 is the position in the array "complete_trees" of the individual with minimum F, not RMSE or R2!
 	
 	// print state variables and expression of the best individual
 	fout << gi << " " << scientific << P->complete_trees[0]->F;
@@ -239,7 +240,7 @@ void Reporter::update_best2file_build(Population *P, string DIR_OUTPUT, int gi, 
 }
 
 
-// function that finds and prints the best individual on the test data set
+// function that finds and prints the best individual as per RMSE (!!!!) on the test data set
 void Reporter::best2file_test(Population *P, string DIR_OUTPUT, int gi)
 {
 	int repr_tot = P->get_repr_tot();
