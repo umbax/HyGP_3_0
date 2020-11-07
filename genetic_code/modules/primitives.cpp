@@ -117,9 +117,10 @@ Val pow1(Val a, int* n_corrections)
 {
 	return a;
 }
-char pow1_sign[] = "^1";
-int pow1_pos = 1;   //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Shift = {pow1, pow1_sign, &pow1_pos};
+char pow1_sign_pre[] = "";
+char pow1_sign_post[] = "^1";
+int pow1_pos = 1;   //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Shift = {pow1, pow1_sign_pre, pow1_sign_post, &pow1_pos};
 
 
 // it's strongly suggested not using this function, as can
@@ -128,26 +129,29 @@ Val negation(Val a, int* n_corrections)
 {
 	return (-a);
 }
-char negation_sign[]="(-1.0)*";
-int negation_pos = 0; //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Negation = {negation, negation_sign, &negation_pos};
+char negation_sign_pre[]="(-1.0)*";
+char negation_sign_post[]="";
+int negation_pos = 0; //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Negation = {negation, negation_sign_pre, negation_sign_post, &negation_pos};
 
 
 Val square(Val a, int* n_corrections)
 {
 	return (a*a);
 }
-char square_sign[] = "^2";
-int square_pos = 1;   //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Square = {square, square_sign, &square_pos};
+char square_sign_pre[] = "";
+char square_sign_post[] = "^2";
+int square_pos = 1;   //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Square = {square, square_sign_pre, square_sign_post, &square_pos};
 
 Val cube(Val a, int* n_corrections)
 {
 	return (a*a*a);
 }
-char cube_sign[] = "^3";
-int cube_pos = 1;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Cube = {cube, cube_sign, &cube_pos};
+char cube_sign_pre[] = "";
+char cube_sign_post[] = "^3";
+int cube_pos = 1;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Cube = {cube, cube_sign_pre, cube_sign_post, &cube_pos};
 
 
 Val exponential(Val a, int* n_corrections)
@@ -157,9 +161,10 @@ Val exponential(Val a, int* n_corrections)
 
 	return r;
 }
-char exp_sign[] = "exp";
-int exp_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Exp = {exponential, exp_sign, &exp_pos};
+char exp_sign_pre[] = "exp";
+char exp_sign_post[] = "";
+int exp_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Exp = {exponential, exp_sign_pre, exp_sign_post, &exp_pos};
 
 
 Val negexponential(Val a, int* n_corrections)
@@ -169,9 +174,10 @@ Val negexponential(Val a, int* n_corrections)
 
 	return r;
 }
-char negexp_sign[] = "1/exp";
-int negexp_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Negexp = {negexponential, negexp_sign, &negexp_pos};
+char negexp_sign_pre[] = "1/exp";
+char negexp_sign_post[] = "";
+int negexp_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Negexp = {negexponential, negexp_sign_pre, negexp_sign_post, &negexp_pos};
 
 
 Val sine(Val a, int* n_corrections)
@@ -179,18 +185,20 @@ Val sine(Val a, int* n_corrections)
 	// a is expressed in radians!!!;
     return sin(a);
 }
-char sin_sign[] = "sin";
-int sin_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Sin = {sine, sin_sign, &sin_pos};
+char sin_sign_pre[] = "sin";
+char sin_sign_post[] = "";
+int sin_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Sin = {sine, sin_sign_pre, sin_sign_post, &sin_pos};
 
 Val cosine(Val a, int* n_corrections)
 {
 	// a is expressed in radians!!!;
     return cos(a);
 }
-char cos_sign[] = "cos";
-int cos_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Cos = {cosine, cos_sign, &cos_pos};
+char cos_sign_pre[] = "cos";
+char cos_sign_post[] = "";
+int cos_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Cos = {cosine, cos_sign_pre, cos_sign_post, &cos_pos};
 
 
 //Val tan(Val a, int* n_corrections)
@@ -215,9 +223,10 @@ Val inverse(Val a, int* n_corrections)
 	// otherwise
     return (((Val)1.0)/a);
 }
-char inverse_sign[] = "^(-1)";
-int inverse_pos = 1;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Inverse = {inverse, inverse_sign, &inverse_pos};
+char inverse_sign_pre[] = "";
+char inverse_sign_post[] = "^(-1)";
+int inverse_pos = 1;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Inverse = {inverse, inverse_sign_pre, inverse_sign_post, &inverse_pos};
 
 
 
@@ -233,9 +242,10 @@ Val logarithm(Val a, int* n_corrections)
 	 // otherwise
 	 return ((Val)log(a));
 }
-char logn_sign[] = "log";
-int logn_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Logn = {logarithm, logn_sign, &logn_pos};
+char logn_sign_pre[] = "log";
+char logn_sign_post[] = "";
+int logn_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Logn = {logarithm, logn_sign_pre, logn_sign_post, &logn_pos};
 
 
 Val absolute(Val a, int* n_corrections)
@@ -250,44 +260,63 @@ Val absolute(Val a, int* n_corrections)
 	if (abs(a)<MIN_VAL)
 		return 0.0;
 }
-char abs_sign[] = "abs";
-int abs_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Absval = {absolute, abs_sign, &abs_pos};
+char abs_sign_pre[] = "abs";
+char abs_sign_post[] = "";
+int abs_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Absval = {absolute, abs_sign_pre, abs_sign_post, &abs_pos};
 
 
 Val hypercos(Val a, int* n_corrections)
 {
 	return cosh(a);
 }
-char hypercos_sign[] = "cosh";
-int hypercos_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Cosh = {hypercos, hypercos_sign, &hypercos_pos};
+char hypercos_sign_pre[] = "cosh";
+char hypercos_sign_post[]="";
+int hypercos_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Cosh = {hypercos, hypercos_sign_pre, hypercos_sign_post, &hypercos_pos};
 
 
 Val hypersin(Val a, int* n_corrections)
 {
 	return sinh(a);
 }
-char hypersin_sign[] = "sinh";
-int hypersin_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Sinh = {hypersin, hypersin_sign, &hypersin_pos};
+char hypersin_sign_pre[] = "sinh";
+char hypersin_sign_post[] = "";
+int hypersin_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Sinh = {hypersin, hypersin_sign_pre, hypersin_sign_post,  &hypersin_pos};
 
 
 Val hypertan(Val a, int* n_corrections)
 {
 	return tanh(a);
 }
-char hypertan_sign[] = "tanh";
-int hypertan_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func Tanh = {hypertan, hypertan_sign, &hypertan_pos};
+char hypertan_sign_pre[] = "tanh";
+char hypertan_sign_post[] = "";
+int hypertan_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func Tanh = {hypertan, hypertan_sign_pre, hypertan_sign_post, &hypertan_pos};
 
 
 Val rect_wave(Val a, int* n_corrections)
 {
 	// a is expressed in radians!!!;
-	Val c=1.0/99.0;
-	return (Val)pow(sin(a),c);
+	return (Val)cbrt(sin(a));		// used cbrt instead of pow() to avoid errors linked to the computation of 1/3
 }
-char rect_wave_sign[] = "rectwave";
-int rect_wave_pos = 0;      //0 if BEFORE, 1 if AFTER the argument
-Unary_Func RectWave = {rect_wave, rect_wave_sign, &rect_wave_pos};
+char rect_wave_sign_pre[] = "nthroot(sin";    //"rectwave"
+char rect_wave_sign_post[] = ",3)";	// nthroot(x,3) command used by Matlab and Octave
+int rect_wave_pos = 2;      //0 if BEFORE, 1 if AFTER, 2 BEFORE AND AFTER the argument
+Unary_Func RectWave = {rect_wave, rect_wave_sign_pre, rect_wave_sign_post, &rect_wave_pos};
+
+
+// TEST: block defining high frequency sine term
+Val hfreqsine(Val a, int* n_corrections)
+{
+	// a is expressed in radians!!!;
+    return sin((2.0*PI/2.0)*a);		// no numerical parameter inserted here (see Unary_Node::check_allocation): frequency is set in an alternative way, it will not be optimised by Omegalim approach
+}
+char hfreqsine_sign_pre[] = "hfreqsin";
+char hfreqsine_sign_post[] = "";
+int hfreqsine_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
+Unary_Func HfreqSine = {hfreqsine, hfreqsine_sign_pre, hfreqsine_sign_post, &hfreqsine_pos};
+
+
+

@@ -554,6 +554,12 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	      	pb->dummy_uni[NUM_U_FUNCS]=RectWave;
 			NUM_U_FUNCS++;
 	}
+	// TEST hfreqsine
+	if (func_uni.find("hfreqsin") != string::npos) {
+	      	pb->dummy_uni[NUM_U_FUNCS]=HfreqSine;
+			NUM_U_FUNCS++;
+	}
+
 	
 	pb->num_u_funcs = NUM_U_FUNCS;
 

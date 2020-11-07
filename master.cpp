@@ -244,17 +244,17 @@ int main (int argc, char *argv[])
 
 		// PRINT TO FILE OPERATIONS (in case of crash, data is saved)  -------------------------
 		cout << "\nPrint generation results to file...";
-		// print to file (stream of data to file opened and closed within the function)
+		// write evolution statistical data to file "data_gp.txt"
 		pop_reporter.stats2file(&Mparam, P, DIR_OUTPUT, i, check_end);
-		// write the test-points (training set), and the corresponding values of g_obj and the best individual (only one)
+		// write the target points (training set), best individual corresponding values and residuals to file "points_gp.txt"
 		pop_reporter.points2file(&Mparam, &Mprobl, P, DIR_OUTPUT, i, check_end, start, finish, delta_t, Mparam.seed);
-		// write best individual's expression
+		// write best individual's expression as per aggregate value F (!!!) on training data set to "best_gp.txt"
 		pop_reporter.update_best2file_build(P, DIR_OUTPUT, i, check_end);
-		// write the list of the best-so-far individuals (see elite or archive) - truncation!
+		// write list of the best-so-far individuals (see elite or archive - first repr_tot individuals) on training data set to "latest_archive.txt"
 		pop_reporter.archive2file_build(P, DIR_OUTPUT, i, check_end);
-		// write no of tree evaluations
+		// write no of tree evaluations at each generation to "n_tree_evaluations.txt"
 		pop_reporter.n_tree_eval2file(P, DIR_OUTPUT, i, check_end);
-		// write adaptive approach data
+		// write related to adaptive approach (eps_neutral, the constructive, destructive and neutral genetic operations rates, etc) to "adaptation_data.txt"
 		pop_reporter.adaptive_gen_ops_data2file(P, DIR_OUTPUT, i, check_end);
 		cout << "OK";
 		// -------------------------------------------------------------------------------------
@@ -302,7 +302,7 @@ int main (int argc, char *argv[])
 		P->evaluate_complete_trees(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
 		// sort according to error (RMSE) - better not to use it to keep order and to recognise performance on building and test data sets...
 		//P->sort(last_gen,tree_comp_fitness); // non va: ordina in ordine decrescente e alcune volte pone a 0 RMSE e R2. Perché?
-		// find and print best individual on test data set to file
+		// find and print best individual on test data set as per RMSE (!!!!) to file "best_gp_TEST.txt"
 		pop_reporter.best2file_test(P, DIR_OUTPUT, last_gen);
 		// print archive evaluated on the test data set to file
 		pop_reporter.archive2file_test(P, DIR_OUTPUT, last_gen);  // insert a function to order in rmse decreasing order, leaving however the name of the run

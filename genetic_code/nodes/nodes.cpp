@@ -55,7 +55,8 @@ Node::Node(void)
     parent = NULL;
 
 	// set the operation control to an uncorrect value (will be changed by unary and binary node constructor)
-	multdiv_valid = 0;  //it means that operations have to be checked
+    mult_div = 0;
+    multdiv_valid = 0;  //it means that operations have to be checked
 
 	// set subtree's depth
 	depth = 0;
@@ -65,6 +66,9 @@ Node::Node(void)
 
 	// default type
 	type = -1;
+
+	// hits
+	hits=0;
 }
 
 
@@ -158,6 +162,7 @@ Node *Node::get_parent(void)
 int Node::check_nodal_functions_upstream(void)
 {
 	int COMMENT=0;
+	int pos=-1;
 
 	if (COMMENT) cout << "\n\nBinary_Node::check_nodal_functions_upstream : START" << endl;
 
@@ -168,8 +173,19 @@ int Node::check_nodal_functions_upstream(void)
 	string parent_fun="";
 
 	if (parent->type == NODE_UNARY) {
-		parent_fun=((Unary_Node*)parent)->get_func()->sign;
+		// BEFORE argument
+		if (*(((Unary_Node*)parent)->get_func()->pos)==0) parent_fun=((Unary_Node*)parent)->get_func()->pre_sign;
+		// AFTER argument
+		if (*(((Unary_Node*)parent)->get_func()->pos)==1) parent_fun=((Unary_Node*)parent)->get_func()->post_sign;
+		// BEFORE and AFTER argument
+		if (*(((Unary_Node*)parent)->get_func()->pos)==2) {
+			string pre_s=((Unary_Node*)parent)->get_func()->pre_sign;
+			string post_s=((Unary_Node*)parent)->get_func()->post_sign;
+			parent_fun=pre_s+post_s;
+		}
+
 		if (COMMENT) cout << "\nFunction of parent node: " << parent_fun;
+
 		// check that the parent function belongs to a specific subset=[shift, neg]
 		if ( (!strcmp(parent_fun.c_str(),"^1")) || (!strcmp(parent_fun.c_str(),"(-1.0)*")) ) {
 			if (COMMENT) cout << "\nOK go upstream!" << endl;
@@ -443,6 +459,8 @@ int Binary_Node::op_check(void)
 }
 
 
+// function that inserts numerical parameters in selected locations to get complete trees
+// (rules defined in Table 5.1 page 132 and at page 142 Armani's thesis)
 void Binary_Node::check_allocation(Node **p_tree, int number_op)
 {
 	//Val value;
@@ -553,36 +571,36 @@ void Binary_Node::show_state(void)
 	//
 	cout << setw(27) << "O1 : Fitness (error) = " << scientific << setw(12) << fitness;
 	cout << setw(6) << "  T1 = " << scientific << setw(12) <<  T1;
-	cout << "% = "<< fixed << setw(12)  << 100.0*T1/F << endl;
+	cout << " % = "<< fixed << setw(12)  << 100.0*T1/F << endl;
 	//
 	cout << setw(27) << "O2 : n_tuning_parameters = " << setw(12) << n_tuning_parameters;
 	cout <<  setw(6) << "  T2 = " << scientific << setw(12) << T2;
-	cout << "% = " << fixed << setw(12)  << 100.0*T2/F << endl;
+	cout << " % = " << fixed << setw(12)  << 100.0*T2/F << endl;
 	//
 	cout << setw(27) << "O3 : n_corrections = " << scientific << setw(12) <<n_corrections;
 	cout << setw(6) << "  T3 = " << scientific << setw(12) << T3;
-	cout << "% = " << fixed << setw(12) << 100.0*T3/F << endl;
+	cout << " % = " << fixed << setw(12) << 100.0*T3/F << endl;
 	//
 	cout << setw(27) << "O4 : size = " << scientific << setw(12) << count();
 	cout << setw(6) << "  T4 = " << scientific << setw(12) << T4;
-	cout << "% = " << fixed << setw(12) << 100.0*T4/F << endl;
+	cout << " % = " << fixed << setw(12) << 100.0*T4/F << endl;
 	//
 	cout << setw(27) << "O5 : pen_ord0 = " << scientific << setw(12) << pen_ord0;
 	cout << setw(6) << "  T5 = " << scientific << setw(12) << T5;
-	cout << "% = " << fixed << setw(12) << 100.0*T5/F << endl;
+	cout << " % = " << fixed << setw(12) << 100.0*T5/F << endl;
 	//
 	cout << setw(27) << "O6 : pen_ord1 = " << scientific << setw(12) << pen_ord1;
 	cout << setw(6) << "  T6 = " << scientific << setw(12) << T6;
-	cout << "% = " << fixed << setw(12) << 100.0*T6/F << endl;
+	cout << " % = " << fixed << setw(12) << 100.0*T6/F << endl;
 	//
 	cout << setw(27) << "O7 : depth_first_op = " << scientific << setw(12) << depth_first_op;
 	cout << setw(6) << "  T7 = " << scientific << setw(12) << T7;
-	cout << "% = " << fixed << setw(12) << 100.0*T7/F << endl;
+	cout << " % = " << fixed << setw(12) << 100.0*T7/F << endl;
 	//
 	cout << setw(27) << "O8 : tree mean (train. data) = " << scientific << setw(12) << tree_mean;
 	cout << " tree variance (train. data) = " << scientific << setw(12) << tree_variance;
 	cout << setw(6) << "  T8 = " << scientific << setw(12) << T8;
-	cout << "% = " << fixed << setw(12) << 100.0*T8/F << endl;
+	cout << " % = " << fixed << setw(12) << 100.0*T8/F << endl;
 
 }
 
@@ -706,7 +724,7 @@ char *Unary_Node::print(void)
 
     // make a new string to hold the composite string
     // (child length + operator length + 2 for the paren's + 1 for the ending character of the string(\0) )
-    int newlength = strlen(child_str) + strlen(f->sign) + 4 + 1;
+    int newlength = strlen(child_str) + strlen(f->pre_sign) + strlen(f->post_sign) + 4 + 1;
     char *newstr = new (nothrow) char[newlength];
 
 	//check allocation
@@ -718,13 +736,19 @@ char *Unary_Node::print(void)
 
 
     // print into it
-	if (*(f->pos)== 0)
-		// sign of the operator BEFORE the argument
-    	sprintf(newstr,"(%s(%s))",f->sign,child_str);
+	// check correct value of *(f->pos) (positioning of unary function sign)
+	if ((*(f->pos)<0) || (*(f->pos)>2)) {
+		cerr << "\nUnary_Node::print : *(f->pos) error : not 0,1 or 2. Exit";
+		exit (-1);
+	}
+	// sign of the operator BEFORE the argument
+	//if (*(f->pos)== 0) sprintf(newstr,"(%s(%s))",f->sign,child_str);
 
-	if 	(*(f->pos) == 1)
-		// sign of the operator AFTER the argument
-		sprintf(newstr,"((%s)%s)", child_str, f->sign);
+	// sign of the operator AFTER the argument
+	//if 	(*(f->pos) == 1) sprintf(newstr,"((%s)%s)", child_str, f->sign);
+
+	// sign of the operator BEFORE AND AFTER the argument
+	sprintf(newstr,"(%s(%s)%s)", f->pre_sign, child_str, f->post_sign);
 
     // delete the child's string
     delete [] child_str;
@@ -761,6 +785,8 @@ int Unary_Node::calc_depth(void)
 int Unary_Node::op_check(void) {return 0;}
 
 
+// function that inserts numerical parameters in selected locations to get complete trees
+// (rules defined in Table 5.1 page 132 and at page 142 Armani's thesis)
 void Unary_Node::check_allocation(Node **p_tree, int number_op)
 {
 	//Val value;
@@ -770,10 +796,6 @@ void Unary_Node::check_allocation(Node **p_tree, int number_op)
 	//----------------- TRY : insert a constant for SHIFT --------------------------
 	// if number_op = 1  SHIFT
 	if (number_op==1)  {
-		// added: keep it, but SHIFT does not give good results!!!
-		// 1 - SHIFT insertion
-		//choose random value
-		//value = constant_generation();
 		// SHIFT: insert the parameter with the chosen value
 		insert_parameter(this, p_tree,  &Add, (Val)1.0);      //1.0 instead of random value
 		//
@@ -787,21 +809,30 @@ void Unary_Node::check_allocation(Node **p_tree, int number_op)
 	// if unary function is COS, SIN or EXP insert a parameter for the amplitude
 	if ((&Sin) || (&Cos) || (&Exp) || (&RectWave))   //check if these primitives are used... to avoid run-time errors
 		//if  ((!strcmp(f->sign,"sin")) || (!strcmp(f->sign,"cos")) || (!strcmp(f->sign,"exp")))  {	// WORKS
-		if  ((!strcmp(f->sign,Sin.sign)) || (!strcmp(f->sign,Cos.sign)) || (!strcmp(f->sign,Exp.sign)) || (!strcmp(f->sign,RectWave.sign)))  {
-		// AMPLITUDE PARAMETER
-			//choose random value
-			//value = constant_generation();
-			// insert the parameter with the chosen value
+		if  ((!strcmp(f->pre_sign,Sin.pre_sign)) || (!strcmp(f->pre_sign,Cos.pre_sign)) || (!strcmp(f->pre_sign,Exp.pre_sign)) || (!strcmp(f->pre_sign,RectWave.pre_sign)))  {
+			// insert AMPLITUDE PARAMETER
 			insert_parameter(p_node, p_tree, &Mult, (Val)1.0);		   //1.0 instead of random value
 		}
 
-		// if unary function is POW1, SQUARE or CUBE insert a parameter for the translation of the argument
-	if ((&Shift)) // || (&Square) || (&Cube))   //check if these primitives are used... to avoid run-time errors
-		if  (!strcmp(f->sign,"^1")) { // || (!strcmp(f->sign,"^2")) || (!strcmp(f->sign,"^3")))  {			//check on Unary_Func *f;
+	// if unary function is POW1, SQUARE or CUBE insert a parameter for the translation of the argument
+	if ((&Shift)) { // || (&Square) || (&Cube))   //check if these primitives are used... to avoid run-time errors
+		if  (!strcmp(f->post_sign,"^1")) { // || (!strcmp(f->sign,"^2")) || (!strcmp(f->sign,"^3")))  {			//check on Unary_Func *f;
 			// INSERT TRANSLATION PARAMETER
 			// set the parameter for check_allocation
 			child_op = 1;
 		}
+	}
+
+	// unary function block HfreqSine: insert amplitude but avoid insertion for child
+	if ((&HfreqSine)) {
+		if  (!strcmp(f->pre_sign,"hfreqsin")) {  //&& (child->type==NODE_VAR add the condition that the child is a variable node...
+			// insert AMPLITUDE PARAMETER
+			insert_parameter(p_node, p_tree, &Mult, (Val)1.0);		   //1.0 instead of random value
+			// set the parameter child_op to inhibit parameter insertion
+			//cout << "\nUnary_Node::check_allocation : HFreqSine detected! No parameter to be inserted for child" << endl;
+			child_op = -1;
+		}
+	}
 
 
 	// for all the other cases, don't insert a parameter
@@ -935,14 +966,16 @@ void Terminal_Var::check_allocation(Node **p_tree, int number_op)
 	}
 	else {
 	// -------------------------*/
-		// 2 - SCALE insertion
-		//choose random value
-		//value = constant_generation();
-		// SCALE: insert the parameter with the chosen value
-		insert_parameter(p_node, p_tree, &Mult, (Val)1.0);     //1.0 instead of random value
-		p_node = parent;
+
+	// 2 - SCALE insertion
 
 
+	//choose random value
+	//value = constant_generation();
+	// SCALE: insert the parameter with the chosen value
+	if (number_op!=-1) insert_parameter(p_node, p_tree, &Mult, (Val)1.0);     // number_op=-1 if parent is block HfreqSine
+
+	p_node = parent;
 	// if number_op = 1  SHIFT added
 	if (number_op==1) {
 		// 1 - SHIFT insertion

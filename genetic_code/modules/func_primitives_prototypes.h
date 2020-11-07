@@ -32,7 +32,8 @@ typedef struct Binary_Func {
 // Unary functions
 typedef struct Unary_Func {
     Val (*eval)(Val, int*);                   // function pointer
-    char *sign;                         // the prefix operation sign
+    char *pre_sign;                         // the prefix operation sign (before the argument)
+    char *post_sign;                        // the suffix operation sign (after the argument)
 	int *pos;  							// the position of the operation sign (0 if BEFORE, 1 if after the argument)
 }  Unary_Func;
 
