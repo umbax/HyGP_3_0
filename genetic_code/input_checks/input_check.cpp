@@ -61,29 +61,40 @@ void input_check(RunParameters *pr, ProblemDefinition *pb)
 		exit(-1); 
 	}
 
+	// check strategy for statistical properties
+	if ( (pr->strat_statp!=6) && (pr->strat_statp!=7) ) {
+		cerr << "\nError: the strategies currently available are STRAT_STATP= 6 or STRAT_STATP= 7!!!\n";
+		exit(-1);
+	}
+
 	// check on penalisation weights
+	// statistical properties objective  (a8)
+	if ((pr->w_strat_statp<0) || (pr->w_strat_statp>1.0)) {
+		cerr << "\nError: the weight linked to statistical properties objective (W_STRAT_STATP) has to be between 0 and 1!!!\n";
+		exit(-1);
+	}
 	// complexity (a2)
-	if ((pr->w_complexity<0) || (pr->w_complexity>1)) {
+	if ((pr->w_complexity<0) || (pr->w_complexity>1.0)) {
 		cerr << "\nError: the weight on complexity (W_COMPLEXITY) has to be between 0 and 1!!!\n";
 		exit(-1); 
 	}
     // w_n_corrections (a3)
-	if ((pr->w_n_corrections<0) || (pr->w_n_corrections>1)) {
+	if ((pr->w_n_corrections<0) || (pr->w_n_corrections>1.0)) {
 			cerr << "\nError: the weight on corrections (W_N_CORRECTIONS) has to be between 0 and 1!!!\n";
 			exit(-1);
 	}
 	// w_size (a4)
-	if ((pr->w_size<0) || (pr->w_size>1)) {
+	if ((pr->w_size<0) || (pr->w_size>1.0)) {
 			cerr << "\nError: the weight on size (W_SIZE) has to be between 0 and 1!!!\n";
 			exit(-1);
 	}
 	// w_pen_ord0 (a5)
-	if ((pr->w_pen_ord0<0) || (pr->w_pen_ord0>1)) {
+	if ((pr->w_pen_ord0<0) || (pr->w_pen_ord0>1.0)) {
 			cerr << "\nError: the weight on 0-order inequality constraints (W_PEN_ORD_0) has to be between 0 and 1!!!\n";
 			exit(-1);
 	}
 	// w_pen_ord1 (a6)
-	if ((pr->w_pen_ord1<0) || (pr->w_pen_ord1>1)) {
+	if ((pr->w_pen_ord1<0) || (pr->w_pen_ord1>1.0)) {
 			cerr << "\nError: the weight on 1-order inequality constraints (W_PEN_ORD_1) has to be between 0 and 1!!!\n";
 			exit(-1);
 	}

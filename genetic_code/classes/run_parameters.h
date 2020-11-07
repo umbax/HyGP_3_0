@@ -47,8 +47,12 @@ class RunParameters
 			double new_rate;		//percentage of the new individuals randomly initialized, with respect to the individual killed
 			int M;							// size of the population - number of trees 
 			int G;							// number of generations 
-			bool normalised;		// 1 if normalised RMSE is used; 0 for normal RMSE (see Population::fitness_func)
-			bool minmax;				// 1 if MinMax F function, 0 if usual weighted function
+
+			bool normalised;		// PARAMETER NOT USED ANY LONGER: 1 if normalised RMSE is used; 0 for normal RMSE (see Population::fitness_func)
+			bool minmax;			// PARAMETER NOT USED ANY LONGER: 1 if MinMax F function, 0 if usual weighted function
+
+			int strat_statp;			// Strategy to handle statistical moments as objectives - see Population::aggregate_F
+			double w_strat_statp;	// Numerical weight of strategy to handle statistical moments as objectives - see Population::aggregate_F
 			double w_complexity;		//weight given to the second normalized objective (measure of complexity of the tree)
 			double w_n_corrections;	//weight given to the number of times protected division "corrects" the result (division by zero)
 			double w_size;					 //weight given to the number of nodes a tree is made of
@@ -62,6 +66,8 @@ class RunParameters
 			int n_inequality1;    	//total number of order 1 inequality constraints (number of points constrained) 
 			double w_pen_ord1;    //weight for the penalisation on order 1 inequality constraint
 			
+			// constructor
+			RunParameters(void);
 			// function to show data
 			void show(void);
 };

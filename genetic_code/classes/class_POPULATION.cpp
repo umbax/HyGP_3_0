@@ -2463,12 +2463,19 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance))/(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean))); // Strategy 4
 	//F8 = fabs(ppd->y_var - complete_tree->tree_variance)/pow(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean)),2); // Strategy 5
 	// strategies below still under testing
-	F8 = pow(sqrt(fabs(ppd->y_var - complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3); //Strategy 6
-	//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2); //Strategy 7
-	//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),1)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),1); //Strategy 8
+	if ((pr->strat_statp)==6) {
+		//Strategy 6
+		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3);//Strategy 6
+	}
+	if ((pr->strat_statp)==7) {
+		//Strategy 7
+		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2);//Strategy 7
+	}
+
+		//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),1)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),1); //Strategy 8
 	//(exp((fabs(ppd->y_ave-complete_tree->tree_mean)))-1.0);
 
-	// weights
+	// weights - this operation can be put in read input, as it can be executed just once at the beginning of the run
 	//-------------------------------------------------------------
 	a2 = pr->w_complexity;
 	a3 = pr->w_n_corrections;
@@ -2476,7 +2483,8 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	a5 = pr->w_pen_ord0;		// penalisation of unsatisfied inequality constraint, order 0 (value)
 	a6 = pr->w_pen_ord1;		// penalisation of unsatisfied inequality constraint, order 1 (first derivative)
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
-	a8 = 0.000000001; // 11/8/20 TEMPORARY, until the corresponding keyword in input file is implemented
+	a8 = pr->w_strat_statp; // 0.000000001;
+	// the weight of the primary objective, RMSE error, is the residual to 1 of the sum of previous coefficients a2 to a8
 	a1= double(1.-a2-a3-a4-a5-a6-a8); //-a7); // The sum of all a_i coefficients must be 1!!
 	
 	//------------------------------------------------------------

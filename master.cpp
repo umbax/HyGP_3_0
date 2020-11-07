@@ -90,8 +90,8 @@ int main (int argc, char *argv[])
 	printf("\n			****************************			");
 	cout << "\n\nAvailable operations:";
 	cout << "\nBINARY: add , sub, mult, sdiv, spow";
-	cout << "\nUNARY: shift, neg, square, cube, exp, nxp, sin, cos, inv, abs, log, sinh, cosh, tanh, rectwave";
-	cout << "\n(list updated 1/10/2020)";
+	cout << "\nUNARY: shift, neg, square, cube, exp, nxp, sin, cos, inv, abs, log, sinh, cosh, tanh, rectwave, hfreqsin";
+	cout << "\n(list updated 7/11/2020)";
 	cout << "\n\nATTENTION! If you use more than 15 unary operations or 7 binary operations";
 	cout << "\nincrease the size of u_func_list or b_func_list (see problem_definition.h)";
 	cout << "\n(FUTURE solution : use vectors to read primitives...)";

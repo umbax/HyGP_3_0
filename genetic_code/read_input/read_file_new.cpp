@@ -78,8 +78,8 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 															"NEW_RATE=",
 															"M=",
 															"G=",
-															"NORMALISED_ERR=",
-															"MINMAX=",
+															"STRAT_STATP=",  //"NORMALISED_ERR=" not used any longer, slot used for another parameter
+															"W_STRAT_STATP=",			//"MINMAX=" not used any longer, slot used for another parameter
 															"W_COMPLEXITY=",
 															"W_N_CORRECTIONS=",
 															"W_SIZE=",
@@ -173,8 +173,8 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	pr->new_rate = p_par_values[16];
 	pr->M = (int)(p_par_values[17]);
 	pr->G = (int)(p_par_values[18]);
-	pr->normalised=(bool)(p_par_values[19]);
-	pr->minmax=(bool)(p_par_values[20]);
+	pr->strat_statp=(int)(p_par_values[19]); //pr->normalised=(bool)(p_par_values[19]); not used any longer, slot used for another parameter
+	pr->w_strat_statp=p_par_values[20];	 //pr->minmax=(bool)(p_par_values[20]); not used any longer, slot used for another parameter
 	pr->w_complexity = p_par_values[21];
 	pr->w_n_corrections = p_par_values[22];
 	pr->w_size = p_par_values[23];
