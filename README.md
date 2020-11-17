@@ -15,6 +15,7 @@ Objectives:
 - number of numerical coefficients (squared) 
 - number of illegal operations (i.e. division by zero)
 - number of nodes (individual size)
+- variance and average of target function, computed from provided data
 
 Maximal depth restriction implemented to avoid generation of trees of excessive depth.
 
@@ -23,4 +24,4 @@ Evolution ends when the best individual root mean square error goes below a user
 
 The hybrid approach is implemented using a sequential quadratic programming (SQP) algorithm to tune the numerical coefficients of the individuals. The number of random initial guesses of the numerical coefficients can be set by the user.
 
-Execution: sequential or parallel (OpenMP or SGE array job)
+Execution: sequential or parallel (SGE array job)
