@@ -127,6 +127,8 @@ class Binary_Node : public Node {
 	Val R2_test;
 	double tree_mean;		// mean of the values returned by the complete tree on the building data set
 	double tree_variance;	// variance of the values returned by the complete tree on the building data set
+	double tree_min;		// minimum value returned by tree on building data set
+	double tree_max;		// maximum value returned by tree on building data set
 	int hits;				// number of hits of the tree (if this is the root). Building data set
 	int hits_test;			// number of hits of the tree (if this is the root). Test data set
 	int n_tuning_parameters;   	//number of tuning parameters (holds only for complete trees - with parameters...)

@@ -247,6 +247,8 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	n_corrections_test = 0;
 	tree_mean = 0.0;
 	tree_variance = 0.0;
+	tree_min=0.0;
+	tree_max=0.0;
 	index_puls = NULL; 		//address of the array containing the position of the pulsations in x[]
 	index_var = NULL;	 	//address of the array containing the position of the variable (in v_list) the corresponding pulsation in index_puls refers to
 	n_pulsations = -1;  // see find_pulsations(...)
@@ -601,6 +603,8 @@ void Binary_Node::show_state(void)
 	cout << " tree variance (train. data) = " << scientific << setw(12) << tree_variance;
 	cout << setw(6) << "  T8 = " << scientific << setw(12) << T8;
 	cout << " % = " << fixed << setw(12) << 100.0*T8/F << endl;
+	//
+	cout << setw(27) << "tree min = " << tree_min << "   tree max = " << tree_max << endl;
 
 }
 

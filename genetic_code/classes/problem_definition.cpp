@@ -438,8 +438,8 @@ void ProblemDefinition::compute_inputdata_stats(void)
 	// sum_output, y_ave, Y_min and y_max
 	Val y_ave_temp = .0;
 	Val a=data[0][n_var];
-	Val a_max=.0;
-	Val a_min=.0;
+	Val a_max=data[0][n_var];
+	Val a_min=data[0][n_var];
 	sum_output=.0;
 	for (int k=0; k < n_data; k++) {
 		a=data[k][n_var];
@@ -462,8 +462,8 @@ void ProblemDefinition::compute_inputdata_stats(void)
 	// compute statistical properties of TEST DATA target values
 	Val y_ave_test_temp = .0;
 	a=data_test[0][n_var];
-	a_max=.0;
-	a_min=.0;
+	a_max=data_test[0][n_var];
+	a_min=data_test[0][n_var];
 	sum_output_test = .0;
 	for (int k=0; k < n_test; k++) {
 		a=data_test[k][n_var];

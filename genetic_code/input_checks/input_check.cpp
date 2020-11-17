@@ -62,8 +62,8 @@ void input_check(RunParameters *pr, ProblemDefinition *pb)
 	}
 
 	// check strategy for statistical properties
-	if ( (pr->strat_statp!=6) && (pr->strat_statp!=7) ) {
-		cerr << "\nError: the strategies currently available are STRAT_STATP= 6 or STRAT_STATP= 7!!!\n";
+	if ( (pr->strat_statp!=6) && (pr->strat_statp!=7) && (pr->strat_statp!=8)) {
+		cerr << "\nError: the strategies currently available are STRAT_STATP= 6, STRAT_STATP= 7 or STRAT_STATP= 8!!!\n";
 		exit(-1);
 	}
 

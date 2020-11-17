@@ -2118,10 +2118,17 @@ void Population::evaluate_complete_trees()
 {
 	int COMMENT = 1;
 	//-----------------------------------------------------------------
-	// result[0] = RMSE error (fitness value), result[1] = no. of hits scored,
-	// result[2] = no. of corrections done by protected operations, result[3] = R2
+	Val result[8];
+	//	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
+	//	result[1] = (Val)0.0;	// storing n of hits
+	//	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
+	//	result[3] = (Val)0.0; // storing value of R squared (R2)
+	//	result[4] = (Val)0.0;	// storing mean tree value on building data set
+	//	result[5] = (Val)0.0;	// storing variance of tree values on building data set
+	//	result[6] = (Val)0.0;	// storing min tree value on building data set
+	//	result[7] = (Val)0.0;	// storing max tree value on building data set
 
-	Val result[6];
+
 	int repr_tot = get_repr_tot();
 	cout << "\n\nEVALUATION of the n. " << repr_tot << " complete trees in the archive on the TEST DATA SET";
 	for (int i=0; i<repr_tot; i++) {
@@ -2170,13 +2177,15 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	// FOR THE FUTURE: change the way you import Sy: you might implement a class for storing data sets and all the related statistics
 	int COMMENT =0;
 
-	Val error = (Val)0.;
-	Val error_norm = (Val)0.;
+	Val treeval = 0.0;
+	Val a_max, a_min;
+	Val error = 0.0;
+	Val error_norm = 0.0;
 	Val square_err = 0.0;
 	Val sum_values = 0.0;
 	Val sum_square_values = 0.0;
-	Val result_tree_norm = (Val)0.0;
-	Val threshold = (Val)0.0001;   // for counting hits
+	Val result_tree_norm = 0.0;
+	Val threshold = 0.0001;   // for counting hits
 	int hits=0;
 	int n_corrections = 0;
 	((Binary_Node*)current_tree)->n_corrections=0;
@@ -2187,6 +2196,8 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	result_tree[3] = (Val)0.0; // storing value of R squared (R2)
 	result_tree[4] = (Val)0.0;	// storing mean tree value on building data set
 	result_tree[5] = (Val)0.0;	// storing variance of tree values on building data set
+	result_tree[6] = (Val)0.0;	// storing min tree value on building data set
+	result_tree[7] = (Val)0.0;	// storing max tree value on building data set
 
 	if (COMMENT) {
 		cout << "\nPopulation::fitness_func" << endl;
@@ -2195,6 +2206,8 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 		cout << "num_vars = " << parameters->nvar << " n_cases = " << n_cases << endl;
 		cout << " data_used: variables    given output    tree output" << endl; 
 	}
+
+
 
 	// cycle on the fitness cases, or points in the building/tuning data set (nfitcases)
 	for (int i=0; i< n_cases; i++) {	// n_test_cases; i++) {
@@ -2207,10 +2220,19 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 				cout << (problem->v_list[j])->value << "  ";   //var is field of Z defined at line 247 in master.cpp (it is not a member of Terminal_Var!!!)
 		}
 		
+
 		// tree evaluation
 		// (here n_corrections is evaluated) - ATTENTION if crossvalidation is enabled, corrections might be counted more than once per each tree!
-		Val treeval = tree_value((Binary_Node*)current_tree, &(((Binary_Node*)current_tree)->n_corrections));
+		treeval = tree_value((Binary_Node*)current_tree, &(((Binary_Node*)current_tree)->n_corrections));
 
+		// MAX and MIN of tree
+		if (i==0) {
+			a_min= treeval;
+			a_max= treeval;
+		} else {
+			if (treeval>a_max) a_max=treeval;
+			if (treeval<a_min) a_min=treeval;
+		}
 
 		// -------------------------------------------------------------------------
 		// ERROR FUNCTION
@@ -2278,6 +2300,12 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	// variance of tree values on building data set - result_tree[5] (see reformulation in http://datagenetics.com/blog/november22017/index.html)
 	result_tree[5] = sum_square_values/((Val)n_cases)-result_tree[4]*result_tree[4];
 
+	// min tree value on building data set
+	result_tree[6] = a_min;
+
+	// max tree value on building data set
+	result_tree[7] = a_max;
+
 	if (COMMENT) cout << "Fitness value  = " << result_tree[0] << endl;
 
 }
@@ -2294,7 +2322,15 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
 {
 	double fitness; // actually an error (RMSE). Be aware that this should be a Val type...
-	Val result[4];
+	Val result[8];
+	//	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
+	//	result[1] = (Val)0.0;	// storing n of hits
+	//	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
+	//	result[3] = (Val)0.0; // storing value of R squared (R2)
+	//	result[4] = (Val)0.0;	// storing mean tree value on building data set
+	//	result[5] = (Val)0.0;	// storing variance of tree values on building data set
+	//	result[6] = (Val)0.0;	// storing min tree value on building data set
+	//	result[7] = (Val)0.0;	// storing max tree value on building data set
 
 	// update tree parameters with input values x
 	update_complete_tree(ntree, x, n_param);
@@ -2471,8 +2507,11 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		//Strategy 7
 		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2);//Strategy 7
 	}
-
-		//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),1)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),1); //Strategy 8
+	if ((pr->strat_statp)==8) {
+		//Strategy 8
+		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3)+pow(fabs(ppd->y_max-complete_tree->tree_max),3)+pow(fabs(ppd->y_min-complete_tree->tree_min),3);//Strategy 8
+	}
+	//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),1)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),1); //Strategy 8
 	//(exp((fabs(ppd->y_ave-complete_tree->tree_mean)))-1.0);
 
 	// weights - this operation can be put in read input, as it can be executed just once at the beginning of the run
@@ -2684,14 +2723,16 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	double node_value; 
 	double* x;	// array of tree parameters (numerical coefficients)
 	double* x_best;   // best array of tree parameters (numerical coefficients)
-	Val fitness, fitness_best, R2, R2_best, tree_mean, tree_mean_best, tree_variance, tree_variance_best;
-	Val result[6];
-	// result[0] : error (fitness value - RMSE),
-	// result[1] : n. of hits scored,
-	// result[2]: n. of corrections done by protected operations
-	// result[3]: R2 value
-	// result[4]: average of tree values on training data set
-	// result[5]: variance of tree values on training data set
+	Val fitness, fitness_best, R2, R2_best, tree_mean, tree_mean_best, tree_variance, tree_variance_best, tree_min, tree_min_best, tree_max, tree_max_best;
+	Val result[8];
+//	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
+//	result[1] = (Val)0.0;	// storing n of hits
+//	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
+//	result[3] = (Val)0.0; // storing value of R squared (R2)
+//	result[4] = (Val)0.0;	// storing mean tree value on building data set
+//	result[5] = (Val)0.0;	// storing variance of tree values on building data set
+//	result[6] = (Val)0.0;	// storing min tree value on building data set
+//	result[7] = (Val)0.0;	// storing max tree value on building data set
 	
 	// utile
 	//cin.get();
@@ -2785,15 +2826,25 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	}
 
 	//---------------------------------------------------------------------
-	//initialization of state variables
+	//initialization of state variables of best tree
 	//---------------------------------------------------------------------	
 	fitness_best = 999999E99;
 	hits_best = 0;
 	n_tuning_parameters_best = 999999;
 	n_corrections_best = 999999;
 	R2_best = 999999;
-	tree_mean = 999999;
-	tree_variance = 999999;
+	tree_mean_best = 999999;
+	tree_variance_best = 999999;
+	tree_min_best=999999;
+	tree_max_best=999999;
+	//	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
+	//	result[1] = (Val)0.0;	// storing n of hits
+	//	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
+	//	result[3] = (Val)0.0; // storing value of R squared (R2)
+	//	result[4] = (Val)0.0;	// storing mean tree value on building data set
+	//	result[5] = (Val)0.0;	// storing variance of tree values on building data set
+	//	result[6] = (Val)0.0;	// storing min tree value on building data set
+	//	result[7] = (Val)0.0;	// storing max tree value on building data set
 	
 	//--------------------------------------------------------------------------------------------------------------------------------
 	// HERE THE MULTIPLE GUESSES CYCLE STARTS 
@@ -2896,6 +2947,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		R2 = result[3];
 		tree_mean = result[4];
 		tree_variance = result[5];
+		tree_min=result[6];
+		tree_max=result[7];
 		// also the array of coefficients x is returned...
 /*
 		// SELECTION of the BEST SET of PARAMETERS (x_best update) 
@@ -2929,7 +2982,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		//-----------------------------------------------------------------------------------------------------
 		//if ((fitness < fitness_best) && (method>=0) && (der_check)) {
 		// what if the paramaters x is not acceptable (all NaN)? Implement a function to check! Here or in tuning_individual_PRESS_single_guess
-		if (fitness < fitness_best)  {	   // single-objective comparison on validation error (measured on data_validation)
+		if (fitness < fitness_best)  {	   // single-objective comparison on validation error (measured on data_validation)- RMSE or PressRMSE (CROSSVALIDATION=1)
 			fitness_best = fitness;
 			hits_best = hits;
 			n_tuning_parameters_best = n_param;  // n_param is always the same, so that is not needed...
@@ -2937,6 +2990,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			R2_best = R2;
 			tree_mean_best = tree_mean;
 			tree_variance_best = tree_variance;
+			tree_min_best=tree_min;
+			tree_max_best=tree_max;
 			for (int j=0; j<n_param; j++)
 				 x_best[j] = x[j];  //
 		}
@@ -2962,6 +3017,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	ntree->R2 = R2_best;
 	ntree->tree_mean = tree_mean_best;
 	ntree->tree_variance = tree_variance_best;
+	ntree->tree_min=tree_min_best;
+	ntree->tree_max=tree_max_best;
 
 	if (COMMENT) {	
 		//  print the value of the tuned constants
@@ -3069,7 +3126,7 @@ void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double*
 		if (COMMENT) cout << "\n\nPopulation::tuning_individual_RMSE_single_guess : *p_n_param = " << *p_n_param << ", n_tuning = " << problem->n_tuning;
 
 		//to perform optimization with TIOL2.FOR  - Andrey's method - WORKS PERFECTLY!
-		if (COMMENT) cout << "\nPopulation::tuning_individual : Call opti_()";
+		if (COMMENT) cout << "\nPopulation::tuning_individual_RMSE_single_guess : Call opti_()";
 		opti_(&method, x_original, p_n_param, &m_total, &IW);
 
 		if (COMMENT) {
@@ -3094,7 +3151,7 @@ void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double*
 	//-----------------------------------------------------------
 	if (method==0) (*p_n_guess_ok)++;
 	if (COMMENT) {
-		cout << "Population::tuning_individual_PRESS_single_guess : show current data_validation" << endl;
+		cout << "\nPopulation::tuning_individual_RMSE_single_guess : show current data_validation" << endl;
 		cout << "problem->n_validation = " << problem->n_validation;
 		//problem->show_data_validation();
 	}
@@ -3109,12 +3166,13 @@ void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double*
 
 	// finally, define output values
 	//p_result[0];  // error predictor if CROSSVALIDATION=1 ok, if not...?   result[0] : error (fitness value - RMSE)
-	//p_result[1] // result[1] : n. of hits scored
-	//p_result[2]	// result[2]: n. of corrections done by protected operations
-	//p_result[3]	// result[3]: R2
-	//p_result[4]	// result[4]: tree mean on building data set
-	//p_result[5]	// result[5]: tree variance on building data set
-	// define which array x of tree parameters... currently x obtained from the last tuning on the whole data set
+	//	result[1] = (Val)0.0;	// storing n of hits
+	//	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
+	//	result[3] = (Val)0.0; // storing value of R squared (R2)
+	//	result[4] = (Val)0.0;	// storing mean tree value on building data set
+	//	result[5] = (Val)0.0;	// storing variance of tree values on building data set
+	//	result[6] = (Val)0.0;	// storing min tree value on building data set
+	//	result[7] = (Val)0.0;	// storing max tree value on building data set
 	// what if they are all NaN?! The individual expression cannot be printed... CHECK
 	for (int i=0; i<(*p_n_param); i++) {
 		if (isnan(x_original[i])) x_original[i]=1.0;   // correction in case of illegal parameter
