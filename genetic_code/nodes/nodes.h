@@ -118,6 +118,7 @@ class Binary_Node : public Node {
     void change_f (Binary_Func*);
 
 	// variables that define the STATE OF THE INDIVIDUAL (tree) - must be used only for root nodes
+    int diverging; 			// 1 if the tree contains high level polynomials, 0 if not (22/11/20 for now does not detect diverging unary functions)
     int son_of;				// genetic operation that generated the tree: 0 = reproduction, 1 = crossover, 2 = subtree mutation, 3 = point mutation
     double parent_fitness;	// fitness of best parent (for crossover parents are two...)
     double fitness;         // fitness of the tree, now called "error" (if this is the root). Building data set. IT SHOULD BE OF TYPE Val  !!
@@ -148,6 +149,7 @@ class Binary_Node : public Node {
 	double T6;
 	double T7;      // factorisation term
 	double T8;
+	double T9;
 
 	int twin;										// if twin = 1, the current tree structure is identical to another tree structure (perhaps the best tree in the previous gen)
 

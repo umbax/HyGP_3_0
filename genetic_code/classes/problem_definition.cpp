@@ -319,7 +319,7 @@ ProblemDefinition::~ProblemDefinition(void)
 	// delete all the dynamically allocated variables!!!
 	// still to understand why this destructor is called:
 	// - after Population::get_tree_derivative_given_norm_vector
-	// - Population::new_spawn and Population_evaluate()
+	// - Population::between new_spawn and Population_evaluate()
 
 	cout << "ProblemDefinition::~ProblemDefinition(void) : destructor called" << endl;
 

@@ -233,6 +233,7 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
     left = right = NULL;
 
 	//initialise state
+    diverging=0;
     son_of = -1;
     parent_fitness = -1.0;
 	fitness = .0;  // this is RMSE error, see fitness_func
@@ -263,6 +264,7 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	T6 = 1.0e+10;
 	T7 = 1.0e+10;
 	T8 = 1.0e+10;
+	T9 = 1.0e+10;
 	twin = 0;
 }
 
@@ -603,6 +605,10 @@ void Binary_Node::show_state(void)
 	cout << " tree variance (train. data) = " << scientific << setw(12) << tree_variance;
 	cout << setw(6) << "  T8 = " << scientific << setw(12) << T8;
 	cout << " % = " << fixed << setw(12) << 100.0*T8/F << endl;
+	//
+	cout << setw(27) << "O9 : high level polynomials : diverging = " << scientific << setw(12) << diverging;
+	cout << setw(6) << "  T9 = " << scientific << setw(12) << T9;
+	cout << " % = " << fixed << setw(12) << 100.0*T9/F << endl;
 	//
 	cout << setw(27) << "tree min = " << tree_min << "   tree max = " << tree_max << endl;
 

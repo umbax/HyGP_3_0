@@ -865,7 +865,7 @@ Binary_Node *Population::generate_subtree(int max_depth_subtree)
 	int COMMENT =0;
 	Val value;
 	char *expr;
-	if (COMMENT) cout << "\nCREATION OF A NEW SUBTREE" << endl;
+	if (COMMENT) cout << "\nPopulation::generate_subtree: CREATION OF A NEW SUBTREE" << endl;
 	
 	// create the root of the new subtree (the first argument of the constructor is the pointer to parent, NULL, as the node is root)
 	p_new_subtree = new Binary_Node(NULL,problem->b_func_list[int_rand(problem->num_b_funcs)]);    //int_rand(2)+2]);    // 2]); //gives multiplication!
@@ -1820,7 +1820,7 @@ void Population::kill_and_fill (ProblemDefinition *pb)
  }
 
 
-void Population::new_spawn(RunParameters pr, ProblemDefinition pb, int n_test_cases, int gen)
+void Population::new_spawn(RunParameters pr, int n_test_cases, int gen)  //ProblemDefinition pb
 {
 
 	int COMMENT =0;  //1 comments, 0 silent
@@ -1834,7 +1834,7 @@ void Population::new_spawn(RunParameters pr, ProblemDefinition pb, int n_test_ca
 	int cross_tot = (int)(floor(cross_rate*size));  //originally pr.cross_rate
 	int mut_tot = size - cross_tot - repr_tot;
 
-	 // allocate the a new tree pointer list
+	// allocate a new tree pointer list
    	Binary_Node **new_trees;
 	new_trees = new Binary_Node *[size];
 	// check
@@ -1976,8 +1976,20 @@ void Population::evaluate(int gen, int G)
 		// Doing this on the array of parameterless trees allow the modification to be transmitted throughout the evolution.
 		// Strategy adopted: Ed2 - if a variable is found as divisor (right child of a division),
 		// such variable is either replaced with 1 (Strategy : Ed) or might be summed with 1 (Strategy: Ed2)
-		//perform_editing(i);
-
+		// perform_editing(i);
+			//cout << "\n Individual  " << i << " :" << endl;
+			//		cout << " Individual in trees[" << i << "]: " << endl;
+			//		expr = trees[i]->print();
+			//		cout << " " << expr << endl;
+			//		delete [] expr;
+		purge_high_level_polynomials(trees[i],(Node*)(trees[i]));
+			//cout << "\nAfter purge_high_level_polynomials:";
+			//cout << "\n Individual  " << i << " :" << endl;
+			//		cout << " Individual in trees[" << i << "]: " << endl;
+			//		expr = trees[i]->print();
+			//		cout << " " << expr << endl;
+			//		delete [] expr;
+		//cin.get();
 
 		// 0 - copy the parameterless trees in a new array (complete_trees)
 		if (COMMENT) cout << "\n\nCopying individual trees["<< i << "] to complete_trees[" << i << "]..." << endl;
@@ -2016,7 +2028,9 @@ void Population::evaluate(int gen, int G)
 			print_individual((Node *)complete_trees[i]);
 			cout << " Number of parameters: " << complete_trees[i]->n_tuning_parameters << endl;
 		}
-
+		// 22/11/20 insert here search for high level polynomials
+		//search_high_level_polynomials(complete_trees[i],(Node*)(complete_trees[i]));
+		//cin.get();
 
 		// 3 - assign the found fitness value to the corresponding parameterless tree
 		if (COMMENT) cout << " Updating fitness value of the corresponding parameterless tree trees["<< i << "]" << endl;
@@ -2043,7 +2057,7 @@ void Population::evaluate(int gen, int G)
 			search_first_op(complete_trees[i],(Node*)(complete_trees[i]),0); // <= IMPORTANT for FACTORISE!
 		}
 
-		// 7 - evaluate F
+		// 7 - evaluate F (at last)
 		// REMEMBER: during optimization fitness values (sheer RMSE) are evaluated...
 		// IMPORTANT if you want to introduce penalization for complexity. Extra penalization terms
 		// must be added here to fitness
@@ -2411,6 +2425,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	double F7, a7; // penalisation to increase factorisation (depth of first division)
 
 	double F8, a8; // ADDED 11/8/20: penalisation on statistical properties of the tree (average and variance)
+	double F9, a9; // ADDED 22/11/20: penalisation of diverging trees (high level polynomials - that is not argument of any function - are present)
 
 	//-------------------------------------------------------------
 	// first objective: FITNESS
@@ -2514,6 +2529,14 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),1)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),1); //Strategy 8
 	//(exp((fabs(ppd->y_ave-complete_tree->tree_mean)))-1.0);
 
+	//-------------------------------------------------------------------------
+	// 9th objective : presence of high level polynomials that cause divergent behaviour (extrapolation issues)
+	//-------------------------------------------------------------------------
+	F9 = 0.0;
+	//F9 = 1.0*(complete_tree->diverging);  //1.0*(complete_tree->diverging);
+
+
+	//-------------------------------------------------------------
 	// weights - this operation can be put in read input, as it can be executed just once at the beginning of the run
 	//-------------------------------------------------------------
 	a2 = pr->w_complexity;
@@ -2523,8 +2546,9 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	a6 = pr->w_pen_ord1;		// penalisation of unsatisfied inequality constraint, order 1 (first derivative)
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
 	a8 = pr->w_strat_statp; // 0.000000001;
+	a9 = 0.0; //0.4; //0.3; //0.2; //0.1;
 	// the weight of the primary objective, RMSE error, is the residual to 1 of the sum of previous coefficients a2 to a8
-	a1= double(1.-a2-a3-a4-a5-a6-a8); //-a7); // The sum of all a_i coefficients must be 1!!
+	a1= double(1.-a2-a3-a4-a5-a6-a8-a9); //-a7); // The sum of all a_i coefficients must be 1!!
 	
 	//------------------------------------------------------------
 	// objectives multiplied by weights
@@ -2537,6 +2561,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	complete_tree->T6 = a6*F6;
 	complete_tree->T7 = 0.0; // not used in the standard approach
 	complete_tree->T8 = a8*F8;
+	complete_tree->T9 = a9*F9;
 
 	//------------------------------------------------------------
 	// fitness function definition
@@ -2571,7 +2596,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		
 		if (pr->w_factorisation<=0) {
 			// STANDARD APPROACH (HyGP)
-			complete_tree->F = complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T8;  // removed "+ complete_tree->T7;"
+			complete_tree->F = complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T8 + + complete_tree->T9;  // removed "+ complete_tree->T7;"
 		}
 			// adaptive approach
 			//	complete_tree->F = complete_tree->T1 + (-1.0*((double)learning_on-1.0))*complete_tree->T2 + complete_tree->T3 + ((double)learning_on+1.0)*complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T7;
@@ -2596,7 +2621,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		cout << "\na4 = " << a4 << "  F4 = " << F4 << "  a4*F4 = " << a4*F4;
 		cout << "\na5 = " << a5 << "  F5 = " << F5 << "  a5*F5 = " << a5*F5;
 		cout << "\na7 = " << a7 << "  F7 = " << F7 << "  a7*F7 = " << a7*F7;
-		cout << "\na8 = " << a8 << "  F8 = " << F8 << "  a8*F8 = " << a8*F8 << " ATTENTION! Hardcoded target: zero mean and zero variance on training data!";
+		cout << "\na8 = " << a8 << "  F8 = " << F8 << "  a8*F8 = " << a8*F8;
 		//for (int k=0; k<4; k++) cout << "\nlist[ " << k << " ] = " << list[k];
 		cout << "\nF = " << complete_tree->F << endl;
 	}
@@ -3405,7 +3430,7 @@ void Population::tuning_individual_PRESS_single_guess(Binary_Node *ntree, double
 ///
 
 	// finally, define output values
-	p_result[0]=PressRMS;  // error predictor if CROSSVALIDATION=1 ok, if not...?   result[0] : error (fitness value - RMSE)
+	p_result[0]=PressRMS;  // error predictor if CROSSVALIDATION=1 ok, if not...?   result[0] : error (RMSE)
 	//p_result[1] // result[1] : n. of hits scored
 	//p_result[2]	// result[2]: n. of corrections done by protected operations
 	//p_result[3]	// result[3]: R2
@@ -4488,11 +4513,11 @@ void Population::search_first_op(Binary_Node *tree, Node *cur_node, int cur_dept
 {
   int COMMENT = 0;
 
-	// list of operations whose presence has to be checked
-	// BINARY
+  // list of operations whose presence has to be checked
+  // BINARY
   int found_div =-1; // division
-	int found_mult =-1; // multiplication
-	// UNARY
+  int found_mult =-1; // multiplication
+  // UNARY
   //int found_inv = -1; // reciprocal
   int found_sin = -1; // sin
   int found_cos = -1; // cos 
@@ -4501,22 +4526,23 @@ void Population::search_first_op(Binary_Node *tree, Node *cur_node, int cur_dept
   int found_tanh = -1; //tanh
   int found_log = -1; //log
 
-	if (cur_node->type == NODE_BINARY) {
-		// check division
-		found_div =  strcmp((((Binary_Node*)cur_node)->get_func())->sign,SDiv.sign);
-		// check multiplication
-		found_mult = strcmp((((Binary_Node*)cur_node)->get_func())->sign,Mult.sign);
+  if (cur_node->type == NODE_BINARY) {
+	// check division
+	found_div =  strcmp((((Binary_Node*)cur_node)->get_func())->sign,SDiv.sign);
+	// check multiplication
+	found_mult = strcmp((((Binary_Node*)cur_node)->get_func())->sign,Mult.sign);
    
-		if ((found_div==0) || (found_mult==0)) { //or (!found_mult))
-			tree->depth_first_op = cur_depth;
-      if (COMMENT) {
-        char *expr;
-			  expr = tree->print();
-			  cout << "\n\n Tree: \n" << expr;
-        cout << "\n Found sought operation at depth : " << cur_depth;
-        if (found_div==0) cout << " - DIVISION";
-        if (found_mult==0) cout << " - MULTIPLICATION";
-      }
+	if ((found_div==0) || (found_mult==0)) { //or (!found_mult))
+		tree->depth_first_op = cur_depth;
+     if (COMMENT) {
+    	 char *expr;
+    	 expr = tree->print();
+		 cout << "\n\n Tree: \n" << expr;
+		 delete [] expr;
+		 cout << "\n Found sought operation at depth : " << cur_depth;
+		 if (found_div==0) cout << " - DIVISION";
+		 if (found_mult==0) cout << " - MULTIPLICATION";
+     }
 			return;
 		}
 		else {
@@ -4547,9 +4573,10 @@ void Population::search_first_op(Binary_Node *tree, Node *cur_node, int cur_dept
     	tree->depth_first_op = cur_depth;
       if (COMMENT) {
         char *expr;
-			  expr = tree->print();
-			  cout << "\n\n Tree: \n" << expr;
-        cout << "\n Found sought operation at depth : " << cur_depth;
+		expr = tree->print();
+		cout << "\n\n Tree: \n" << expr;
+		delete [] expr;
+		cout << "\n Found sought operation at depth : " << cur_depth;
         if (found_sin==0) cout << " - SIN";
         if (found_cos==0) cout << " - COS";
         if (found_exp==0) cout << " - EXP";
@@ -4565,8 +4592,155 @@ void Population::search_first_op(Binary_Node *tree, Node *cur_node, int cur_dept
 	return;
 }
 
+// function that seraches for diverging polynomials (22/10/20 to improve extrapolation properties)
+void Population::search_high_level_polynomials(Binary_Node *tree, Node *cur_node)
+{
+	int COMMENT = 0;
+	if (COMMENT) {
+		cout << "\n\nPopulation::search_high_level_polynomials() : START";
+		char *expr;
+		expr = cur_node->print();
+		cout << "\n Node: " << expr;
+		delete [] expr;
+	}
+
+	// Binary node
+	int found_add=0;
+	int found_sub=0;
+	int found_mult=0;
+	// Unary node
+	int found_shift=0;
+	// Terminal node (variable)
+	int found_variable=0;
+
+	// check operation of root node
+	// Binary node
+	if (cur_node->type == NODE_BINARY) {
+		// check addition
+		if (!strcmp((((Binary_Node*)cur_node)->get_func())->sign,Add.sign)) found_add=1;
+		// check subtraction
+		if (!strcmp((((Binary_Node*)cur_node)->get_func())->sign,Sub.sign)) found_sub=1;
+		// check multiplication
+		if (!strcmp((((Binary_Node*)cur_node)->get_func())->sign,Mult.sign)) found_mult=1;
+	}
+	// Unary node: check only shift: if there are polynomial down below, they are argument of this unary function, and the user should avoid using diverging functions if bounded behaviour is requested...
+	if (cur_node->type == NODE_UNARY) {
+		// check shift
+		if (!strcmp((((Unary_Node*)cur_node)->get_func())->post_sign, Shift.post_sign)) found_shift=1;
+	}
+	// Terminal Variable
+	if (cur_node->type == NODE_VAR) {
+		found_variable = 1;
+	}
+	// Terminal Const: by definition a constant, so no diverging issues
 
 
+	// check in branches of high level polynomials
+	// Binary Node
+	if ((found_add) || (found_sub) || (found_mult)) {
+		// call recursively offspring function
+		search_high_level_polynomials(tree, ((Binary_Node*)cur_node)->get_left());
+		search_high_level_polynomials(tree, ((Binary_Node*)cur_node)->get_right());
+	}
+	// Unary Node
+	if (found_shift) {
+		// call recursively offspring function
+		search_high_level_polynomials(tree, ((Unary_Node*)cur_node)->get_child());
+	}
+	// Terminal Node - Variable
+	if (found_variable) {
+		tree->diverging=1;   // here a high level, diverging polynomial has been found
+		if (COMMENT) cout << "\n\nPopulation::search_high_level_polynomials() : high level, diverging polynomial has been found";
+	}
+
+
+	if (COMMENT) {
+		cout << "\n\nPopulation::search_high_level_polynomials() : END";
+	}
+
+
+	return;
+
+}
+
+
+// function that purges high level polynomials in trees without parameters (29/11/20)
+void Population::purge_high_level_polynomials(Binary_Node *tree, Node *cur_node)
+{
+
+	int COMMENT = 0;
+	if (COMMENT) {
+		cout << "\n\nPopulation::purge_high_level_polynomials() : START";
+		char *expr;
+		expr = cur_node->print();
+		cout << "\n Node: " << expr;
+		delete [] expr;
+	}
+
+	// Binary node
+	int found_add=0;
+	int found_sub=0;
+	int found_mult=0;
+	// Unary node
+	int found_shift=0;
+	// Terminal node (variable)
+	int found_variable=0;
+
+	// check operation of root node
+	// Binary node
+	if (cur_node->type == NODE_BINARY) {
+		// check addition
+		if (!strcmp((((Binary_Node*)cur_node)->get_func())->sign,Add.sign)) found_add=1;
+		// check subtraction
+		if (!strcmp((((Binary_Node*)cur_node)->get_func())->sign,Sub.sign)) found_sub=1;
+		// check multiplication
+		if (!strcmp((((Binary_Node*)cur_node)->get_func())->sign,Mult.sign)) found_mult=1;
+	}
+	// Unary node: check only shift: if there are polynomial down below, they are argument of this unary function, and the user should avoid using diverging functions if bounded behaviour is requested...
+	if (cur_node->type == NODE_UNARY) {
+		// check shift
+		if (!strcmp((((Unary_Node*)cur_node)->get_func())->post_sign, Shift.post_sign)) found_shift=1;
+	}
+	// Terminal Variable
+	if (cur_node->type == NODE_VAR) {
+		found_variable = 1;
+	}
+	// Terminal Const: by definition a constant, so no diverging issues
+
+
+	// check in branches of high level polynomials
+	// Binary Node
+	if ((found_add) || (found_sub) || (found_mult)) {
+		// call recursively offspring function
+		purge_high_level_polynomials(tree, ((Binary_Node*)cur_node)->get_left());
+		purge_high_level_polynomials(tree, ((Binary_Node*)cur_node)->get_right());
+	}
+	// Unary Node
+	if (found_shift) {
+		// call recursively offspring function
+		purge_high_level_polynomials(tree, ((Unary_Node*)cur_node)->get_child());
+	}
+	// Terminal Node - Variable
+	if (found_variable) {
+		// here the variable found is the cause of the divergent behaviour: replace it with a constant (1)
+		eliminate_subtree(cur_node, (Val)1.0);
+		if (COMMENT) {
+			cout << "\n\nPopulation::search_high_level_polynomials() : high level, diverging polynomial has been found";
+			char *expr;
+			expr = cur_node->print();
+			cout << "\n Node: " << expr;
+			delete [] expr;
+		}
+
+	}
+
+
+	if (COMMENT) {
+		cout << "\n\npurge_high_level_polynomials() : END";
+	}
+
+	return;
+}
 
 
 Node* Population::remove_unary_node(Unary_Node *u_node)
