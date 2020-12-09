@@ -174,8 +174,8 @@ class Population {
 	void search_first_op(Binary_Node*, Node *, int);
 	// function that searches for high level polynomials in complete trees (22/11/20)
 	void search_high_level_polynomials(Binary_Node*, Node *);
-	// function that purges high level polynomials in trees without parameters (29/11/20)
-	void purge_high_level_polynomials(Binary_Node*, Node *);
+	// function that purges diverging terms in trees without parameters (29/11/20)
+	void purge_diverging_terms(Binary_Node*, Node *);
 
 
 	// function which returns the value of a given tree (indicated by ntree, index of trees[])

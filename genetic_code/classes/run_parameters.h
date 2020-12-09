@@ -36,20 +36,21 @@ class RunParameters
 			double max_n_periods;	// maximum number of complete oscillations in each direction
 			int nfitcases;			// total number of fitness cases (no of rows of the sample matrix)
 			int method;				// method for generating the initial pop. -> 1=no limits, 2=FULL, 3=GROW, 4=RAMPED
-			int depth_max;		// maximum depth of newly generated tree (must be > 0 or > depth_min)
-			int depth_min;		// minimum depth of newly generated tree (must be > 0)  --- only for RAMPED method
+			int depth_max;			// maximum depth of newly generated tree (must be > 0 or > depth_min)
+			int depth_min;			// minimum depth of newly generated tree (must be > 0)  --- only for RAMPED method
 			int depth_lim;			// limit on depth during the evolution (no trees will ever reach a depth bigger than depth_lim)
-			double p_FULL;			// % of trees built with FULL method (p_FULL + p_GROW = 1)    --- only for RAMPED method
+			double p_FULL;			// percentage of trees built with FULL method (p_FULL + p_GROW = 1)    --- only for RAMPED method
 			double repr_rate;		// reproduction rate
 			double cross_rate;	 	// crossover rate
 			double mut_rate;		// mutation rate 
 			double comp_rate;		//percentage of the individuals created composing two trees, with respect to the individual killed
 			double new_rate;		//percentage of the new individuals randomly initialized, with respect to the individual killed
-			int M;							// size of the population - number of trees 
-			int G;							// number of generations 
+			int M;					// size of the population - number of trees
+			int G;					// number of generations
+			int bounded;			// flag to activate the editing strategy to remove high level polynomials and other diverging terms, to limit the search to bounded functions
 
-			bool normalised;		// PARAMETER NOT USED ANY LONGER: 1 if normalised RMSE is used; 0 for normal RMSE (see Population::fitness_func)
-			bool minmax;			// PARAMETER NOT USED ANY LONGER: 1 if MinMax F function, 0 if usual weighted function
+			bool normalised;		// 9/12/20 PARAMETER NOT USED ANY LONGER: 1 if normalised RMSE is used; 0 for normal RMSE (see Population::fitness_func)
+			bool minmax;			// 9/12/20 PARAMETER NOT USED ANY LONGER: 1 if MinMax F function, 0 if usual weighted function
 
 			int strat_statp;			// Strategy to handle statistical moments as objectives - see Population::aggregate_F
 			double w_strat_statp;	// Numerical weight of strategy to handle statistical moments as objectives - see Population::aggregate_F

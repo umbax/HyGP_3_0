@@ -1203,6 +1203,7 @@ void Population::print_population_with_parameters(int gen)
 		if (!COMMENT) break; 
 	}
 	cout << "------------------------------------------------------------------------\n" << endl; 
+	cout << "Population::print_population_with_parameters: selected strategy = " << parameters->strat_statp << endl;
 	
 }
 
@@ -1826,7 +1827,7 @@ void Population::new_spawn(RunParameters pr, int n_test_cases, int gen)  //Probl
 	int COMMENT =0;  //1 comments, 0 silent
 	char *expr;
 
-	cout << "\n\nPopulation :: new_spawn(  )" << endl;
+	cout << "\n\nPopulation::new_spawn" << endl;
 
 	// set the number of individuals to copy/generate with each genetic operator
 	int repr_tot = (int)(floor(repr_rate*size));   //originally pr.repr_rate
@@ -1868,11 +1869,11 @@ void Population::new_spawn(RunParameters pr, int n_test_cases, int gen)  //Probl
   int total_new_trees = 0;
   for (int k=0; k<4; k++)
    		total_new_trees = total_new_trees + composition[k];
-  cout << "\nTotal number of new trees generated/replicated : " << total_new_trees << endl; 
-  cout << "\n by reproduction : " << composition[0];
-  cout << "\n generated from scratch : " << composition[1];
-  cout << "\n by crossover : " << composition[2];
-  cout << "\n by mutation : " << composition[3];
+  cout << "Total number of new trees generated/replicated : " << total_new_trees;
+  cout << "\n  by reproduction : " << composition[0];
+  cout << "\n  generated from scratch : " << composition[1];
+  cout << "\n  by crossover : " << composition[2];
+  cout << "\n  by mutation : " << composition[3];
   
   
   if (total_new_trees != size) {
@@ -1960,8 +1961,10 @@ void Population::evaluate(int gen, int G)
 
 
 	// cycle through each individual in the population of size "size"
+	cout << "Evaluating tree n. : " << endl;
 	for (int i=0; i<size; i++) {
 
+		cout << "\r" << i << " " << flush;
 		// print the individual without parameters
 		expr = trees[i]->print();
 		if (COMMENT)  {
@@ -1977,19 +1980,20 @@ void Population::evaluate(int gen, int G)
 		// Strategy adopted: Ed2 - if a variable is found as divisor (right child of a division),
 		// such variable is either replaced with 1 (Strategy : Ed) or might be summed with 1 (Strategy: Ed2)
 		// perform_editing(i);
-			//cout << "\n Individual  " << i << " :" << endl;
-			//		cout << " Individual in trees[" << i << "]: " << endl;
-			//		expr = trees[i]->print();
-			//		cout << " " << expr << endl;
-			//		delete [] expr;
-		purge_high_level_polynomials(trees[i],(Node*)(trees[i]));
-			//cout << "\nAfter purge_high_level_polynomials:";
-			//cout << "\n Individual  " << i << " :" << endl;
-			//		cout << " Individual in trees[" << i << "]: " << endl;
-			//		expr = trees[i]->print();
-			//		cout << " " << expr << endl;
-			//		delete [] expr;
-		//cin.get();
+//			cout << "\n Individual  " << i << " :" << endl;
+//			cout << " Individual in trees[" << i << "]: " << endl;
+//			expr = trees[i]->print();
+//			cout << " " << expr << endl;
+//			delete [] expr;
+		// 9/12/20 TREE EDITING to convert diverging functions to bounded functions (single converging terms as variables are turned into constants
+		if (parameters->bounded==1) purge_diverging_terms(trees[i],(Node*)(trees[i]));
+//			cout << "\nAfter purge_diverging_terms:";
+//			cout << "\n Individual  " << i << " :" << endl;
+//			cout << " Individual in trees[" << i << "]: " << endl;
+//			expr = trees[i]->print();
+//			cout << " " << expr << endl;
+//			delete [] expr;
+//			cin.get();
 
 		// 0 - copy the parameterless trees in a new array (complete_trees)
 		if (COMMENT) cout << "\n\nCopying individual trees["<< i << "] to complete_trees[" << i << "]..." << endl;
@@ -2427,6 +2431,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	double F8, a8; // ADDED 11/8/20: penalisation on statistical properties of the tree (average and variance)
 	double F9, a9; // ADDED 22/11/20: penalisation of diverging trees (high level polynomials - that is not argument of any function - are present)
 
+
 	//-------------------------------------------------------------
 	// first objective: FITNESS
 	//-------------------------------------------------------------
@@ -2508,10 +2513,10 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	// eighth objective : statistical properties of the tree (mean and variance)
 	//-------------------------------------------------------------------------
 	// first attempt only valid for target function with zero mean and similar variance to input data
-	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance)); // Strategy 2
 	//F8 = fabs(complete_tree->tree_mean) // Strategy 1
+	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance)); // Strategy 2
 	//F8 = fabs(complete_tree->tree_mean) + sqrt(fabs(ppd->y_var - complete_tree->tree_variance)); // Strategy 3
-	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance))/(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean))); // Strategy 4
+	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance))/(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean)));// Strategy 4
 	//F8 = fabs(ppd->y_var - complete_tree->tree_variance)/pow(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean)),2); // Strategy 5
 	// strategies below still under testing
 	if ((pr->strat_statp)==6) {
@@ -2526,6 +2531,16 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		//Strategy 8
 		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3)+pow(fabs(ppd->y_max-complete_tree->tree_max),3)+pow(fabs(ppd->y_min-complete_tree->tree_min),3);//Strategy 8
 	}
+	if ((pr->strat_statp)==11) {
+		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3);
+		//F8 = pow(fabs(ppd->y_max-complete_tree->tree_max),3)+pow(fabs(ppd->y_min-complete_tree->tree_min),3);
+		// test to monitor ratio between difference in peaks and standard deviation
+		//F8= pow(fabs(ppd->y_max-complete_tree->tree_max)/(sqrt(ppd->y_var)),3)+pow(fabs(ppd->y_min-complete_tree->tree_min)/(sqrt(ppd->y_var)),3);
+		// test to monitor ratio between difference in peaks and target function amplitude
+		//F8= pow(100*fabs(ppd->y_max-complete_tree->tree_max)/(fabs(ppd->y_max-ppd->y_min)),3)+pow(100*fabs(ppd->y_min-complete_tree->tree_min)/(fabs(ppd->y_max-ppd->y_min)),3);
+
+	}
+
 	//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),1)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),1); //Strategy 8
 	//(exp((fabs(ppd->y_ave-complete_tree->tree_mean)))-1.0);
 
@@ -2572,25 +2587,22 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//	dc = (double)(gen/G);
 	// else dc = 1.;
 
-	if (pr->minmax) {
+	if (pr->strat_statp==11) {	// if (pr->minmax) {
 		// minmax approach     
 		// build the list of elements among which you want to find the maximum
-		double list[4];
-		list[0] = a1*F1/.01;
-		list[1] = a2*F2/1.;
-		list[2] = a3*F3*1000000.0/1.; 
-		list[3] = a4*F4/1.;
+		double list[5];
+		list[0] = complete_tree->T1;
+		list[1] = complete_tree->T2;
+		list[2] = complete_tree->T3;
+		list[3] = complete_tree->T4;
+		list[4] = complete_tree->T8;
 
-		complete_tree->F = *max_element(list, list+3);
-	}
-	else {
+		complete_tree->F = *max_element(list, list+5);
+
+	} else {
 		// aggregating approach
 		// compute F as linear combination of fitness value and other objectives
-		//F = F1 + a2*F2;  //Alvarez's        
-		//F = (1-a2)*F1+a2*F2;
-		//F= (1-a2-a4)*F1+a2*F2+a4*F4;
 		//F = a1*F1+a2*dc*dc*F2+a3*dc*dc*F3+a4*dc*dc*F4;   //dynamic weights
-		//
 		//F = a1*F1+a2*F2+a3*(exp(F3*F3)-1)*1000000.0+a4*F4+(1000000.0)*(exp(F5*F5)-1.0)*a5;
 		//F = a1*F1+a2*F2+a3*F3*1000000.0+a4*F4+(1000000.0)*(exp(F5*F5)-1.0)*a5;
 		
@@ -2608,6 +2620,8 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		// factorise2
 		//complete_tree->F = F7*(complete_tree->T1 + complete_tree->T2 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6) + complete_tree->T3 ;
 	}
+
+
 
 	if (COMMENT) {  // && (i==0)) {
 		cout << "\nPopulation::aggregate_F" << endl;
@@ -4396,6 +4410,121 @@ void Population::update_ext_archive(void)
 
 
 
+//// OLD VERSION (before 7/12/20), which finds all the pulsations corresponding to all single sin() and cos() terms
+//// function to find the addresses of the terminal_const nodes that are "pulsation" or circular frequencies to be optimised in a specific way
+//// This function is called by Population::tuning_individual
+//// input: nothing
+//// output: no of pulsations (vector_puls is updated with the addresses of the pulsations)
+//void Population::find_pulsations_OLD(Binary_Node *tree)
+//{
+//	int COMMENT = 0;
+//
+//	tree->n_pulsations = 0;  // n_pulsations is a member of Binary_Node
+//
+//	if (COMMENT) {
+//		cout << "\n\nPopulation::find_pulsations() : START";
+//		char *expr = tree->print();
+//		cout << "\ntree : " << expr;
+//		delete [] expr;
+//		cout << "\n index_puls = " << tree->index_puls;
+//		cout << "\n n_pulsations = " << tree->n_pulsations;
+//	}
+//
+//	// exit if sin and cos are not primitives in input file
+//	if (COMMENT) cout << "\n &Sin = " << &Sin << "  &Cos = " << &Cos;
+//	if ((&Sin==NULL) && (&Cos==NULL)) {
+//		tree->n_pulsations = 0;
+//		if (COMMENT) cout << "\nfind_pulsations : n_pulsations = 0";
+//	}
+//	// if you are here, sin and cos are among primitives
+//	else {
+//		if (COMMENT) cout << "\n Sin or Cos are used";
+//		Node *grandpa;
+//		Node *brother;
+//		string grandpa_fun;
+//		vector < int > vector_puls; // vector containing the indexes of the pulsations in p_par
+//		vector < int > vector_var; // vector containing the indexes of the variables corresponding to pulsations
+//		int i_var;
+//
+//		//searching among parameters' addresses in p_par
+//		for (int i=0; i< tree->p_par.size(); i++) {
+//				// retrieve grandparent's address: if a is the parameter in sin(a*x), then sin is the grandpa unary function, x is the brother
+//				grandpa = ((tree->p_par[i])->get_parent())->get_parent();
+//				// retrieve brother's address (parent's right child...)
+//				brother = ((Binary_Node*)(tree->p_par[i])->get_parent())->get_right();
+//
+//				if (grandpa)  {   //make sure that grandpa exists (not the case for additional shift term...)
+//					if (grandpa->type == NODE_UNARY) {
+//
+//						// check grandpa function
+//						grandpa_fun = ((Unary_Node*)grandpa)->get_func()->pre_sign;  //31/10/20 improvement: better to use a internal code for operations
+//						// check operations of all grandpa's ancestors
+//
+//						// check that the parameter has all the features to be considered a "pulsation"
+//						if (((!strcmp(grandpa_fun.c_str(),"sin")) || (!strcmp(grandpa_fun.c_str(),"cos"))) && (brother->type==NODE_VAR)) {
+//							// check that all the functions upstream the multplication of a1*sinusoidal f. are add,sub,shift,neg
+//							if ((grandpa->get_parent())->check_nodal_functions_upstream()==1) {
+//								//&/&/&/&/&/&/&/&/&/&/
+//								// here you are sure that the pulsation belongs to a term like sin(omega*Zi) ...
+//								// PULSATION : append the index i of the pulsation to vector_puls
+//								vector_puls.push_back(i);
+//								tree->n_pulsations = tree->n_pulsations + 1; // added 7/12/20
+//
+//								// VARIABLE INDEX in v_list : append the variable no. of the pulsation to vector_var
+//								// correct the number to get the index in v_list first
+//								i_var = (((Terminal_Var*)brother)->get_var_number()) - 1;
+//								//check that i_var< num_vars
+//								if (i_var>=parameters->nvar) {
+//									cerr << "\nPopulation::find_pulsations : ERROR : i_var >= num_vars !!!";
+//									exit (-1);
+//								}
+//								// update vector_var with the index
+//								vector_var.push_back(i_var);
+//
+//								//&/&/&/&/&/&/&/&/&/&/
+//							}
+//						}
+//					}
+//				}
+//
+//		}
+//
+//
+//		// transform vcout << "Index of pulsations in p_par: " << endl;ector into a standard int array
+//		tree->n_pulsations = vector_puls.size();
+//		if (!(tree->n_pulsations)) {
+//			if (COMMENT) cout << "\nfind_pulsations : n_pulsations = 0";
+//		}
+//		else	{  // here you are sure there are pulsations
+//			// initialise arrays with pulsation information
+//			tree->index_puls = new int[tree->n_pulsations];   // content deleted at the end of Population::tuning_individual
+//			tree->index_var = new int[tree->n_pulsations];	// content deleted at the end of Population::tuning_individual
+//			for (int k=0; k < tree->n_pulsations; k++) {
+//				tree->index_puls[k] = vector_puls[k];
+//				tree->index_var[k] = vector_var[k];
+//			}
+//
+//
+//			if (COMMENT) {
+//				cout << "\nn_pulsations = " << tree->n_pulsations << endl;
+//				cout << "Pulsations found:";
+//				for (int h=0; h < tree->n_pulsations; h++)
+//					cout << " " <<  (tree->p_par[tree->index_puls[h]])->value(NULL);
+//				cout << "\nCorresponding variable's index in v_list:"<< endl;
+//				for (int h=0; h < tree->n_pulsations; h++)
+//					cout << " " <<  tree->index_var[h];
+//			}
+//		}  // end else
+//
+//	}  // end else
+//
+//	if (COMMENT) cout << "\nPopulation::find_pulsations : END" << endl;
+//	//cin.get();
+//}
+
+
+//+-+-+-
+// NEW VERSION (after 7/12/20), finds only one pulsation corresponding to a single sin() or cos() term
 // function to find the addresses of the terminal_const nodes that are "pulsation" or circular frequencies to be optimised in a specific way
 // This function is called by Population::tuning_individual
 // input: nothing
@@ -4407,104 +4536,110 @@ void Population::find_pulsations(Binary_Node *tree)
 	tree->n_pulsations = 0;  // n_pulsations is a member of Binary_Node
 
 	if (COMMENT) {
-		cout << "\n\nPopulation::find_pulsations() : START";
-		char *expr = tree->print();	
+		cout << "\n\nPopulation::find_pulsations";
+		char *expr = tree->print();
 		cout << "\ntree : " << expr;
 		delete [] expr;
 		cout << "\n index_puls = " << tree->index_puls;
 		cout << "\n n_pulsations = " << tree->n_pulsations;
 	}
 
-	// exit if sin and cos are not primitives in input file	
+	// exit if sin and cos are not primitives in input file
 	if (COMMENT) cout << "\n &Sin = " << &Sin << "  &Cos = " << &Cos;
 	if ((&Sin==NULL) && (&Cos==NULL)) {
 		tree->n_pulsations = 0;
-		if (COMMENT) cout << "\nfind_pulsations : n_pulsations = 0";
+		if (COMMENT) cout << "\nPopulation::find_pulsations : n_pulsations = 0 as sin and cos are not among primitives. Exit";
+		// exit, nothing to find if sin() and cos() are not among primitives
+		return;
 	}
-	// if you are here, sin and cos are among primitives
-	else {
-		if (COMMENT) cout << "\n Sin or Cos are used";
-		Node *grandpa;
-		Node *brother;
-		string grandpa_fun;
-		vector < int > vector_puls; // vector containing the indexes of the pulsations in p_par	
-		vector < int > vector_var; // vector containing the indexes of the variables corresponding to pulsations
-		int i_var;
 
-		//searching among parameters' addresses in p_par
-		for (int i=0; i< tree->p_par.size(); i++) {	
-				// retrieve grandparent's address: if a is the parameter in sin(a*x), then sin is the grandpa unary function, x is the brother
-				grandpa = ((tree->p_par[i])->get_parent())->get_parent();	
-				// retrieve brother's address (parent's right child...)
-				brother = ((Binary_Node*)(tree->p_par[i])->get_parent())->get_right();
+	// search for pulsations in sin() and cos() terms, as sin and cos are among primitives
+	if (COMMENT) cout << "\n Sin or Cos are used";
+	Node *grandpa;
+	Node *brother;
+	string grandpa_fun;
+	vector < int > vector_puls; // vector containing the indexes of the pulsations in p_par
+	vector < int > vector_var; // vector containing the indexes of the variables corresponding to pulsations
+	int i_var;
 
-				if (grandpa)  {   //make sure that grandpa exists (not the case for additional shift term...)	
-					if (grandpa->type == NODE_UNARY) {
+	//searching for a single pulsation among parameters' addresses in p_par: as soon as it is found leave the loop
+	int i=0;
+	while ( (i< tree->p_par.size()) && (tree->n_pulsations==0) ) {
 
-						// check grandpa function
-						grandpa_fun = ((Unary_Node*)grandpa)->get_func()->pre_sign;  //31/10/20 improvement: better to use a internal code for operations
-						// check operations of all grandpa's ancestors
 
-						// check that the parameter has all the features to be considered a "pulsation"
-						if (((!strcmp(grandpa_fun.c_str(),"sin")) || (!strcmp(grandpa_fun.c_str(),"cos"))) && (brother->type==NODE_VAR)) {
-							// check that all the functions upstream the multplication of a1*sinusoidal f. are add,sub,shift,neg
-							if ((grandpa->get_parent())->check_nodal_functions_upstream()==1) {
-								//&/&/&/&/&/&/&/&/&/&/
-								// here you are sure that the pulsation belongs to a term like sin(omega*Zi) ...
-								// PULSATION : append the index i of the pulsation to vector_puls
-								vector_puls.push_back(i);
-							
-								// VARIABLE INDEX in v_list : append the variable no. of the pulsation to vector_var
-								// correct the number to get the index in v_list first
-								i_var = (((Terminal_Var*)brother)->get_var_number()) - 1;
-								//check that i_var< num_vars
-								if (i_var>=parameters->nvar) {
-									cerr << "\nPopulation::find_pulsations : ERROR : i_var >= num_vars !!!";
-									exit (-1);
-								}
-								// update vector_var with the index
-								vector_var.push_back(i_var);
+			// retrieve grandparent's address: if a is the parameter in sin(a*x), then sin is the grandpa unary function, x is the brother
+			grandpa = ((tree->p_par[i])->get_parent())->get_parent();
+			// retrieve brother's address (parent's right child...)
+			brother = ((Binary_Node*)(tree->p_par[i])->get_parent())->get_right();
 
-								//&/&/&/&/&/&/&/&/&/&/
+			if (grandpa)  {   //make sure that grandpa exists (not the case for additional shift term...)
+				if (grandpa->type == NODE_UNARY) {
+
+					// check grandpa function
+					grandpa_fun = ((Unary_Node*)grandpa)->get_func()->pre_sign;  //31/10/20 improvement: better to use a internal code for operations
+					// check operations of all grandpa's ancestors
+
+					// check that the parameter has all the features to be considered a "pulsation"
+					if (((!strcmp(grandpa_fun.c_str(),"sin")) || (!strcmp(grandpa_fun.c_str(),"cos"))) && (brother->type==NODE_VAR)) {
+						// check that all the functions upstream the multplication of a1*sinusoidal f. are add,sub,shift,neg
+						if ((grandpa->get_parent())->check_nodal_functions_upstream()==1) {
+							//&/&/&/&/&/&/&/&/&/&/
+							// here you are sure that the pulsation belongs to a term like sin(omega*Zi) ...
+							// PULSATION : append the index i of the pulsation to vector_puls
+							vector_puls.push_back(i);
+							tree->n_pulsations = tree->n_pulsations + 1; // added 7/12/20
+
+							// VARIABLE INDEX in v_list : append the variable no. of the pulsation to vector_var
+							// correct the number to get the index in v_list first
+							i_var = (((Terminal_Var*)brother)->get_var_number()) - 1;
+							// check that i_var< num_vars
+							if (i_var>=parameters->nvar) {
+								cerr << "\nPopulation::find_pulsations : ERROR : i_var >= num_vars !!!";
+								exit (-1);
 							}
+							// update vector_var with the index
+							vector_var.push_back(i_var);
+
 						}
 					}
 				}
-		
-		}		
+			}
+	i++;
+	} // end while loop
 
-	
-		// transform vcout << "Index of pulsations in p_par: " << endl;ector into a standard int array
-		tree->n_pulsations = vector_puls.size();
-		if (!(tree->n_pulsations)) {
-			if (COMMENT) cout << "\nfind_pulsations : n_pulsations = 0";		
+
+	// transform vcout << "Index of pulsations in p_par: " << endl;ector into a standard int array
+	tree->n_pulsations = vector_puls.size();
+	if (!(tree->n_pulsations)) {
+		if (COMMENT) cout << "\nfind_pulsations : n_pulsations = 0";
+	}
+	else	{  // here you are sure there are pulsations
+		// initialise arrays with pulsation information
+		tree->index_puls = new int[tree->n_pulsations];   // content deleted at the end of Population::tuning_individual
+		tree->index_var = new int[tree->n_pulsations];	// content deleted at the end of Population::tuning_individual
+		for (int k=0; k < tree->n_pulsations; k++) {
+			tree->index_puls[k] = vector_puls[k];
+			tree->index_var[k] = vector_var[k];
 		}
-		else	{  // here you are sure there are pulsations
-			// initialise arrays with pulsation information			
-			tree->index_puls = new int[tree->n_pulsations];   // content deleted at the end of Population::tuning_individual
-			tree->index_var = new int[tree->n_pulsations];	// content deleted at the end of Population::tuning_individual
-			for (int k=0; k < tree->n_pulsations; k++) {
-				tree->index_puls[k] = vector_puls[k];
-				tree->index_var[k] = vector_var[k];			
-			}
-			
 
-			if (COMMENT) {
-				cout << "\nn_pulsations = " << tree->n_pulsations << endl;
-				cout << "Pulsations found:";				
-				for (int h=0; h < tree->n_pulsations; h++)
-					cout << " " <<  (tree->p_par[tree->index_puls[h]])->value(NULL);
-				cout << "\nCorresponding variable's index in v_list:"<< endl;
-				for (int h=0; h < tree->n_pulsations; h++)
-					cout << " " <<  tree->index_var[h];			
-			}
-		}  // end else
-	
+
+		if (COMMENT) {
+			cout << "\nn_pulsations = " << tree->n_pulsations << endl;
+			cout << "Pulsations found:";
+			for (int h=0; h < tree->n_pulsations; h++)
+				cout << " " <<  (tree->p_par[tree->index_puls[h]])->value(NULL);
+			cout << "\nCorresponding variable's index in v_list:"<< endl;
+			for (int h=0; h < tree->n_pulsations; h++)
+				cout << " " <<  tree->index_var[h];
+		}
 	}  // end else
 
-	if (COMMENT) cout << "\nPopulation::find_pulsations : END" << endl;
-	//cin.get();
+
+	if (COMMENT) cout << "\nPopulation::find_pulsations : exit" << endl;
+
+	return;
 }
+//+-+-+-
 
 
 // function that searches the position (number of node) of the node containing a division
@@ -4665,7 +4800,7 @@ void Population::search_high_level_polynomials(Binary_Node *tree, Node *cur_node
 
 
 // function that purges high level polynomials in trees without parameters (29/11/20)
-void Population::purge_high_level_polynomials(Binary_Node *tree, Node *cur_node)
+void Population::purge_diverging_terms(Binary_Node *tree, Node *cur_node)
 {
 
 	int COMMENT = 0;
@@ -4681,8 +4816,12 @@ void Population::purge_high_level_polynomials(Binary_Node *tree, Node *cur_node)
 	int found_add=0;
 	int found_sub=0;
 	int found_mult=0;
+	int found_spow=0;
 	// Unary node
 	int found_shift=0;
+	int found_exp=0;
+	int found_square=0;
+	int found_cube=0;
 	// Terminal node (variable)
 	int found_variable=0;
 
@@ -4695,11 +4834,19 @@ void Population::purge_high_level_polynomials(Binary_Node *tree, Node *cur_node)
 		if (!strcmp((((Binary_Node*)cur_node)->get_func())->sign,Sub.sign)) found_sub=1;
 		// check multiplication
 		if (!strcmp((((Binary_Node*)cur_node)->get_func())->sign,Mult.sign)) found_mult=1;
+		// check spow
 	}
-	// Unary node: check only shift: if there are polynomial down below, they are argument of this unary function, and the user should avoid using diverging functions if bounded behaviour is requested...
+	// Unary node
 	if (cur_node->type == NODE_UNARY) {
 		// check shift
 		if (!strcmp((((Unary_Node*)cur_node)->get_func())->post_sign, Shift.post_sign)) found_shift=1;
+		// check exp
+		if (!strcmp((((Unary_Node*)cur_node)->get_func())->pre_sign, Exp.pre_sign)) found_exp=1;
+		// check square
+		if (!strcmp((((Unary_Node*)cur_node)->get_func())->post_sign, Square.post_sign)) found_square=1;
+		// check cube
+		if (!strcmp((((Unary_Node*)cur_node)->get_func())->post_sign, Square.post_sign)) found_cube=1;
+
 	}
 	// Terminal Variable
 	if (cur_node->type == NODE_VAR) {
@@ -4712,13 +4859,13 @@ void Population::purge_high_level_polynomials(Binary_Node *tree, Node *cur_node)
 	// Binary Node
 	if ((found_add) || (found_sub) || (found_mult)) {
 		// call recursively offspring function
-		purge_high_level_polynomials(tree, ((Binary_Node*)cur_node)->get_left());
-		purge_high_level_polynomials(tree, ((Binary_Node*)cur_node)->get_right());
+		purge_diverging_terms(tree, ((Binary_Node*)cur_node)->get_left());
+		purge_diverging_terms(tree, ((Binary_Node*)cur_node)->get_right());
 	}
 	// Unary Node
-	if (found_shift) {
+	if (found_shift || found_exp || found_square || found_cube) {
 		// call recursively offspring function
-		purge_high_level_polynomials(tree, ((Unary_Node*)cur_node)->get_child());
+		purge_diverging_terms(tree, ((Unary_Node*)cur_node)->get_child());
 	}
 	// Terminal Node - Variable
 	if (found_variable) {

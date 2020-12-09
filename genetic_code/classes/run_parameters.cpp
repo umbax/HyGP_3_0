@@ -32,19 +32,20 @@ RunParameters::RunParameters(void)
 	maxrand=0.0;
 	step=0.0;
 	max_n_periods=0.0;	// maximum number of complete oscillations in each direction
-	nfitcases=0;			// total number of fitness cases (no of rows of the sample matrix)
-	method=0;				// method for generating the initial pop. -> 1=no limits, 2=FULL, 3=GROW, 4=RAMPED
+	nfitcases=0;		// total number of fitness cases (no of rows of the sample matrix)
+	method=0;			// method for generating the initial pop. -> 1=no limits, 2=FULL, 3=GROW, 4=RAMPED
 	depth_max=0;		// maximum depth of newly generated tree (must be > 0 or > depth_min)
 	depth_min=0;		// minimum depth of newly generated tree (must be > 0)  --- only for RAMPED method
-	depth_lim=0;			// limit on depth during the evolution (no trees will ever reach a depth bigger than depth_lim)
+	depth_lim=0;		// limit on depth during the evolution (no trees will ever reach a depth bigger than depth_lim)
 	p_FULL=0.0;			// % of trees built with FULL method (p_FULL + p_GROW = 1)    --- only for RAMPED method
 	repr_rate=0.0;		// reproduction rate
 	cross_rate=0.0;	 	// crossover rate
 	mut_rate=0.0;		// mutation rate
 	comp_rate=0.0;		//percentage of the individuals created composing two trees, with respect to the individual killed
 	new_rate=0.0;		//percentage of the new individuals randomly initialized, with respect to the individual killed
-	M=0;							// size of the population - number of trees
-	G=0;							// number of generations
+	M=0;				// size of the population - number of trees
+	G=0;				// number of generations
+	bounded = 0;
 
 	normalised=0;		// 7/11/20 PARAMETER NOT USED ANY LONGER: 1 if normalised RMSE is used; 0 for normal RMSE (see Population::fitness_func)
 	minmax=0;			// 7/11/20 PARAMETER NOT USED ANY LONGER: 1 if MinMax F function, 0 if usual weighted function
@@ -88,6 +89,7 @@ void RunParameters::show(void)
 	cout << "new_rate = " << new_rate << endl;
 	cout << "M = " << M << endl;
 	cout << "G = " << G << endl;
+	cout << "bounded = " << bounded << endl;
 	cout << "strat_statp = " << strat_statp << endl;
 	cout << "w_strat_statp = " << w_strat_statp << endl;
 	cout << "w_complexity = " << w_complexity << endl;

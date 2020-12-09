@@ -57,9 +57,9 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	int m = 0;
 	int count=0;
 	string word;
-	double p_par_values[33];
+	double p_par_values[34]; // 9/12/20 added parameter BOUNDED   33->34
 	int n_par = 33;
-	string PAR_LABELS[33]	=		 {	"SEED=",
+	string PAR_LABELS[34]	=		 {	"SEED=",
                                                             "NVAR=",
 															"MINRAND=",
 															"MAXRAND=",
@@ -78,6 +78,7 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 															"NEW_RATE=",
 															"M=",
 															"G=",
+															"BOUNDED=",
 															"STRAT_STATP=",  //"NORMALISED_ERR=" not used any longer, slot used for another parameter
 															"W_STRAT_STATP=",			//"MINMAX=" not used any longer, slot used for another parameter
 															"W_COMPLEXITY=",
@@ -173,20 +174,21 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	pr->new_rate = p_par_values[16];
 	pr->M = (int)(p_par_values[17]);
 	pr->G = (int)(p_par_values[18]);
-	pr->strat_statp=(int)(p_par_values[19]); //pr->normalised=(bool)(p_par_values[19]); not used any longer, slot used for another parameter
-	pr->w_strat_statp=p_par_values[20];	 //pr->minmax=(bool)(p_par_values[20]); not used any longer, slot used for another parameter
-	pr->w_complexity = p_par_values[21];
-	pr->w_n_corrections = p_par_values[22];
-	pr->w_size = p_par_values[23];
-	pr->w_factorisation = p_par_values[24];  // switch between standard approach (<0) and factorisation bonus (>0)
-	pr->n_guesses = (int)(p_par_values[25]);
-	pr->crossvalidation = (int)(p_par_values[26]);
-	pr->folds_n = (int)(p_par_values[27]);
-	pr->threshold = p_par_values[28];
-	pr->n_inequality0 = (int)p_par_values[29];
-	pr->w_pen_ord0 = p_par_values[30];
-	pr->n_inequality1 = (int)p_par_values[31];
-	pr->w_pen_ord1 = p_par_values[32];
+	pr->bounded = (int)(p_par_values[19]);
+	pr->strat_statp=(int)(p_par_values[20]); //pr->normalised=(bool)(p_par_values[19]); not used any longer, slot used for another parameter
+	pr->w_strat_statp=p_par_values[21];	 //pr->minmax=(bool)(p_par_values[20]); not used any longer, slot used for another parameter
+	pr->w_complexity = p_par_values[22];
+	pr->w_n_corrections = p_par_values[23];
+	pr->w_size = p_par_values[24];
+	pr->w_factorisation = p_par_values[25];  // switch between standard approach (<0) and factorisation bonus (>0)
+	pr->n_guesses = (int)(p_par_values[26]);
+	pr->crossvalidation = (int)(p_par_values[27]);
+	pr->folds_n = (int)(p_par_values[28]);
+	pr->threshold = p_par_values[29];
+	pr->n_inequality0 = (int)p_par_values[30];
+	pr->w_pen_ord0 = p_par_values[31];
+	pr->n_inequality1 = (int)p_par_values[32];
+	pr->w_pen_ord1 = p_par_values[33];
 	
 
 	//----------------------------------------------------------------------------------------------------
