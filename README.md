@@ -18,7 +18,7 @@ Objectives:
 - variance and average of target function, computed from provided data
 - max and min value of provided data
 
-The parameter BOUNDED in input file allows the used to evolve bounded models (BOUNDED= 1), for extrapolation purposes.
+The parameter BOUNDED in input file forces HyGP to evolve bounded models (BOUNDED= 1), for extrapolation purposes.
 
 Maximal depth restriction implemented to avoid generation of trees of excessive depth.
 
