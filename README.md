@@ -9,13 +9,16 @@ Selection: tournament out of three individuals selected from elite or whole popu
 
 Genetic operators: reproduction (elite), subtree crossover and mutation indipendently applied. Mutation is alternatively subtree mutation (even generations) and point mutation (odd generations). The reproduction operator replace copies in the elite with new individuals generated from scratch 
 
-Fitness function: multiobjective definition through weighted approach (non Pareto). 
+Fitness function: multiobjective definition through weighted approach or MinMax (non Pareto) - Strategy selected from STRAT_STATP parameter in input file. 
 Objectives:
 - individual root mean square error divided by average elite root mean square error
 - number of numerical coefficients (squared) 
 - number of illegal operations (i.e. division by zero)
-- number of nodes (individual size)
+- number of nodes (model size)
 - variance and average of target function, computed from provided data
+- max and min value of provided data
+
+The parameter BOUNDED in input file forces HyGP to evolve bounded models (BOUNDED= 1), for extrapolation purposes.
 
 Maximal depth restriction implemented to avoid generation of trees of excessive depth.
 
