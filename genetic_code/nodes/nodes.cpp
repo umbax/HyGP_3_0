@@ -1059,7 +1059,7 @@ char *Terminal_Const::print(void)
 	// just print the value to a string
     char prn[30];
  	if (COMMENT)  cout << "\n  prn =  " << prn << endl;
-	dim=sprintf(prn,"%1.5e", (double)constant);
+	dim=sprintf(prn,"%1.10e", (double)constant);
 	if (COMMENT) {
 		cout << "\n  prn =  " << prn << endl;
 		cout << "\n  dim = " << dim;

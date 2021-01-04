@@ -2208,10 +2208,10 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	int n_corrections = 0;
 	((Binary_Node*)current_tree)->n_corrections=0;
 	// initialization (IMPORTANT!!!)
-	result_tree[0] = (Val)0.0;  //storing fitness value (error - RMSE)
+	result_tree[0] = (Val)0.0;  // fitness value (error - RMSE)
 	result_tree[1] = (Val)0.0;	// storing n of hits
 	result_tree[2] = (Val)0.0;	// storing n of corrections done by protected operations
-	result_tree[3] = (Val)0.0; // storing value of R squared (R2)
+	result_tree[3] = (Val)0.0; 	// storing value of R squared (R2)
 	result_tree[4] = (Val)0.0;	// storing mean tree value on building data set
 	result_tree[5] = (Val)0.0;	// storing variance of tree values on building data set
 	result_tree[6] = (Val)0.0;	// storing min tree value on building data set
@@ -2219,17 +2219,17 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 
 	if (COMMENT) {
 		cout << "\nPopulation::fitness_func" << endl;
-		cout << "Tree to be evaluated:\n\n" << endl;
+		cout << "Tree to be evaluated:\n" << endl;
 		print_individual(current_tree);
-		cout << "num_vars = " << parameters->nvar << " n_cases = " << n_cases << endl;
+		cout << "\nnum_vars = " << parameters->nvar << " n_cases = " << n_cases << endl;
 		cout << " data_used: variables    given output    tree output" << endl; 
 	}
 
 
 
 	// cycle on the fitness cases, or points in the building/tuning data set (nfitcases)
-	for (int i=0; i< n_cases; i++) {	// n_test_cases; i++) {
-		if (COMMENT) cout << i << ") ";
+	for (int i=0; i<n_cases; i++) {	// n_test_cases; i++) {
+		if (COMMENT) cout << "\ni=" << i << ") ";
 		
 		// assign the right value to all the variables for the i-th fitness case
 		for (int j=0; j<parameters->nvar; j++) {
@@ -2242,6 +2242,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 		// tree evaluation
 		// (here n_corrections is evaluated) - ATTENTION if crossvalidation is enabled, corrections might be counted more than once per each tree!
 		treeval = tree_value((Binary_Node*)current_tree, &(((Binary_Node*)current_tree)->n_corrections));
+		if (COMMENT) cout << " treeval = " << treeval;
 
 		// MAX and MIN of tree
 		if (i==0) {
@@ -2258,12 +2259,11 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 		// 	RMSE versions
 		error =  (Val)(treeval - data_used[i][parameters->nvar]);
 		if (COMMENT) {
-			cout << "\nPopulation::fitness_func : actual = " << data_used[i][parameters->nvar];
-			cout << "\nPopulation::fitness_func : predicted = " << treeval;
-			cout << "\nPopulation::fitness_func : error predicted-actual = " << error;
+			cout << " target = " << data_used[i][parameters->nvar];
+			cout << "\nerror predicted-target = " << error;
 		}
 		square_err = square_err + error*error;   //sum of the square of the errors - SSres (https://en.wikipedia.org/wiki/Coefficient_of_determination)
-		sum_values = sum_values + treeval; 				// sum of the errors - will be used to compute average
+		sum_values = sum_values + treeval; 				// sum of the tree values - will be used to compute average
 		sum_square_values = sum_square_values + treeval*treeval;
 		
 		// normalisedD RMSE version
@@ -2280,7 +2280,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 		// HITS
 		if (fabs(error) <= threshold) hits++;     // increase number of hits
 
-	}
+	}   // end cycle on the fitness cases
 	
 
 	//----------------------------------------------------------------------
@@ -2302,29 +2302,36 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 
 	}
 
+	if (COMMENT) cout << "\nRMSE  = " << result_tree[0] << endl;
+
 	// HITS - result_tree[1]
 	result_tree[1] = hits;
+	if (COMMENT) cout << "Hits  = " << result_tree[1] << endl;
 
 	// CORRECTIONS - result_tree[2]
 	n_corrections=((Binary_Node*)current_tree)->n_corrections;
 	result_tree[2] = n_corrections;	
+	if (COMMENT) cout << "N. corrections  = " << result_tree[2] << endl;
 
 	// R2 - result_tree[3]
 	result_tree[3] = 1.0 - square_err/Sy;
+	if (COMMENT) cout << "R2  = " << result_tree[3] << endl;
 
 	// average value of the tree on building data set - result_tree[4]
 	result_tree[4] = sum_values/((Val)n_cases);
+	if (COMMENT) cout << "Average value on building data set  = " << result_tree[4] << endl;
 
 	// variance of tree values on building data set - result_tree[5] (see reformulation in http://datagenetics.com/blog/november22017/index.html)
 	result_tree[5] = sum_square_values/((Val)n_cases)-result_tree[4]*result_tree[4];
+	if (COMMENT) cout << "Variance on building data set  = " << result_tree[5] << endl;
 
 	// min tree value on building data set
 	result_tree[6] = a_min;
+	if (COMMENT) cout << "Min value on building data set  = " << result_tree[6] << endl;
 
 	// max tree value on building data set
 	result_tree[7] = a_max;
-
-	if (COMMENT) cout << "Fitness value  = " << result_tree[0] << endl;
+	if (COMMENT) cout << "Max value on building data set  = " << result_tree[7] << endl;
 
 }
 
@@ -4800,6 +4807,8 @@ void Population::search_high_level_polynomials(Binary_Node *tree, Node *cur_node
 
 
 // function that purges high level polynomials in trees without parameters (29/11/20)
+// each branch of a tree that might contain a diverging term is analysed
+// if divergent subtrees are found the terminal variable of the subtree is turned into a constant
 void Population::purge_diverging_terms(Binary_Node *tree, Node *cur_node)
 {
 
@@ -4845,7 +4854,7 @@ void Population::purge_diverging_terms(Binary_Node *tree, Node *cur_node)
 		// check square
 		if (!strcmp((((Unary_Node*)cur_node)->get_func())->post_sign, Square.post_sign)) found_square=1;
 		// check cube
-		if (!strcmp((((Unary_Node*)cur_node)->get_func())->post_sign, Square.post_sign)) found_cube=1;
+		if (!strcmp((((Unary_Node*)cur_node)->get_func())->post_sign, Cube.post_sign)) found_cube=1;
 
 	}
 	// Terminal Variable

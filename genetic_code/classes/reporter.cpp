@@ -142,6 +142,7 @@ void Reporter::stats2file(RunParameters *pr, Population *P, string DIR_OUTPUT, i
 // function to print evaluated points of the best individual (shape) to file "points_gp.txt"
 void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population* P, string DIR_OUTPUT, int gi, int check_end, time_t start, time_t finish, double delta_t,int seed)
 {
+
 	string file, r,s;
 	const char *expr1;
 	// string to char conversion
@@ -173,8 +174,11 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 	fout << "Used_seed= " << seed << endl;
 	fout << "Tree average value on training data set= " << P->complete_trees[0]->tree_mean << endl;
 	fout << "Tree variance on training data set= " << P->complete_trees[0]->tree_variance << endl;
-	
-	fout << left <<setw(w_c1) << " " << setw(w_c) << "target"<< setw(w_c) << "tree" << setw(w_c) << "residual (tree-target)" << endl;
+	char *expr;
+	expr = P->complete_trees[0]->print();
+	fout << "Tree expression:" << endl;
+	fout << expr << endl;
+	fout << left << setw(w_c1) << " " << setw(w_c) << "target" << setw(w_c) << "tree" << setw(w_c) << "residual (tree-target)" << endl;
 	
 	for (int i=0; i< pr->nfitcases; i++) {
 		//print # of column
@@ -189,7 +193,7 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 		target=pb->get_data(i,pr->nvar);
 		tree=P->complete_trees[0]->value(NULL);
 		residual=tree-target;
-		fout <<  " " << scientific  << target << " " << scientific << tree << " " << scientific << residual << endl;
+		fout <<  " " << scientific << setprecision(10) << target << " " << scientific << tree << " " << scientific << residual << endl;
 	}
 
 	//fout << endl;

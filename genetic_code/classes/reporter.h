@@ -17,7 +17,7 @@
 #define REPORTER_H_
 
 #include <iomanip>  // manipulators (text format): setw
-//#include <sstream>    // for stringstream
+#include <iostream>    // std::cout, std::fixed, std::scientific
 #include <fstream>  // file I/O
 #include <string>
 
