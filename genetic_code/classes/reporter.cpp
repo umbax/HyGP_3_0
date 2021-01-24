@@ -16,7 +16,7 @@
 #include "./reporter.h"
 
 
-// function to print evaluated points of the best individual (shape) to file "points_gp.txt"
+// function to print evaluated points of the best individual (shape) to file "inputdata_stats.txt"
 void Reporter::inputdatastats2file(ProblemDefinition *pb, string DIR_OUTPUT)
 {
 	string file, r,s;
@@ -39,6 +39,7 @@ void Reporter::inputdatastats2file(ProblemDefinition *pb, string DIR_OUTPUT)
 
 	static int w_c1 = 4;
 	static int w_c = 14;
+	// Features of the BUILDING data set
 	//first line
 	fout <<"# Input data (whole - see input file) statistics" << endl;
 	fout << "Number of record/fitness cases: n_data = " << pb->get_n_data() << endl;
@@ -56,8 +57,17 @@ void Reporter::inputdatastats2file(ProblemDefinition *pb, string DIR_OUTPUT)
 		}
 		fout << endl;
 	}
+	// save autocorrelation values (each row corresponds to a delay value)
+	fout << "Autocorrelation function values (ProblemDefinition::compute_inputdata_stats()):" << endl;
+	for (int i=0; i<pb->delay_max; i++) {
+		fout << pb->r_k[i] << endl;
+	}
+	fout << "\nFirst autocorrelation function root:" << endl;
+	fout << pb->first_acf_root_input << endl;
 	fout << "###" << endl;
 
+
+	// Features of the TEST data set
 	if (pb->data_test) {
 		fout <<"# Test data statistics" << endl;
 		fout << "Number of record/fitness cases: n_test = " << pb->n_test << endl;
@@ -139,7 +149,7 @@ void Reporter::stats2file(RunParameters *pr, Population *P, string DIR_OUTPUT, i
 	fout.close();
 }
 
-// function to print evaluated points of the best individual (shape) to file "points_gp.txt"
+// function to print evaluated points of the best individual (P->complete_trees[0]) to file "points_gp.txt"
 void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population* P, string DIR_OUTPUT, int gi, int check_end, time_t start, time_t finish, double delta_t,int seed)
 {
 
@@ -174,12 +184,15 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 	fout << "Used_seed= " << seed << endl;
 	fout << "Tree average value on training data set= " << P->complete_trees[0]->tree_mean << endl;
 	fout << "Tree variance on training data set= " << P->complete_trees[0]->tree_variance << endl;
+	fout << "First autocorrelation function root:" << P->complete_trees[0]->first_acf_root_tree << endl;
+	//fout << "###" << endl;
 	char *expr;
 	expr = P->complete_trees[0]->print();
 	fout << "Tree expression:" << endl;
 	fout << expr << endl;
 	fout << left << setw(w_c1) << " " << setw(w_c) << "target" << setw(w_c) << "tree" << setw(w_c) << "residual (tree-target)" << endl;
 	
+	// this re-evaluation cycle can be saved if tree values are saved in Population::fitness_func() and here just recalled
 	for (int i=0; i< pr->nfitcases; i++) {
 		//print # of column
 		fout << left << setw(w_c1) << i;
@@ -197,6 +210,16 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 	}
 
 	//fout << endl;
+
+//	// save autocorrelation values (each row corresponds to a delay value)
+//	// ATTENTION! All the attributes that are not saved in the tree after tuning (see ::evaluate)
+//	// correspond to the last set of coefficient optimised, not necessarily to the best set and so to the best tree!!
+//	fout << "Autocorrelation function values:" << endl;
+//	for (int i=0; i<pb->delay_max; i++) {
+//		fout << (P->complete_trees[0])->r_k[i] << endl;
+//	}
+
+
 	// close stream (at each call is open and then closed)
 	fout.close();
 }

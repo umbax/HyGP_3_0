@@ -130,6 +130,9 @@ class Binary_Node : public Node {
 	double tree_variance;	// variance of the values returned by the complete tree on the building data set
 	double tree_min;		// minimum value returned by tree on building data set
 	double tree_max;		// maximum value returned by tree on building data set
+	Val* r_k; 			//array storing autocorrelation values on building data set (only if nvar=1)
+	int r_k_size; 		// size of r_k array (number of lags + initial value (1))
+	Val first_acf_root_tree; // smallest root of tree autocorrelation function (the one closest to 0)
 	int hits;				// number of hits of the tree (if this is the root). Building data set
 	int hits_test;			// number of hits of the tree (if this is the root). Test data set
 	int n_tuning_parameters;   	//number of tuning parameters (holds only for complete trees - with parameters...)
@@ -150,6 +153,7 @@ class Binary_Node : public Node {
 	double T7;      // factorisation term
 	double T8;
 	double T9;
+	double T10;
 
 	int twin;										// if twin = 1, the current tree structure is identical to another tree structure (perhaps the best tree in the previous gen)
 

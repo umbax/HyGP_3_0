@@ -25,7 +25,7 @@
 #include <string>    // to manipulate strings (C)
 #include <cstring>   // to manipulate strings (C) (strcpy,)
 #include <vector>
-#include <cmath>	// floor
+#include <cmath>	// floor, fabs
 
 
 #include "../modules/Val_type.h"
@@ -65,14 +65,16 @@ class ProblemDefinition
 		Val y_var; 		// variance of input data
 		Val y_max;		// max value of target
 		Val y_min;		// min value of target
+		int delay_max;	// max delay for calculation of autocorrelation values (initialised in compute_inputdata_stats()) - only for n_var=1
+		Val* r_k; 	//array storing autocorrelation values (initialised in compute_inputdata_stats()) - only for n_var=1
+		Val first_acf_root_input;  // closest root to 0 of autocorrelation function of input data - only for n_var=1
 
-		// folds for crossvalidation
+		// crossvalidation set-up
 		//Val*** folds; // pointer to a 3d array (no of fold x row x column) - initialised in kfold_split
-
 		// data tuning and evaluation (tuning = building data, evaluation = cross validation data)
 		Val** data_tuning;		// BUILDING/TUNING DATA SET : not defined explicitly
 		int  n_tuning;
-		Val** data_validation;	// CROSS VALIDATION DATA SET (coincides with building data if split = 0)
+		Val** data_validation;	// CROSS VALIDATION DATA SET (coincides with building data if n_folds = 0)
 		int n_validation;	 //ex n_evaluation;
 
 		// TEST DATA SET
@@ -134,7 +136,7 @@ class ProblemDefinition
 		int variables_initialised;
 		void initialise_variables(Variable** , double);
 
-		// function to compute input data statistics
+		// function to compute input data statistics (including autocorrelation function)
 		void compute_inputdata_stats(void);
 
 		// function to display data on the screen

@@ -116,10 +116,10 @@ int main (int argc, char *argv[])
 	// compute additional attributes or set up structures in Problem Definition (variables, for example)
 	// now all is done in read_input_file (but it's too messy there...)
 	Mprobl.compute_inputdata_stats();
-	
+
 	// print to file input data statistics
 	pop_reporter.inputdatastats2file(&Mprobl, DIR_OUTPUT);
-
+//cin.get();
 	// show imported data (input parameters and input data)
 	Mparam.show();  // run hyperparameters
 	//Mprobl.show_all();    // input data matrix and other data
@@ -246,7 +246,7 @@ int main (int argc, char *argv[])
 		cout << "\nPrint generation results to file...";
 		// write evolution statistical data to file "data_gp.txt"
 		pop_reporter.stats2file(&Mparam, P, DIR_OUTPUT, i, check_end);
-		// write the target points (training set), best individual corresponding values and residuals to file "points_gp.txt"
+		// write target points (training set), best individual corresponding values and residuals to file "points_gp.txt"
 		pop_reporter.points2file(&Mparam, &Mprobl, P, DIR_OUTPUT, i, check_end, start, finish, delta_t, Mparam.seed);
 		// write best individual's expression as per aggregate value F (!!!) on training data set to "best_gp.txt"
 		pop_reporter.update_best2file_build(P, DIR_OUTPUT, i, check_end);
@@ -258,6 +258,7 @@ int main (int argc, char *argv[])
 		pop_reporter.adaptive_gen_ops_data2file(P, DIR_OUTPUT, i, check_end);
 		cout << "OK";
 		// -------------------------------------------------------------------------------------
+
 		
 		if (check_end)
 			break;

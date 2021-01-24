@@ -62,10 +62,12 @@ void input_check(RunParameters *pr, ProblemDefinition *pb)
 	}
 
 	// check strategy for statistical properties
-	if ( (pr->strat_statp!=6) && (pr->strat_statp!=7) && (pr->strat_statp!=8) && (pr->strat_statp!=9) && (pr->strat_statp!=11)) {
-		cerr << "\nError: the strategies currently available are STRAT_STATP= 6, STRAT_STATP= 7 or STRAT_STATP= 8!!!\n";
+	if ( (pr->strat_statp!=6) && (pr->strat_statp!=7) && (pr->strat_statp!=8) && (pr->strat_statp!=9) && (pr->strat_statp!=11) && (pr->strat_statp!=13)) {
+		cerr << "\nError: the strategies currently available are STRAT_STATP= 6, STRAT_STATP= 7, STRAT_STATP= 8, STRAT_STATP= 11, STRAT_STATP= 13!!!\n";
 		exit(-1);
 	}
+
+	// ATTENTION pr->strat_statp==12 only possible for nvar==1
 
 	// check on penalisation weights
 	// statistical properties objective  (a8)

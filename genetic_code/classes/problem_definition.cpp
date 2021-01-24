@@ -52,6 +52,7 @@ ProblemDefinition::ProblemDefinition(void)
 	y_var = 0.0;		// variance of target data
 	y_max = 0.0;			// max value of target
 	y_min = 0.0;			// min value of target
+	first_acf_root_input = 0.0; // closest root to 0 of autocorrelation function of input data - only for n_var=1
 
 	// statistics of corresponding output (target) of the TEST data set (TEST DATA SET)
 	data_test = NULL;
@@ -319,7 +320,6 @@ ProblemDefinition::~ProblemDefinition(void)
 	// delete all the dynamically allocated variables!!!
 	// still to understand why this destructor is called:
 	// - after Population::get_tree_derivative_given_norm_vector
-	// - Population::between new_spawn and Population_evaluate()
 
 	cout << "ProblemDefinition::~ProblemDefinition(void) : destructor called" << endl;
 
@@ -333,7 +333,12 @@ ProblemDefinition::~ProblemDefinition(void)
 	if (points_per_fold!=NULL)
 		delete[] points_per_fold;
 
-	// folds
+	// folds ??
+
+	// array storing autocorrelation values
+	if (n_var==1) {
+		delete[] r_k;
+	}
 
 	cout << "ProblemDefinition::~ProblemDefinition(void) : exit" << endl;
 
@@ -434,6 +439,7 @@ void ProblemDefinition::compute_inputdata_stats(void)
 	}
 
 	// compute statistical properties of DATA target values
+	//--------------------------------------------------------
 
 	// sum_output, y_ave, Y_min and y_max
 	Val y_ave_temp = .0;
@@ -443,23 +449,57 @@ void ProblemDefinition::compute_inputdata_stats(void)
 	sum_output=.0;
 	for (int k=0; k < n_data; k++) {
 		a=data[k][n_var];
+		// sum of target squares
 		sum_output = sum_output + a*a;
+		// sum of the target values
 		y_ave_temp = y_ave_temp + a;
+		// min and max
 		if (a>=a_max) a_max=a;
 		if (a<=a_min) a_min=a;
 	}
+	// mean target value
 	y_ave = y_ave_temp/(double)(n_data);
+	// min target value
 	y_min=a_min;
+	// max target value
 	y_max=a_max;
 
 	// Sy=sum((output- average_output)^2)=(n-1)*output variance on the whole dataset
-	// and y_var
+	// variance y_var
 	Sy=.0;
 	for (int k=0; k < n_data; k++) Sy = Sy + (data[k][n_var] - y_ave)*(data[k][n_var] - y_ave);
 	y_var = Sy/(double)(n_data-1);
 
+	// autocorrelation r_k (only for 1D case)
+	if (n_var==1) {
+		delay_max=(int)floor(n_data/2); // 9/1/21 value to be discussed, this is just temporary. Also used in Population::fitness_func
+		r_k= new Val[delay_max]; 	//array storing autocorrelation values
+		for (int i=0; i<delay_max; i++) {
+			r_k[i]=0.0;
+		}
+		cout << "delay_max = " << delay_max << endl;
+		cout << "k	r_k" << endl;
+		for (int delay=0; delay<delay_max; delay++) {
+			for (int k=0; k < n_data-delay; k++) {
+				r_k[delay] = r_k[delay] + (data[k][n_var]-y_ave)*(data[k+delay][n_var]-y_ave);
+				//cout << k << "  c_k[" << delay << "] = " << c_k[delay] << endl;
+			}
+			r_k[delay]= r_k[delay]/Sy;
+			//cout << "r_k[" << delay << "]= " << r_k[delay] << endl;
+
+			// search for first root of autocorrelation function (the one closest to 0)
+			// if r_k[delay-1] r_k[delay]>0 are both positive or negative do nothing: r_k[delay-1]*r_k[delay]>0
+			if (first_acf_root_input==0) {
+				if (fabs(r_k[delay])<1.0E-12) first_acf_root_input=data[delay][0];  //mind! Only for n_var=1!
+				else {
+					if ((r_k[delay-1]>0) && (r_k[delay]<0)) first_acf_root_input=(data[delay-1][0]+data[delay][0])/2.0; //mind! Only for n_var=1!
+				}
+			}
+		}
+	} // end if n_var==1
 
 	// compute statistical properties of TEST DATA target values
+	//------------------------------------------------------------
 	Val y_ave_test_temp = .0;
 	a=data_test[0][n_var];
 	a_max=data_test[0][n_var];
@@ -467,15 +507,24 @@ void ProblemDefinition::compute_inputdata_stats(void)
 	sum_output_test = .0;
 	for (int k=0; k < n_test; k++) {
 		a=data_test[k][n_var];
+		// sum of target squares
 		sum_output_test = sum_output_test + a*a;
+		// sum of the target values
 		y_ave_test_temp = y_ave_test_temp + a;
+		// min and max
 		if (a>=a_max) a_max=a;
 		if (a<=a_min) a_min=a;
 	}
+	// mean target value
 	y_ave_test = y_ave_test_temp/(double)(n_test);
+	// min target value
 	y_test_min=a_min;
+	// max target value
 	y_test_max=a_max;
 
+
+	// Sy=sum((output- average_output)^2)=(n-1)*output variance on the whole dataset
+	// variance y_var
 	Sy_test = .0;
 	for (int k=0; k < n_test; k++) Sy_test = Sy_test + (data_test[k][n_var] - y_ave_test)*(data_test[k][n_var] - y_ave_test);
 	y_var_test=Sy_test/(double)(n_test-1);

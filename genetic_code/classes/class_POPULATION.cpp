@@ -1985,7 +1985,8 @@ void Population::evaluate(int gen, int G)
 //			expr = trees[i]->print();
 //			cout << " " << expr << endl;
 //			delete [] expr;
-		// 9/12/20 TREE EDITING to convert diverging functions to bounded functions (single converging terms as variables are turned into constants
+		// 9/12/20 TREE EDITING to convert diverging functions to bounded functions
+		// (single converging terms as variables are turned into constants)
 		if (parameters->bounded==1) purge_diverging_terms(trees[i],(Node*)(trees[i]));
 //			cout << "\nAfter purge_diverging_terms:";
 //			cout << "\n Individual  " << i << " :" << endl;
@@ -2195,19 +2196,31 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	// FOR THE FUTURE: change the way you import Sy: you might implement a class for storing data sets and all the related statistics
 	int COMMENT =0;
 
-	Val treeval = 0.0;
+	// initialisation of internal variables
+	Val* treeval = new Val[n_cases];  // 10/1/21 turned Val treeval into a dynamic array
 	Val a_max, a_min;
 	Val error = 0.0;
 	Val error_norm = 0.0;
 	Val square_err = 0.0;
 	Val sum_values = 0.0;
 	Val sum_square_values = 0.0;
+	Val SStot_tree = 0.0;
 	Val result_tree_norm = 0.0;
 	Val threshold = 0.0001;   // for counting hits
 	int hits=0;
 	int n_corrections = 0;
 	((Binary_Node*)current_tree)->n_corrections=0;
-	// initialization (IMPORTANT!!!)
+	// autocorrelation function
+	if (parameters->nvar==1) {
+		((Binary_Node*)current_tree)->r_k_size=problem->delay_max;
+		((Binary_Node*)current_tree)->r_k= new Val[problem->delay_max]; 	//array storing autocorrelation values: add delete in Destructor!!
+		for (int i=0; i<(problem->delay_max); i++) {  // da spostare
+			((Binary_Node*)current_tree)->r_k[i]=0.0; // da spostare
+		}
+	}
+	Val first_acf_root=0;
+
+	// initialization of output array
 	result_tree[0] = (Val)0.0;  // fitness value (error - RMSE)
 	result_tree[1] = (Val)0.0;	// storing n of hits
 	result_tree[2] = (Val)0.0;	// storing n of corrections done by protected operations
@@ -2216,6 +2229,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	result_tree[5] = (Val)0.0;	// storing variance of tree values on building data set
 	result_tree[6] = (Val)0.0;	// storing min tree value on building data set
 	result_tree[7] = (Val)0.0;	// storing max tree value on building data set
+	result_tree[8] = (Val)0.0;	// storing value first zero of tree autocorrelation function
 
 	if (COMMENT) {
 		cout << "\nPopulation::fitness_func" << endl;
@@ -2228,50 +2242,47 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 
 
 	// cycle on the fitness cases, or points in the building/tuning data set (nfitcases)
+	//+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	for (int i=0; i<n_cases; i++) {	// n_test_cases; i++) {
 		if (COMMENT) cout << "\ni=" << i << ") ";
 		
 		// assign the right value to all the variables for the i-th fitness case
 		for (int j=0; j<parameters->nvar; j++) {
 			(problem->v_list[j])->value = data_used[i][j];
-			if (COMMENT)
-				cout << (problem->v_list[j])->value << "  ";   //var is field of Z defined at line 247 in master.cpp (it is not a member of Terminal_Var!!!)
+			if (COMMENT) cout << (problem->v_list[j])->value << "  ";   //var is field of Z defined at line 247 in master.cpp (it is not a member of Terminal_Var!!!)
 		}
-		
 
 		// tree evaluation
 		// (here n_corrections is evaluated) - ATTENTION if crossvalidation is enabled, corrections might be counted more than once per each tree!
-		treeval = tree_value((Binary_Node*)current_tree, &(((Binary_Node*)current_tree)->n_corrections));
-		if (COMMENT) cout << " treeval = " << treeval;
+		treeval[i] = tree_value((Binary_Node*)current_tree, &(((Binary_Node*)current_tree)->n_corrections));
+		if (COMMENT) cout << " treeval[" << i<< "]" << treeval[i];
 
 		// MAX and MIN of tree
 		if (i==0) {
-			a_min= treeval;
-			a_max= treeval;
+			a_min= treeval[i];
+			a_max= treeval[i];
 		} else {
-			if (treeval>a_max) a_max=treeval;
-			if (treeval<a_min) a_min=treeval;
+			if (treeval[i]>a_max) a_max=treeval[i];
+			if (treeval[i]<a_min) a_min=treeval[i];
 		}
 
-		// -------------------------------------------------------------------------
 		// ERROR FUNCTION
-		// -------------------------------------------------------------------------
 		// 	RMSE versions
-		error =  (Val)(treeval - data_used[i][parameters->nvar]);
+		error =  (Val)(treeval[i] - data_used[i][parameters->nvar]);
 		if (COMMENT) {
 			cout << " target = " << data_used[i][parameters->nvar];
 			cout << "\nerror predicted-target = " << error;
 		}
 		square_err = square_err + error*error;   //sum of the square of the errors - SSres (https://en.wikipedia.org/wiki/Coefficient_of_determination)
-		sum_values = sum_values + treeval; 				// sum of the tree values - will be used to compute average
-		sum_square_values = sum_square_values + treeval*treeval;
+		sum_values = sum_values + treeval[i]; 				// sum of the tree values to compute mean
+		sum_square_values = sum_square_values + treeval[i]*treeval[i];
 		
-		// normalisedD RMSE version
+		// normalised RMSE version
 		if (normalised) { 
     		if (abs(data_used[i][parameters->nvar])>1.0e-12)   //1.0e-12
-				error_norm =  (Val)abs((data_used[i][parameters->nvar] - treeval)/data_used[i][parameters->nvar]);
+				error_norm =  (Val)abs((data_used[i][parameters->nvar] - treeval[i])/data_used[i][parameters->nvar]);
 			else
-				error_norm =  (Val)abs(data_used[i][parameters->nvar] - treeval);
+				error_norm =  (Val)abs(data_used[i][parameters->nvar] - treeval[i]);
     		//
 			result_tree_norm = result_tree_norm + error_norm*error_norm;   //sum of the square of the errors - for RMSE *
 		}
@@ -2281,27 +2292,25 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 		if (fabs(error) <= threshold) hits++;     // increase number of hits
 
 	}   // end cycle on the fitness cases
-	
+	//+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 	//----------------------------------------------------------------------
 	// OUTPUT
 	//----------------------------------------------------------------------
-
-	// FITNESS VALUE (RMSE error) - result_tree[0]
-	if (normalised)
-		// normalised RMSE version
-		result_tree[0] = sqrt(result_tree_norm/(Val)n_cases); 
-	else {
-		if (crossvalid)
+	// RMSE error - result_tree[0]
+	if (normalised==0) {
+		if (crossvalid) {
 			// root of sum of squared errors, for HyGP with crossvalidation capability
 			result_tree[0] = sqrt((Val)square_err);
-		else {
-			//// common RMSE VERSION (for original HyGP, no crossvalidation)
+		} else {
+			// common RMSE VERSION (for original HyGP, no crossvalidation)
 			result_tree[0] = sqrt((Val)square_err/(Val)n_cases);
 		}
-
 	}
-
+	// normalised RMSE version
+	if (normalised==1) {
+			result_tree[0] = sqrt(result_tree_norm/(Val)n_cases);
+	}
 	if (COMMENT) cout << "\nRMSE  = " << result_tree[0] << endl;
 
 	// HITS - result_tree[1]
@@ -2314,10 +2323,10 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	if (COMMENT) cout << "N. corrections  = " << result_tree[2] << endl;
 
 	// R2 - result_tree[3]
-	result_tree[3] = 1.0 - square_err/Sy;
+	result_tree[3] = 1.0 - square_err/Sy;  // Sy (also referred to as SStot) is computed from the original, given data
 	if (COMMENT) cout << "R2  = " << result_tree[3] << endl;
 
-	// average value of the tree on building data set - result_tree[4]
+	// average value of the tree on the given data set - result_tree[4]
 	result_tree[4] = sum_values/((Val)n_cases);
 	if (COMMENT) cout << "Average value on building data set  = " << result_tree[4] << endl;
 
@@ -2333,6 +2342,44 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	result_tree[7] = a_max;
 	if (COMMENT) cout << "Max value on building data set  = " << result_tree[7] << endl;
 
+	//* autocorrelation r_k (only for 1D case) - 10/1/21 UNDER DEVELOPMENT: Is there a way to make it more efficient? So far 3 n_cases cycles are needed to complete the calculations...
+	if (parameters->nvar==1) {
+		// first compute SStot_tree = sum((y_tree- average(y_tree))^2) (https://en.wikipedia.org/wiki/Coefficient_of_determination)
+		for (int i=0; i<n_cases; i++) {
+			SStot_tree = SStot_tree + (treeval[i]-result_tree[4])*(treeval[i]-result_tree[4]);
+		}
+		// then compute autocorrelation function
+		for (int delay=0; delay<problem->delay_max; delay++) {
+			for (int k=0; k < n_cases-delay; k++) {
+				((Binary_Node*)current_tree)->r_k[delay] = ((Binary_Node*)current_tree)->r_k[delay] + (treeval[k]-result_tree[4])*(treeval[k+delay]-result_tree[4]);
+			}
+			((Binary_Node*)current_tree)->r_k[delay]= (((Binary_Node*)current_tree)->r_k[delay])/SStot_tree;  //SStot = sum((y- y_average)^2) of the HyGP model (https://en.wikipedia.org/wiki/Coefficient_of_determination)
+
+
+			// search for first root of autocorrelation function (the one closest to 0)
+			// if r_k[delay-1] r_k[delay]>0 are both positive or negative do nothing: r_k[delay-1]*r_k[delay]>0
+			if (((Binary_Node*)current_tree)->first_acf_root_tree==0) {
+				if (fabs(((Binary_Node*)current_tree)->r_k[delay])<1.0E-12) first_acf_root=data_used[delay][0];  //mind! Only for n_var=1!
+				else {
+					if ((((Binary_Node*)current_tree)->r_k[delay-1]>0) && (((Binary_Node*)current_tree)->r_k[delay]<0)) first_acf_root=(data_used[delay-1][0]+data_used[delay][0])/2.0; //mind! Only for n_var=1!
+				}
+			}
+
+		} // end delay cycle
+	} // end if parameters->nvar==1
+	//*
+
+	// just to check autocorrelation function values
+//	cout << "\nPopulation::fitness_func : Computed autocorrelation function:" << endl;
+//	for (int delay=0; delay<problem->delay_max; delay++) {
+//		cout << "r_k[" << delay << "]= " << ((Binary_Node*)current_tree)->r_k[delay] << endl;
+//	}
+//	cin.get();
+
+	// first zero of autocorrelation function - result_tree[8]
+	result_tree[8] = first_acf_root;
+
+	delete[] treeval;  // why not storing the values in each root node, so when you have to save them to file in Reporter you do not have to recompute them?
 }
 
 
@@ -2360,7 +2407,7 @@ double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
 	// update tree parameters with input values x
 	update_complete_tree(ntree, x, n_param);
 
-	// evaluate tree fitness (error)
+	// evaluate tree fitness (RMSE error)
 	fitness_func(problem->Sy, problem->data_validation, problem->n_validation, ntree, result, parameters->normalised, parameters->crossvalidation);   //IMPORTANT: fitness evaluated on data_validation !!!
 	fitness = (double)result[0];
 	//hits = (int)result[1];
@@ -2437,7 +2484,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 
 	double F8, a8; // ADDED 11/8/20: penalisation on statistical properties of the tree (average and variance)
 	double F9, a9; // ADDED 22/11/20: penalisation of diverging trees (high level polynomials - that is not argument of any function - are present)
-
+	double F10, a10; // ADDED 23/1/21: penalisation linked to first root of autocorrelation function (see ::fitness_func())
 
 	//-------------------------------------------------------------
 	// first objective: FITNESS
@@ -2545,8 +2592,8 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		//F8= pow(fabs(ppd->y_max-complete_tree->tree_max)/(sqrt(ppd->y_var)),3)+pow(fabs(ppd->y_min-complete_tree->tree_min)/(sqrt(ppd->y_var)),3);
 		// test to monitor ratio between difference in peaks and target function amplitude
 		//F8= pow(100*fabs(ppd->y_max-complete_tree->tree_max)/(fabs(ppd->y_max-ppd->y_min)),3)+pow(100*fabs(ppd->y_min-complete_tree->tree_min)/(fabs(ppd->y_max-ppd->y_min)),3);
-
 	}
+
 
 	//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),1)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),1); //Strategy 8
 	//(exp((fabs(ppd->y_ave-complete_tree->tree_mean)))-1.0);
@@ -2556,6 +2603,14 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//-------------------------------------------------------------------------
 	F9 = 0.0;
 	//F9 = 1.0*(complete_tree->diverging);  //1.0*(complete_tree->diverging);
+
+	//-------------------------------------------------------------------------
+	// 10th objective : difference in first root of autocorrelation function between input signal and model
+	//-------------------------------------------------------------------------
+	if ((pr->strat_statp)==13) {
+		F10 = pow(sqrt(fabs(ppd->first_acf_root_input-complete_tree->first_acf_root_tree)),3);
+		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3);
+	}
 
 
 	//-------------------------------------------------------------
@@ -2569,8 +2624,9 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
 	a8 = pr->w_strat_statp; // 0.000000001;
 	a9 = 0.0; //0.4; //0.3; //0.2; //0.1;
+	a10 = 0.0001;  //23/1/21 test
 	// the weight of the primary objective, RMSE error, is the residual to 1 of the sum of previous coefficients a2 to a8
-	a1= double(1.-a2-a3-a4-a5-a6-a8-a9); //-a7); // The sum of all a_i coefficients must be 1!!
+	a1= double(1.-a2-a3-a4-a5-a6-a8-a9-a10); //-a7); // The sum of all a_i coefficients must be 1!!
 	
 	//------------------------------------------------------------
 	// objectives multiplied by weights
@@ -2584,6 +2640,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	complete_tree->T7 = 0.0; // not used in the standard approach
 	complete_tree->T8 = a8*F8;
 	complete_tree->T9 = a9*F9;
+	complete_tree->T10 = a10*F10;
 
 	//------------------------------------------------------------
 	// fitness function definition
@@ -2594,8 +2651,8 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//	dc = (double)(gen/G);
 	// else dc = 1.;
 
+	// MINMAX approach
 	if (pr->strat_statp==11) {	// if (pr->minmax) {
-		// minmax approach     
 		// build the list of elements among which you want to find the maximum
 		double list[5];
 		list[0] = complete_tree->T1;
@@ -2605,9 +2662,10 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		list[4] = complete_tree->T8;
 
 		complete_tree->F = *max_element(list, list+5);
+	}
 
-	} else {
-		// aggregating approach
+	// AGGREGATED (WEIGHTED SUM) approach
+	if (pr->strat_statp!=11) {
 		// compute F as linear combination of fitness value and other objectives
 		//F = a1*F1+a2*dc*dc*F2+a3*dc*dc*F3+a4*dc*dc*F4;   //dynamic weights
 		//F = a1*F1+a2*F2+a3*(exp(F3*F3)-1)*1000000.0+a4*F4+(1000000.0)*(exp(F5*F5)-1.0)*a5;
@@ -2615,7 +2673,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		
 		if (pr->w_factorisation<=0) {
 			// STANDARD APPROACH (HyGP)
-			complete_tree->F = complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T8 + + complete_tree->T9;  // removed "+ complete_tree->T7;"
+			complete_tree->F = complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T8 + complete_tree->T9 + complete_tree->T10;  // removed "+ complete_tree->T7;"
 		}
 			// adaptive approach
 			//	complete_tree->F = complete_tree->T1 + (-1.0*((double)learning_on-1.0))*complete_tree->T2 + complete_tree->T3 + ((double)learning_on+1.0)*complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T7;
@@ -2769,19 +2827,25 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	double node_value; 
 	double* x;	// array of tree parameters (numerical coefficients)
 	double* x_best;   // best array of tree parameters (numerical coefficients)
-	Val fitness, fitness_best, R2, R2_best, tree_mean, tree_mean_best, tree_variance, tree_variance_best, tree_min, tree_min_best, tree_max, tree_max_best;
-	Val result[8];
-//	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
-//	result[1] = (Val)0.0;	// storing n of hits
-//	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
-//	result[3] = (Val)0.0; // storing value of R squared (R2)
-//	result[4] = (Val)0.0;	// storing mean tree value on building data set
-//	result[5] = (Val)0.0;	// storing variance of tree values on building data set
-//	result[6] = (Val)0.0;	// storing min tree value on building data set
-//	result[7] = (Val)0.0;	// storing max tree value on building data set
+	Val fitness, fitness_best;
+	Val R2, R2_best;
+	Val tree_mean, tree_mean_best;
+	Val tree_variance, tree_variance_best;
+	Val tree_min, tree_min_best;
+	Val tree_max, tree_max_best;
+	Val tree_acf_root, tree_acf_root_best;
+	Val result[9];
 	
-	// utile
-	//cin.get();
+	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
+	result[1] = (Val)0.0;	// storing n of hits
+	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
+	result[3] = (Val)0.0; // storing value of R squared (R2)
+	result[4] = (Val)0.0;	// storing mean tree value on building data set
+	result[5] = (Val)0.0;	// storing variance of tree values on building data set
+	result[6] = (Val)0.0;	// storing min tree value on building data set
+	result[7] = (Val)0.0;	// storing max tree value on building data set
+	result[8] = (Val)0.0;	// storing first zero of autocorrelation function
+
 
 	if (COMMENT) {
 		cout << "\n\nPopulation::tuning_individual : TUNING TREE n. " << tree_no;
@@ -2842,9 +2906,9 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 
 
 	
-	//--------------------------------------------------------------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------------------------------------
 	// Creation and initialisation of the arrays x and x_best containing the parameters to be tuned 
-	//--------------------------------------------------------------------------------------------------------------------------------	
+	//-----------------------------------------------------------------------------------------------------------
 	// Array x (parameters)  
 	x = new (nothrow) double [n_param];
 	if (x == 0) {
@@ -2891,6 +2955,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	//	result[5] = (Val)0.0;	// storing variance of tree values on building data set
 	//	result[6] = (Val)0.0;	// storing min tree value on building data set
 	//	result[7] = (Val)0.0;	// storing max tree value on building data set
+	//  result[8] = (Val)0.0;	// storing first zero of autocorrelation function
 	
 	//--------------------------------------------------------------------------------------------------------------------------------
 	// HERE THE MULTIPLE GUESSES CYCLE STARTS 
@@ -2977,17 +3042,14 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
    		
 		// ntree_fdf_c is public member of Population
 		ntree_fdf_c = tree_no;
-		if (COMMENT)
-			cout << "\n  ntree_fdf_c = " << ntree_fdf_c;
+		if (COMMENT) cout << "\n  ntree_fdf_c = " << ntree_fdf_c;
 
 		// tune and validate a single individual (RMSE or Crossvalidation PRESS), using one or more initial guesses for cofficients
-		if (parameters->crossvalidation==1)
-			tuning_individual_PRESS_single_guess(ntree, x, &n_param, &n_guess_ok, result);
-		if (parameters->crossvalidation==0)
-			tuning_individual_RMSE_single_guess(ntree, x, &n_param, &n_guess_ok, result);
+		if (parameters->crossvalidation==1) tuning_individual_PRESS_single_guess(ntree, x, &n_param, &n_guess_ok, result);
+		if (parameters->crossvalidation==0) tuning_individual_RMSE_single_guess(ntree, x, &n_param, &n_guess_ok, result);
 
-		// as a result of tuning result[] is used to update tree properties:
-		fitness = result[0];  // RMS error (CROSSVALIDATION=0) or PressRMS error (CROSSVALIDATION=1)
+		// as a result of tuning, result[] is used to update tree properties:
+		fitness = result[0];  // RMSE error (CROSSVALIDATION=0) or PressRMSE error (CROSSVALIDATION=1)
 		hits = (int)result[1];
 		n_corrections = (int)result[2];
 		R2 = result[3];
@@ -2995,6 +3057,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		tree_variance = result[5];
 		tree_min=result[6];
 		tree_max=result[7];
+		tree_acf_root = result[8];
 		// also the array of coefficients x is returned...
 /*
 		// SELECTION of the BEST SET of PARAMETERS (x_best update) 
@@ -3023,8 +3086,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		//-------------------------------------------------------------------------------------------------------
 */		
 		//-----------------------------------------------------------------------------------------------------
-		// UPDATE best individual with best parameters among those resulting from different initial guesses
-		// Mind!!!! Selection is based on fitness (or RMSE), not on the aggregated error F (obvious)!!!
+		// UPDATE local best results if the current tuning cycle has given better results
+		// Mind!!!! Coefficient tuning is based on RMSE, not on the aggregated function F (obvious, as you are not comparing trees with the same structure)!!!
 		//-----------------------------------------------------------------------------------------------------
 		//if ((fitness < fitness_best) && (method>=0) && (der_check)) {
 		// what if the paramaters x is not acceptable (all NaN)? Implement a function to check! Here or in tuning_individual_PRESS_single_guess
@@ -3038,6 +3101,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			tree_variance_best = tree_variance;
 			tree_min_best=tree_min;
 			tree_max_best=tree_max;
+			tree_acf_root_best = tree_acf_root;
 			for (int j=0; j<n_param; j++)
 				 x_best[j] = x[j];  //
 		}
@@ -3051,10 +3115,11 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		}
 
 
-	// here the cycle related to the number of random guesses on tree coefficients (i_guess<n_guesses) stops -------
-	}
+	}	// here the cycle related to the number of random guesses on tree coefficients (i_guess<n_guesses) stops -------
 
-	//update state variables of the (complete) tree with the best set of (tuned) parameters
+	//---------------------------------------------------------------------------------------------------------------
+	// after tuning cycles, update state variables of the (complete) tree with the best set of (tuned) parameters
+	//---------------------------------------------------------------------------------------------------------------
 	update_complete_tree(ntree, x_best, n_param);
 	ntree->fitness = fitness_best;
 	ntree->hits = hits_best;
@@ -3065,6 +3130,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	ntree->tree_variance = tree_variance_best;
 	ntree->tree_min=tree_min_best;
 	ntree->tree_max=tree_max_best;
+	ntree->first_acf_root_tree = tree_acf_root_best;
 
 	if (COMMENT) {	
 		//  print the value of the tuned constants
@@ -4808,7 +4874,9 @@ void Population::search_high_level_polynomials(Binary_Node *tree, Node *cur_node
 
 // function that purges high level polynomials in trees without parameters (29/11/20)
 // each branch of a tree that might contain a diverging term is analysed
-// if divergent subtrees are found the terminal variable of the subtree is turned into a constant
+// if divergent subtrees are found, two alternative behaviours can be adopted:
+// 1. the terminal variable of the subtree is turned into a constant
+// 2. the terminal variable of the subtree is replaced by sin(variable) (which is bounded!)
 void Population::purge_diverging_terms(Binary_Node *tree, Node *cur_node)
 {
 
@@ -4878,23 +4946,50 @@ void Population::purge_diverging_terms(Binary_Node *tree, Node *cur_node)
 	}
 	// Terminal Node - Variable
 	if (found_variable) {
-		// here the variable found is the cause of the divergent behaviour: replace it with a constant (1)
-		eliminate_subtree(cur_node, (Val)1.0);
+		// 1. here the variable found is the cause of the divergent behaviour: replace it with a constant (1) - TOO CONSERVATIVE!!
+//		eliminate_subtree(cur_node, (Val)1.0);
+//		if (COMMENT) {
+//			cout << "\n\nPopulation::purge_diverging_terms() : diverging polynomial has been found - replaced by 1.0";
+//			char *expr;
+//			expr = cur_node->print();
+//			cout << "\n Node: " << expr;
+//			delete [] expr;
+//		}
+		// 2. here the variable is replaced by a sin function of the same variable
+		// create "sin" node and attach child variable randomly selected
+		Unary_Node *new_edsin = new Unary_Node(NULL, &Sin);
+		Terminal_Var *new_edvar = new Terminal_Var((Node*)new_edsin,problem->v_list[int_rand(parameters->nvar)]);
+		new_edsin->set_child((Node*)new_edvar);
 		if (COMMENT) {
-			cout << "\n\nPopulation::search_high_level_polynomials() : high level, diverging polynomial has been found";
+			cout << "\n\nPopulation::purge_diverging_terms() : new sin() subtree";
+			cout << "\n new_edsin = " << new_edsin;
+			cout << "\n new_edvar = " << new_edvar;
 			char *expr;
-			expr = cur_node->print();
+			expr = new_edsin->print();
+			cout << "\n Subtree: " << expr;
+			delete [] expr;
+		}
+		// replace the divergent cur_node with newly created subtree
+		int i=0;
+		Node* pa_cur_node = cur_node->get_parent();
+		i=insert_subtree((Node**)&tree, (Node*)cur_node, (Node*)new_edsin);
+		// ok till here! Mind that here cur_node does not exist any longer, as it is deleted by insert_subtree!
+		if (COMMENT) {
+			cout << "\n\nPopulation::purge_diverging_terms() : diverging polynomial has been found - replaced by sin()";
+			char *expr;
+			expr = pa_cur_node->print();
 			cout << "\n Node: " << expr;
 			delete [] expr;
 		}
+
 
 	}
 
 
 	if (COMMENT) {
-		cout << "\n\npurge_high_level_polynomials() : END";
+		cout << "\n\npurge_diverging_terms() : END";
 	}
-
+//cin.get();
 	return;
 }
 

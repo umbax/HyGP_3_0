@@ -250,6 +250,9 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	tree_variance = 0.0;
 	tree_min=0.0;
 	tree_max=0.0;
+	r_k = NULL;		// autocorrelation array
+	r_k_size =0;
+	first_acf_root_tree = 0.0;
 	index_puls = NULL; 		//address of the array containing the position of the pulsations in x[]
 	index_var = NULL;	 	//address of the array containing the position of the variable (in v_list) the corresponding pulsation in index_puls refers to
 	n_pulsations = -1;  // see find_pulsations(...)
@@ -265,6 +268,7 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	T7 = 1.0e+10;
 	T8 = 1.0e+10;
 	T9 = 1.0e+10;
+	T10 = 1.0e+10;
 	twin = 0;
 }
 
@@ -280,6 +284,9 @@ Binary_Node::~Binary_Node(void)
 
     // delete the right
     delete right;
+
+    // delete autocorrelation array
+    delete[] r_k;
 }
 
 
@@ -592,25 +599,34 @@ void Binary_Node::show_state(void)
 	cout << setw(27) << "O5 : pen_ord0 = " << scientific << setw(12) << pen_ord0;
 	cout << setw(6) << "  T5 = " << scientific << setw(12) << T5;
 	cout << " % = " << fixed << setw(12) << 100.0*T5/F << endl;
-	//
+
 	cout << setw(27) << "O6 : pen_ord1 = " << scientific << setw(12) << pen_ord1;
 	cout << setw(6) << "  T6 = " << scientific << setw(12) << T6;
 	cout << " % = " << fixed << setw(12) << 100.0*T6/F << endl;
-	//
+
 	cout << setw(27) << "O7 : depth_first_op = " << scientific << setw(12) << depth_first_op;
 	cout << setw(6) << "  T7 = " << scientific << setw(12) << T7;
 	cout << " % = " << fixed << setw(12) << 100.0*T7/F << endl;
-	//
+
 	cout << setw(27) << "O8 : tree mean (train. data) = " << scientific << setw(12) << tree_mean;
 	cout << " tree variance (train. data) = " << scientific << setw(12) << tree_variance;
 	cout << setw(6) << "  T8 = " << scientific << setw(12) << T8;
 	cout << " % = " << fixed << setw(12) << 100.0*T8/F << endl;
-	//
+
 	cout << setw(27) << "O9 : high level polynomials : diverging = " << scientific << setw(12) << diverging;
 	cout << setw(6) << "  T9 = " << scientific << setw(12) << T9;
 	cout << " % = " << fixed << setw(12) << 100.0*T9/F << endl;
-	//
+
 	cout << setw(27) << "tree min = " << tree_min << "   tree max = " << tree_max << endl;
+
+	cout << "Autocorrelation array r_k size: " << r_k_size << endl;
+//	cout << "\nAutocorrelation r_k:" << endl;
+//	for (int i=0; i<r_k_size; i++) cout << r_k[i] << endl;
+	cout << setw(27) <<  "10 : First root of autocorrelation function : " << first_acf_root_tree;
+	cout << setw(6) << "  T10 = " << scientific << setw(12) << T10;
+	cout << " % = " << fixed << setw(12) << 100.0*T10/F << endl;
+
+
 
 }
 

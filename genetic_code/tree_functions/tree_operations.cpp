@@ -110,7 +110,7 @@ int tree_comp_F(const void *a1, const void *a2)
 
 
 
-// utility function for sorting the population according to error (fitness)
+// utility function for sorting the population according to RMSE error (wrongly called fitness)
 // (element 0 with lowest fitness)
 int tree_comp_fitness(const void *a1, const void *a2)
 {
@@ -201,7 +201,7 @@ void insert_parameter(Node *cur, Node **p_tree, Binary_Func *opr, Val value)
 
 
 
-// function that inserts a subtree
+// function that inserts a subtree, replacing the given p_old_subtree with the selected p_new_subtree
 int insert_subtree(Node **p_tree, Node *p_old_subtree, Node *p_new_subtree)             //&trees[i]
 {	
 	int COMMENT =0;    //1 comments, 0 silent...
