@@ -3,23 +3,23 @@ C++ Hybrid Genetic Programming code for symbolic regression of explicit metamode
 
 Main features
 
-###Memetic approach
+### Memetic approach
 The memetic/hybrid approach is implemented using a sequential quadratic programming (SQP) algorithm to tune the numerical coefficients of the individuals. The number of random initial guesses of the numerical coefficients can be set by the user.
 
-###Encoding
+### Encoding
 Models or individuals are represented by trees with unary and binary operations. The root node is always a binary node.
 
-###Selection
+### Selection
 Tournament out of three individuals selected from elite or whole population
 
-###Genetic operators
+### Genetic operators
 The implemented genetic operators are:
 1. reproduction (copy of the *elite* unchanged to new generation. In case of copies, the reproduction operator replaces copies in the elite with new individuals generated from scratch)
 1. crossover
 1. mutation (alternatively subtree mutation (even generations) and point mutation (odd generations)). 
 The genetic operators are independently applied, that is a model can be subjected to only one of the three operators at each generation.
 
-###Fitness function
+### Fitness function
 Multiobjective definition through weighted approach or MinMax (non Pareto). The objectives used to control the shape and behaviour of the evovled models are:
 
 * individual root mean square error divided by average elite root mean square error
@@ -77,15 +77,15 @@ Given RMSE(i,t) the Root Mean Square Error of the i-th HyGP model at generation 
 
 
 
-###Bounded models
+### Bounded models
 The parameter BOUNDED in input file forces HyGP to evolve bounded models (BOUNDED= 1), for extrapolation purposes.
 
 
-###Termination criteria
+### Termination criteria
 Evolution ends when the best individual root mean square error goes below a user defined threshold or the maximum number of generations is reached
 
-###Further measures
+### Further measures
 Maximal depth restriction implemented to avoid generation of trees of excessive depth.
 
-###Execution
+### Execution
 Sequential or parallel (SGE array job)
