@@ -2349,6 +2349,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 			SStot_tree = SStot_tree + (treeval[i]-result_tree[4])*(treeval[i]-result_tree[4]);
 		}
 		// then compute autocorrelation function
+		int ACF_first_root_found=0;
 		for (int delay=0; delay<problem->delay_max; delay++) {
 			for (int k=0; k < n_cases-delay; k++) {
 				((Binary_Node*)current_tree)->r_k[delay] = ((Binary_Node*)current_tree)->r_k[delay] + (treeval[k]-result_tree[4])*(treeval[k+delay]-result_tree[4]);
@@ -2358,10 +2359,15 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 
 			// search for first root of autocorrelation function (the one closest to 0)
 			// if r_k[delay-1] r_k[delay]>0 are both positive or negative do nothing: r_k[delay-1]*r_k[delay]>0
-			if (((Binary_Node*)current_tree)->first_acf_root_tree==0) {
-				if (fabs(((Binary_Node*)current_tree)->r_k[delay])<1.0E-12) first_acf_root=data_used[delay][0];  //mind! Only for n_var=1!
-				else {
-					if ((((Binary_Node*)current_tree)->r_k[delay-1]>0) && (((Binary_Node*)current_tree)->r_k[delay]<0)) first_acf_root=(data_used[delay-1][0]+data_used[delay][0])/2.0; //mind! Only for n_var=1!
+			if (ACF_first_root_found==0) {
+				if (fabs(((Binary_Node*)current_tree)->r_k[delay])<1.0E-12) {
+					first_acf_root=data_used[delay][0];  //mind! Only for n_var=1!
+					ACF_first_root_found=1;
+				} else {
+					if ((((Binary_Node*)current_tree)->r_k[delay-1]>0) && (((Binary_Node*)current_tree)->r_k[delay]<0)) {
+						first_acf_root=(data_used[delay-1][0]+data_used[delay][0])/2.0; //mind! Only for n_var=1!
+						ACF_first_root_found=1;
+					}
 				}
 			}
 
@@ -2608,8 +2614,10 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	// 10th objective : difference in first root of autocorrelation function between input signal and model
 	//-------------------------------------------------------------------------
 	if ((pr->strat_statp)==13) {
+		F7 = 0.0;
+		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3)+0.2*pow(fabs(ppd->y_max-complete_tree->tree_max),3)+0.2*pow(fabs(ppd->y_min-complete_tree->tree_min),3);
+		F9 = 0.0;
 		F10 = pow(sqrt(fabs(ppd->first_acf_root_input-complete_tree->first_acf_root_tree)),3);
-		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3);
 	}
 
 
@@ -2624,7 +2632,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
 	a8 = pr->w_strat_statp; // 0.000000001;
 	a9 = 0.0; //0.4; //0.3; //0.2; //0.1;
-	a10 = 0.0001;  //23/1/21 test
+	a10 = 0.05;  //23/1/21 test
 	// the weight of the primary objective, RMSE error, is the residual to 1 of the sum of previous coefficients a2 to a8
 	a1= double(1.-a2-a3-a4-a5-a6-a8-a9-a10); //-a7); // The sum of all a_i coefficients must be 1!!
 	
