@@ -2501,8 +2501,9 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//F1 = 1.-1./(1.+complete_tree->fitness); 
 	//F1 = complete_tree->fitness/sum_output;	 //the term is constant, but does not give great results...
 	if (pr->crossvalidation==0)
-		F1 = complete_tree->fitness/average_err;	//used in the PhD Thesis: average_err is the av. fitness in the archive of the previous gen. THE TERM VARIES DURING THE EVOLUTION!!!
-		//F1 = complete_tree->fitness;	// test 1/11/2018
+		// F1 = (complete_tree->fitness/average_err);	//used in the PhD Thesis: average_err is the av. fitness in the archive of the previous gen. THE TERM VARIES DURING THE EVOLUTION!!!
+		F1 = 100.0*(complete_tree->fitness/average_err);	//used for Mode 1 Ocean problem
+		// F1 = pow(complete_tree->fitness,2);	// test 1/2/2021
 	else
 		F1 = complete_tree->fitness;
 
@@ -2615,7 +2616,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//-------------------------------------------------------------------------
 	if ((pr->strat_statp)==13) {
 		F7 = 0.0;
-		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3)+0.2*pow(fabs(ppd->y_max-complete_tree->tree_max),3)+0.2*pow(fabs(ppd->y_min-complete_tree->tree_min),3);
+		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3)+0.1*pow(fabs(ppd->y_max-complete_tree->tree_max),3)+0.1*pow(fabs(ppd->y_min-complete_tree->tree_min),3);
 		F9 = 0.0;
 		F10 = pow(sqrt(fabs(ppd->first_acf_root_input-complete_tree->first_acf_root_tree)),3);
 	}
@@ -2632,7 +2633,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
 	a8 = pr->w_strat_statp; // 0.000000001;
 	a9 = 0.0; //0.4; //0.3; //0.2; //0.1;
-	a10 = 0.05;  //23/1/21 test
+	a10 = 0.1;  //23/1/21 test
 	// the weight of the primary objective, RMSE error, is the residual to 1 of the sum of previous coefficients a2 to a8
 	a1= double(1.-a2-a3-a4-a5-a6-a8-a9-a10); //-a7); // The sum of all a_i coefficients must be 1!!
 	
