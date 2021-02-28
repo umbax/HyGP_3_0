@@ -253,6 +253,7 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	r_k = NULL;		// autocorrelation array
 	r_k_size =0;
 	first_acf_root_tree = 0.0;
+	tot_variation_tree = 0.0;
 	index_puls = NULL; 		//address of the array containing the position of the pulsations in x[]
 	index_var = NULL;	 	//address of the array containing the position of the variable (in v_list) the corresponding pulsation in index_puls refers to
 	n_pulsations = -1;  // see find_pulsations(...)
@@ -269,6 +270,7 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	T8 = 1.0e+10;
 	T9 = 1.0e+10;
 	T10 = 1.0e+10;
+	T11 = 1.0e+10;
 	twin = 0;
 }
 
@@ -626,7 +628,9 @@ void Binary_Node::show_state(void)
 	cout << setw(6) << "  T10 = " << scientific << setw(12) << T10;
 	cout << " % = " << fixed << setw(12) << 100.0*T10/F << endl;
 
-
+	cout << setw(27) <<  "11 : Tree total variation : " << scientific << tot_variation_tree;
+	cout << setw(6) << "  T11 = " << scientific << setw(12) << T11;
+	cout << " % = " << fixed << setw(12) << 100.0*T11/F << endl;
 
 }
 

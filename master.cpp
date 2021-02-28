@@ -250,7 +250,7 @@ int main (int argc, char *argv[])
 		pop_reporter.points2file(&Mparam, &Mprobl, P, DIR_OUTPUT, i, check_end, start, finish, delta_t, Mparam.seed);
 		// write best individual's expression as per aggregate value F (!!!) on training data set to "best_gp.txt"
 		pop_reporter.update_best2file_build(P, DIR_OUTPUT, i, check_end);
-		// write list of the best-so-far individuals (see elite or archive - first repr_tot individuals) on training data set to "latest_archive.txt"
+		// write best-so-far individuals (elite or archive - first repr_tot individuals) on training data set to "latest_archive.txt"
 		pop_reporter.archive2file_build(P, DIR_OUTPUT, i, check_end);
 		// write no of tree evaluations at each generation to "n_tree_evaluations.txt"
 		pop_reporter.n_tree_eval2file(P, DIR_OUTPUT, i, check_end);

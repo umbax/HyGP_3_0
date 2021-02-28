@@ -35,7 +35,7 @@ The "strategies" that define how the above mentioned objectives are combined to 
 ###### Weighted approach:
 Given RMSE(i,t) the Root Mean Square Error of the i-th HyGP model at generation t as evaluated on the building data set (declared in the input file), N_(tuning coeff) the number of numerical coefficient in the model, N_(illegal op) the number of illegal operations found in the model, N_nodes the number of nodes of the model  
 
-	F = a_1 RMSE(i,t)/RMSE(i,t-1) + a_2 N_(tuning coeff)+ a_3 N_(illegal op) + a_4 N_nodes+ a_8 F_8
+	F = a_1 RMSE(i,t)/RMSE(i,t-1) + a_2 N_(tuning coeff)^2 + a_3 N_(illegal op) + a_4 N_nodes+ a_8 F_8
 
   * Strategy 6 (STRAT_STATP=6):
   
@@ -59,12 +59,32 @@ Given RMSE(i,t) the Root Mean Square Error of the i-th HyGP model at generation 
 
   * Strategy 13 (STRAT_STATP=13):
   
-     F = a_1 RMSE(i,t)/RMSE(i,t-1) + a_2 N_(tuning coeff)+ a_3 N_(illegal op) + a_4 N_nodes + a_8 F_8 + a_10 F_10
+     F = a_1 F_1 + a_2 F_2 + a_3 F_3 + a_4 F_4 + a_8 F_8 + a_10 F_10 + a_11 F_11
 
   with:
      
-     F8 = (sqrt|input_variance- tree_variance|)^3 + |input_mean - tree_mean|^3
-     F_10 = (sqrt|first_acf_root_input-first_acf_root_tree|)^3
+     F_1 = exp(10.0*RMSE(i,t)/|input_max - input_min|)
+     F_2 = N_(tuning coeff)^2
+     F_3 = N_(illegal op)
+     F_4 = N_nodes
+     F_8 = exp(10.0*|input_variance-tree_variance|/input_variance) + exp(10.0*|input_mean-tree_mean|/(|input_mean)|+1)) + |input_max-tree_max|/|input_max| 
+     F_10 = exp(10.0*|input_ACF_half_point-tree_ACF_half_point|/input_ACF_half_point)-1.0
+     F_11 = (|input_tot_variation - tree_tot_variation|/input_tot_variation)^3
+     
+  * Strategy 14 (STRAT_STATP=14) - evolution of statistical equivalent signal:
+  
+   F = a_2 F_2 + a_3 F_3 + a_4 F_4 + a_8 F_8 + a_10 F_10 + a_11 F_11
+
+  with:
+     
+     F_2 = N_(tuning coeff)^2
+     F_3 = N_(illegal op)
+     F_4 = N_nodes
+     F_8 = exp(10.0*|input_variance-tree_variance|/input_variance) + exp(10.0*|input_mean-tree_mean|/(|input_mean)|+1)) + |input_max-tree_max|/|input_max| 
+     F_10 = exp(10.0*|input_ACF_half_point-tree_ACF_half_point|/input_ACF_half_point)-1.0
+     F_11 = (|input_tot_variation - tree_tot_variation|/input_tot_variation)^3
+  
+  
 
 ###### MinMax approach:
 

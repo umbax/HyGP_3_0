@@ -68,6 +68,7 @@ class ProblemDefinition
 		int delay_max;	// max delay for calculation of autocorrelation values (initialised in compute_inputdata_stats()) - only for n_var=1
 		Val* r_k; 	//array storing autocorrelation values (initialised in compute_inputdata_stats()) - only for n_var=1
 		Val first_acf_root_input;  // closest root to 0 of autocorrelation function of input data - only for n_var=1
+		Val tot_variation_input; // total variation on data set in main input file
 
 		// crossvalidation set-up
 		//Val*** folds; // pointer to a 3d array (no of fold x row x column) - initialised in kfold_split
@@ -76,6 +77,7 @@ class ProblemDefinition
 		int  n_tuning;
 		Val** data_validation;	// CROSS VALIDATION DATA SET (coincides with building data if n_folds = 0)
 		int n_validation;	 //ex n_evaluation;
+
 
 		// TEST DATA SET
 		Val** data_test;

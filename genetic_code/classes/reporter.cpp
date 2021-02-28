@@ -50,7 +50,9 @@ void Reporter::inputdatastats2file(ProblemDefinition *pb, string DIR_OUTPUT)
 	fout << "Target variance: y_var = " << pb->y_var << endl;
 	fout << "Max value of target: y_max = " << pb->y_max << endl;
 	fout << "Min value of target: y_min = " << pb->y_min << endl;
-	fout << "First 5 record/fitness cases with target:" << endl;
+	fout << "First autocorrelation function root= " << pb->first_acf_root_input << endl;
+	fout << "Total variation: tot_variation_input= " << pb->tot_variation_input << endl;
+	fout << "First 5 record/fitness cases with target= " << endl;
 	for (int i=0; i<5; i++) {
 		for (int j=0; j<pb->get_n_var()+1; j++) {
 			fout << pb->get_data(i, j) << " ";
@@ -62,8 +64,6 @@ void Reporter::inputdatastats2file(ProblemDefinition *pb, string DIR_OUTPUT)
 	for (int i=0; i<pb->delay_max; i++) {
 		fout << pb->r_k[i] << endl;
 	}
-	fout << "\nFirst autocorrelation function root:" << endl;
-	fout << pb->first_acf_root_input << endl;
 	fout << "###" << endl;
 
 
@@ -182,9 +182,12 @@ void Reporter::points2file(RunParameters *pr, ProblemDefinition *pb, Population*
 	fout << "Generation= " << gi << endl; 
 	fout << "Elapsed_time(sec)= " << delta_t << endl;
 	fout << "Used_seed= " << seed << endl;
-	fout << "Tree average value on training data set= " << P->complete_trees[0]->tree_mean << endl;
+	fout << "Tree mean value on training data set= " << P->complete_trees[0]->tree_mean << endl;
 	fout << "Tree variance on training data set= " << P->complete_trees[0]->tree_variance << endl;
+	fout << "Tree min value:" << P->complete_trees[0]->tree_min <<endl;
+	fout << "Tree max value:" << P->complete_trees[0]->tree_max <<endl;
 	fout << "First autocorrelation function root:" << P->complete_trees[0]->first_acf_root_tree << endl;
+	fout << "Tree total variation: " << P->complete_trees[0]->tot_variation_tree << endl;
 	//fout << "###" << endl;
 	char *expr;
 	expr = P->complete_trees[0]->print();
@@ -243,7 +246,8 @@ void Reporter::update_best2file_build(Population *P, string DIR_OUTPUT, int gi, 
 	if (gi==0) {	
 		// open file for writing, truncating
 		fout.open(expr1, ios_base::out | ios_base::trunc);
-		fout << "# Gen" <<" F" << " Fitness(RMSE)" << " R2(adim.)" << " Hits " <<  "Expression"  << endl;
+		fout << "# Gen" <<" F" << " Fitness(RMSE)" << " Corrections" << " R2(adim.)" << " Mean" << " Var" << " Min" << " Max" << " First_ACF" << " Tot_variation";
+		fout <<  " Expression"  << endl;
 	} else {
 		// open file for writing, appending
 		fout.open(expr1, ios_base::out | ios_base::app);
@@ -253,10 +257,17 @@ void Reporter::update_best2file_build(Population *P, string DIR_OUTPUT, int gi, 
 	expr = P->print(0, P->complete_trees);  //0 is the position in the array "complete_trees" of the individual with minimum F, not RMSE or R2!
 	
 	// print state variables and expression of the best individual
-	fout << gi << " " << scientific << P->complete_trees[0]->F;
-	fout << " " << scientific << P->complete_trees[0]->fitness;
-	fout << " " << scientific << P->complete_trees[0]->R2;
-	fout << " " << P->complete_trees[0]->hits;
+	fout << gi << " ";  // generation
+	fout << scientific << P->complete_trees[0]->F;  // aggregate fitness F
+	fout << " " << scientific << P->complete_trees[0]->fitness; // RMSE
+	fout << " " << P->complete_trees[0]->n_corrections; // corrections
+	fout << " " << scientific << P->complete_trees[0]->R2;  // R2
+	fout << " " << scientific << P->complete_trees[0]->tree_mean;  // mean
+	fout << " " << scientific << P->complete_trees[0]->tree_variance;  // variance
+	fout << " " << scientific << P->complete_trees[0]->tree_min; // min
+	fout << " " << scientific << P->complete_trees[0]->tree_max; // max
+	fout << " " << scientific << P->complete_trees[0]->first_acf_root_tree; // first ACF root
+	fout << " " << scientific << P->complete_trees[0]->tot_variation_tree; // total variation
 	fout << "  \"" << expr << "\"" << endl;  
 
 	// free memory
@@ -317,6 +328,7 @@ void Reporter::best2file_test(Population *P, string DIR_OUTPUT, int gi)
 		fout << " " << scientific << P->complete_trees[i_best_test]->fitness_test;  // ATTENTION: with fitness is meant "error" (RMSE or PRESS), different from F
 		fout << " " << scientific << P->complete_trees[i_best_test]->R2_test; // R2
 		fout << " "  << P->complete_trees[i_best_test]->hits_test; // Hits
+
 		fout << "  \"" << expr << "\"" << endl;  // Expression
 	}
 	else {
@@ -359,10 +371,19 @@ void Reporter::archive2file_build(Population *P, string DIR_OUTPUT, int gi, int 
 	// print to file all the repr_tot individuals in the archive, evaluated on the training/building data set
 	for   (int i=0; i<repr_tot; i++) { //the first repr_tot individuals are the best-so-far. Check: They must have previously been sorted!
 		expr = P->print(i, P->complete_trees);  
-		fout << gi << " " << scientific << P->complete_trees[i]->F;
-		fout << " " << scientific << P->complete_trees[i]->fitness;
-		fout << " " << scientific << P->complete_trees[i]->R2;
-		fout << " "  << P->complete_trees[i]->hits;
+
+		fout << gi << " ";  // generation
+		fout << scientific << P->complete_trees[i]->F;  // aggregate fitness F
+		fout << " " << scientific << P->complete_trees[i]->fitness; // RMSE
+		fout << " " << P->complete_trees[i]->n_corrections; // corrections
+		fout << " " << scientific << P->complete_trees[i]->R2;  // R2
+		fout << " " << scientific << P->complete_trees[i]->tree_mean;  // mean
+		fout << " " << scientific << P->complete_trees[i]->tree_variance;  // variance
+		fout << " " << scientific << P->complete_trees[i]->tree_min; // min
+		fout << " " << scientific << P->complete_trees[i]->tree_max; // max
+		fout << " " << scientific << P->complete_trees[i]->first_acf_root_tree; // first ACF root
+		fout << " " << scientific << P->complete_trees[i]->tot_variation_tree; // total variation
+
 		fout << "  \"" << expr << "\"" << endl;
 		
 		// free memory

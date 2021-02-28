@@ -105,7 +105,7 @@ echo $PWD
 # COLLECTION OF THE BEST INDIVIDUAL PER EACH RUN AND ABSOLUTE BEST ON BUILDING DATA SET
 #----------------------------------------------------------------------------------------
 echo Creating archives_best.txt ...
-echo "# Gen F Fitness(RMSE)  R2(adim.)  Hits Expression" > $DESTINATION/$OUTPUT_DIR/archives_best.txt 
+echo "# Gen F Fitness(RMSE) Corrections R2 Mean Var Min Max First_ACF_root Tot_variation Expression" > $DESTINATION/$OUTPUT_DIR/archives_best.txt 
 for ((i=1; i<=$N_RUNS; i++ ))
 do
 	echo Reading data from  $DESTINATION/$OUTPUT_DIR/run_$i/best_gp.txt , writing to $DESTINATION/$OUTPUT_DIR/archives_best.txt ...
@@ -117,7 +117,7 @@ echo Done: best individual per each run copied to $DESTINATION/$OUTPUT_DIR/archi
 
 # collection of best individual of the experiment (based on RMSE - 3rd column)
 echo Extracting the best individual at the end of the experiment, the one with minimum RMSE
- awk 'BEGIN{fit_min=10.0e+99; line=0; run=0;} {if ($3<=fit_min) {fit_min=$3; line=$0; run=NR}} END{print "# Best tree found in run no. :\n" run-1 "\n# Data :\n# Gen F Fitness(RMSE)  R2(adim.)  Hits Expression\n" line;}' $DESTINATION/$OUTPUT_DIR/archives_best.txt > $DESTINATION/$OUTPUT_DIR/best_tree.txt
+ awk 'BEGIN{fit_min=10.0e+99; line=0; run=0;} {if ($3<=fit_min) {fit_min=$3; line=$0; run=NR}} END{print "# Best tree found in run no. :\n" run-1 "\n# Data :\n#Gen F Fitness(RMSE) Corrections R2 Mean Var Min Max First_ACF_root Tot_variation Expression\n" line;}' $DESTINATION/$OUTPUT_DIR/archives_best.txt > $DESTINATION/$OUTPUT_DIR/best_tree.txt
 echo Done: best individual of the experiment copied to $DESTINATION/$OUTPUT_DIR/best_tree.txt
 
 

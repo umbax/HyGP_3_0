@@ -2207,6 +2207,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	Val SStot_tree = 0.0;
 	Val result_tree_norm = 0.0;
 	Val threshold = 0.0001;   // for counting hits
+	Val tot_variation=0.0;
 	int hits=0;
 	int n_corrections = 0;
 	((Binary_Node*)current_tree)->n_corrections=0;
@@ -2230,6 +2231,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	result_tree[6] = (Val)0.0;	// storing min tree value on building data set
 	result_tree[7] = (Val)0.0;	// storing max tree value on building data set
 	result_tree[8] = (Val)0.0;	// storing value first zero of tree autocorrelation function
+	result_tree[9] = (Val)0.0;	// storing total variation
 
 	if (COMMENT) {
 		cout << "\nPopulation::fitness_func" << endl;
@@ -2276,6 +2278,9 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 		square_err = square_err + error*error;   //sum of the square of the errors - SSres (https://en.wikipedia.org/wiki/Coefficient_of_determination)
 		sum_values = sum_values + treeval[i]; 				// sum of the tree values to compute mean
 		sum_square_values = sum_square_values + treeval[i]*treeval[i];
+		if (parameters->nvar==1) {
+			if (i>0) tot_variation=tot_variation+fabs(treeval[i]-treeval[i-1]);
+		}
 		
 		// normalised RMSE version
 		if (normalised) { 
@@ -2334,11 +2339,11 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	result_tree[5] = sum_square_values/((Val)n_cases)-result_tree[4]*result_tree[4];
 	if (COMMENT) cout << "Variance on building data set  = " << result_tree[5] << endl;
 
-	// min tree value on building data set
+	// min tree value on building data set - result_tree[6]
 	result_tree[6] = a_min;
 	if (COMMENT) cout << "Min value on building data set  = " << result_tree[6] << endl;
 
-	// max tree value on building data set
+	// max tree value on building data set - result_tree[7]
 	result_tree[7] = a_max;
 	if (COMMENT) cout << "Max value on building data set  = " << result_tree[7] << endl;
 
@@ -2357,14 +2362,14 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 			((Binary_Node*)current_tree)->r_k[delay]= (((Binary_Node*)current_tree)->r_k[delay])/SStot_tree;  //SStot = sum((y- y_average)^2) of the HyGP model (https://en.wikipedia.org/wiki/Coefficient_of_determination)
 
 
-			// search for first root of autocorrelation function (the one closest to 0)
+			// 20/2/21 search for first point at which ACF halves -------------- no longer first root of autocorrelation function (the one closest to 0)
 			// if r_k[delay-1] r_k[delay]>0 are both positive or negative do nothing: r_k[delay-1]*r_k[delay]>0
 			if (ACF_first_root_found==0) {
-				if (fabs(((Binary_Node*)current_tree)->r_k[delay])<1.0E-12) {
+				if ( fabs(((Binary_Node*)current_tree)->r_k[delay]-0.5)<1.0E-12 ) {
 					first_acf_root=data_used[delay][0];  //mind! Only for n_var=1!
 					ACF_first_root_found=1;
 				} else {
-					if ((((Binary_Node*)current_tree)->r_k[delay-1]>0) && (((Binary_Node*)current_tree)->r_k[delay]<0)) {
+					if ((((Binary_Node*)current_tree)->r_k[delay-1]-0.5>0) && (((Binary_Node*)current_tree)->r_k[delay]-0.5<0)) {
 						first_acf_root=(data_used[delay-1][0]+data_used[delay][0])/2.0; //mind! Only for n_var=1!
 						ACF_first_root_found=1;
 					}
@@ -2384,6 +2389,9 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 
 	// first zero of autocorrelation function - result_tree[8]
 	result_tree[8] = first_acf_root;
+
+	// total variation - result_tree[9]
+	result_tree[9] = tot_variation;
 
 	delete[] treeval;  // why not storing the values in each root node, so when you have to save them to file in Reporter you do not have to recompute them?
 }
@@ -2491,6 +2499,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	double F8, a8; // ADDED 11/8/20: penalisation on statistical properties of the tree (average and variance)
 	double F9, a9; // ADDED 22/11/20: penalisation of diverging trees (high level polynomials - that is not argument of any function - are present)
 	double F10, a10; // ADDED 23/1/21: penalisation linked to first root of autocorrelation function (see ::fitness_func())
+	double F11, a11; // ADDED 6/2/21: penalisation linked to total variation
 
 	//-------------------------------------------------------------
 	// first objective: FITNESS
@@ -2612,13 +2621,59 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//F9 = 1.0*(complete_tree->diverging);  //1.0*(complete_tree->diverging);
 
 	//-------------------------------------------------------------------------
-	// 10th objective : difference in first root of autocorrelation function between input signal and model
+	// 10th objective : difference in autocorrelation function properties between input signal and model
 	//-------------------------------------------------------------------------
+
+	//-------------------------------------------------------------------------
+	// 11th objective : difference in total variation
+	//-------------------------------------------------------------------------
+	//F11=pow(sqrt(fabs(ppd->tot_variation_input-complete_tree->tot_variation_tree)),3);
+
+
+
 	if ((pr->strat_statp)==13) {
+		// fitness value (RMSE)
+		F1 = exp(10.0*complete_tree->fitness/fabs(ppd->y_max-ppd->y_min)); //20/2/21 try exp(complete_tree->fitness/average_err);
+		// number of tuning parameters
+		F2 = pow((double)(complete_tree->n_tuning_parameters), 2.0);
+		//No of corrections performed by protected operations
+		F3 = (double)(complete_tree->n_corrections);
+		//SIZE
+		F4 = (double)(complete_tree->count());
+		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
 		F7 = 0.0;
-		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3)+0.1*pow(fabs(ppd->y_max-complete_tree->tree_max),3)+0.1*pow(fabs(ppd->y_min-complete_tree->tree_min),3);
+		// statistical properties of the tree (mean and variance)
+		F8 = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1)) + fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max); //+pow(fabs(ppd->y_ave-complete_tree->tree_mean)/fabs(ppd->y_max-ppd->y_min),3)
+		// presence of high level polynomials that cause divergent behaviour
 		F9 = 0.0;
-		F10 = pow(sqrt(fabs(ppd->first_acf_root_input-complete_tree->first_acf_root_tree)),3);
+		// difference in point at which ACF halves
+		//F10 = pow(sqrt(fabs(ppd->first_acf_root_input-complete_tree->first_acf_root_tree)),3);
+		F10 = exp(10.0*fabs(ppd->first_acf_root_input-complete_tree->first_acf_root_tree)/ppd->first_acf_root_input)-1.0;
+		// difference in total variation
+		F11 = pow(fabs(ppd->tot_variation_input-complete_tree->tot_variation_tree)/ppd->tot_variation_input,3);
+	}
+
+
+	if ((pr->strat_statp)==14) {
+		// fitness value (RMSE)
+		F1 = 0.0;  // the aim of stratehy 14 is to evolve a model with the same statistical properties of the original signal, not local accuracy is not a priority
+		// number of tuning parameters
+		F2 = pow((double)(complete_tree->n_tuning_parameters), 2.0);
+		//No of corrections performed by protected operations
+		F3 = (double)(complete_tree->n_corrections);
+		//SIZE
+		F4 = (double)(complete_tree->count());
+		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
+		F7 = 0.0;
+		// statistical properties of the tree (mean and variance)
+		F8 = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1)) + fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max); //+pow(fabs(ppd->y_ave-complete_tree->tree_mean)/fabs(ppd->y_max-ppd->y_min),3)
+		// presence of high level polynomials that cause divergent behaviour
+		F9 = 0.0;
+		// difference in point at which ACF halves
+		//F10 = pow(sqrt(fabs(ppd->first_acf_root_input-complete_tree->first_acf_root_tree)),3);
+		F10 = exp(10.0*fabs(ppd->first_acf_root_input-complete_tree->first_acf_root_tree)/ppd->first_acf_root_input)-1.0;
+		// difference in total variation
+		F11 = pow(fabs(ppd->tot_variation_input-complete_tree->tot_variation_tree)/ppd->tot_variation_input,3);
 	}
 
 
@@ -2633,9 +2688,11 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
 	a8 = pr->w_strat_statp; // 0.000000001;
 	a9 = 0.0; //0.4; //0.3; //0.2; //0.1;
-	a10 = 0.1;  //23/1/21 test
+	a10 = 3.0E-1; //1.0E-1;//0.05;  //23/1/21 test  // ACF first root
+	a11 = 1.0E-1; //1.0E-2; //1.0E-8;  	// total variation
+
 	// the weight of the primary objective, RMSE error, is the residual to 1 of the sum of previous coefficients a2 to a8
-	a1= double(1.-a2-a3-a4-a5-a6-a8-a9-a10); //-a7); // The sum of all a_i coefficients must be 1!!
+	a1= double(1.-a2-a3-a4-a5-a6-a8-a9-a10-a11); //-a7); // The sum of all a_i coefficients must be 1!!
 	
 	//------------------------------------------------------------
 	// objectives multiplied by weights
@@ -2650,6 +2707,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	complete_tree->T8 = a8*F8;
 	complete_tree->T9 = a9*F9;
 	complete_tree->T10 = a10*F10;
+	complete_tree->T11 = a11*F11;
 
 	//------------------------------------------------------------
 	// fitness function definition
@@ -2682,7 +2740,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		
 		if (pr->w_factorisation<=0) {
 			// STANDARD APPROACH (HyGP)
-			complete_tree->F = complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T8 + complete_tree->T9 + complete_tree->T10;  // removed "+ complete_tree->T7;"
+			complete_tree->F = complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T8 + complete_tree->T9 + complete_tree->T10 + complete_tree->T11;  // removed "+ complete_tree->T7;"
 		}
 			// adaptive approach
 			//	complete_tree->F = complete_tree->T1 + (-1.0*((double)learning_on-1.0))*complete_tree->T2 + complete_tree->T3 + ((double)learning_on+1.0)*complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T7;
@@ -2843,7 +2901,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	Val tree_min, tree_min_best;
 	Val tree_max, tree_max_best;
 	Val tree_acf_root, tree_acf_root_best;
-	Val result[9];
+	Val tree_tot_variation, tree_tot_variation_best;
+	Val result[10];
 	
 	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
 	result[1] = (Val)0.0;	// storing n of hits
@@ -2854,6 +2913,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	result[6] = (Val)0.0;	// storing min tree value on building data set
 	result[7] = (Val)0.0;	// storing max tree value on building data set
 	result[8] = (Val)0.0;	// storing first zero of autocorrelation function
+	result[9] = (Val)0.0;	// storing total variation
 
 
 	if (COMMENT) {
@@ -2956,15 +3016,17 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	tree_variance_best = 999999;
 	tree_min_best=999999;
 	tree_max_best=999999;
-	//	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
-	//	result[1] = (Val)0.0;	// storing n of hits
-	//	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
-	//	result[3] = (Val)0.0; // storing value of R squared (R2)
-	//	result[4] = (Val)0.0;	// storing mean tree value on building data set
-	//	result[5] = (Val)0.0;	// storing variance of tree values on building data set
-	//	result[6] = (Val)0.0;	// storing min tree value on building data set
-	//	result[7] = (Val)0.0;	// storing max tree value on building data set
-	//  result[8] = (Val)0.0;	// storing first zero of autocorrelation function
+	tree_tot_variation_best=999999;
+	//	result[0] = (Val)0.0;  	// fitness value (error - RMSE)
+	//	result[1] = (Val)0.0;	// n of hits
+	//	result[2] = (Val)0.0;	// n of corrections done by protected operations
+	//	result[3] = (Val)0.0; 	// value of R squared (R2)
+	//	result[4] = (Val)0.0;	// mean tree value on building data set
+	//	result[5] = (Val)0.0;	// variance of tree values on building data set
+	//	result[6] = (Val)0.0;	// min tree value on building data set
+	//	result[7] = (Val)0.0;	// max tree value on building data set
+	//  result[8] = (Val)0.0;	// first zero of autocorrelation function
+	//  result[9] = (Val)0.0;	// total variation
 	
 	//--------------------------------------------------------------------------------------------------------------------------------
 	// HERE THE MULTIPLE GUESSES CYCLE STARTS 
@@ -3067,6 +3129,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		tree_min=result[6];
 		tree_max=result[7];
 		tree_acf_root = result[8];
+		tree_tot_variation = result[9];
 		// also the array of coefficients x is returned...
 /*
 		// SELECTION of the BEST SET of PARAMETERS (x_best update) 
@@ -3111,6 +3174,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			tree_min_best=tree_min;
 			tree_max_best=tree_max;
 			tree_acf_root_best = tree_acf_root;
+			tree_tot_variation_best = tree_tot_variation;
 			for (int j=0; j<n_param; j++)
 				 x_best[j] = x[j];  //
 		}
@@ -3140,6 +3204,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	ntree->tree_min=tree_min_best;
 	ntree->tree_max=tree_max_best;
 	ntree->first_acf_root_tree = tree_acf_root_best;
+	ntree->tot_variation_tree = tree_tot_variation_best;
 
 	if (COMMENT) {	
 		//  print the value of the tuned constants

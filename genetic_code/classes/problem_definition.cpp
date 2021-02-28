@@ -53,6 +53,7 @@ ProblemDefinition::ProblemDefinition(void)
 	y_max = 0.0;			// max value of target
 	y_min = 0.0;			// min value of target
 	first_acf_root_input = 0.0; // closest root to 0 of autocorrelation function of input data - only for n_var=1
+	tot_variation_input = 0.0; // total variation
 
 	// statistics of corresponding output (target) of the TEST data set (TEST DATA SET)
 	data_test = NULL;
@@ -456,6 +457,10 @@ void ProblemDefinition::compute_inputdata_stats(void)
 		// min and max
 		if (a>=a_max) a_max=a;
 		if (a<=a_min) a_min=a;
+		// total variation
+		if (n_var==1) {
+			if (k>0) tot_variation_input=tot_variation_input+fabs(data[k][n_var]-data[k-1][n_var]);
+		}
 	}
 	// mean target value
 	y_ave = y_ave_temp/(double)(n_data);
@@ -479,6 +484,7 @@ void ProblemDefinition::compute_inputdata_stats(void)
 		}
 		cout << "delay_max = " << delay_max << endl;
 		cout << "k	r_k" << endl;
+		int first_acf_root_input_found=0;
 		for (int delay=0; delay<delay_max; delay++) {
 			for (int k=0; k < n_data-delay; k++) {
 				r_k[delay] = r_k[delay] + (data[k][n_var]-y_ave)*(data[k+delay][n_var]-y_ave);
@@ -487,16 +493,22 @@ void ProblemDefinition::compute_inputdata_stats(void)
 			r_k[delay]= r_k[delay]/Sy;
 			//cout << "r_k[" << delay << "]= " << r_k[delay] << endl;
 
-			// search for first root of autocorrelation function (the one closest to 0)
+			// 20/2/21 search for first point at which ACF halves -------------- no longer first root of autocorrelation function (the one closest to 0)
 			// if r_k[delay-1] r_k[delay]>0 are both positive or negative do nothing: r_k[delay-1]*r_k[delay]>0
-			if (first_acf_root_input==0) {
-				if (fabs(r_k[delay])<1.0E-12) first_acf_root_input=data[delay][0];  //mind! Only for n_var=1!
-				else {
-					if ((r_k[delay-1]>0) && (r_k[delay]<0)) first_acf_root_input=(data[delay-1][0]+data[delay][0])/2.0; //mind! Only for n_var=1!
+			if (first_acf_root_input_found==0) {
+				if (fabs(r_k[delay]-0.5)<1.0E-12) {
+					first_acf_root_input=data[delay][0];  //mind! Only for n_var=1!
+					first_acf_root_input_found=1;
+				} else {
+					if ( (r_k[delay-1]-0.5>0) && (r_k[delay]-0.5<0) ) {
+						first_acf_root_input=(data[delay-1][0]+data[delay][0])/2.0; //mind! Only for n_var=1!
+						first_acf_root_input_found=1;
+					}
 				}
 			}
 		}
 	} // end if n_var==1
+
 
 	// compute statistical properties of TEST DATA target values
 	//------------------------------------------------------------
