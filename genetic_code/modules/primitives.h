@@ -34,7 +34,8 @@ extern Unary_Func Absval;
 extern Unary_Func Cosh;
 extern Unary_Func Sinh;
 extern Unary_Func Tanh;
-extern Unary_Func RectWave;
 extern Unary_Func HfreqSine;
+extern Unary_Func RectWave;
+extern Unary_Func HeaviStep;
 
 #endif /* GENETIC_CODE_MODULES_PRIMITIVES_H_ */

@@ -624,7 +624,7 @@ void Binary_Node::show_state(void)
 	cout << "Autocorrelation array r_k size: " << r_k_size << endl;
 //	cout << "\nAutocorrelation r_k:" << endl;
 //	for (int i=0; i<r_k_size; i++) cout << r_k[i] << endl;
-	cout << setw(27) <<  "10 : First root of autocorrelation function : " << first_acf_root_tree;
+	cout << setw(27) <<  "10 : Point at which Autocorrelation Function drops by half: " << first_acf_root_tree;
 	cout << setw(6) << "  T10 = " << scientific << setw(12) << T10;
 	cout << " % = " << fixed << setw(12) << 100.0*T10/F << endl;
 

@@ -110,7 +110,6 @@ Binary_Func Spow = {spow, spow_sign};
 
 
 
-
 // UNARY FUNCTIONS (Unary_Func)
 
 Val pow1(Val a, int* n_corrections)
@@ -296,17 +295,6 @@ int hypertan_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND 
 Unary_Func Tanh = {hypertan, hypertan_sign_pre, hypertan_sign_post, &hypertan_pos};
 
 
-Val rect_wave(Val a, int* n_corrections)
-{
-	// a is expressed in radians!!!;
-	return (Val)cbrt(sin(a));		// used cbrt instead of pow() to avoid errors linked to the computation of 1/3
-}
-char rect_wave_sign_pre[] = "nthroot(sin";    //"rectwave"
-char rect_wave_sign_post[] = ",3)";	// nthroot(x,3) command used by Matlab and Octave
-int rect_wave_pos = 2;      //0 if BEFORE, 1 if AFTER, 2 BEFORE AND AFTER the argument
-Unary_Func RectWave = {rect_wave, rect_wave_sign_pre, rect_wave_sign_post, &rect_wave_pos};
-
-
 // TEST: block defining high frequency sine term
 Val hfreqsine(Val a, int* n_corrections)
 {
@@ -318,5 +306,26 @@ char hfreqsine_sign_post[] = "";
 int hfreqsine_pos = 0;      //0 if BEFORE, 1 if AFTER the argument, 2 BEFORE AND AFTER the argument
 Unary_Func HfreqSine = {hfreqsine, hfreqsine_sign_pre, hfreqsine_sign_post, &hfreqsine_pos};
 
+
+Val rect_wave(Val a, int* n_corrections)
+{
+	// a is expressed in radians!!!;
+	return (Val)cbrt(sin(a));		// used cbrt instead of pow() to avoid errors linked to the computation of 1/3
+}
+char rect_wave_sign_pre[] = "nthroot(sin";    //"rectwave"
+char rect_wave_sign_post[] = ",3)";	// nthroot(x,3) command used by Matlab and Octave
+int rect_wave_pos = 2;      //0 if BEFORE, 1 if AFTER, 2 BEFORE AND AFTER the argument
+Unary_Func RectWave = {rect_wave, rect_wave_sign_pre, rect_wave_sign_post, &rect_wave_pos};
+
+
+// Heaviside step function 1/(1+exp(-2kx)) ?
+Val heavi_step(Val a, int* n_corrections)
+{
+	return (Val)(1/(1+exp(-2000.0*a)));		// used cbrt instead of pow() to avoid errors linked to the computation of 1/3
+}
+char heavi_step_sign_pre[] = "1/(1+exp(-2000*";
+char heavi_step_sign_post[] = "))";
+int heavi_step_pos = 2;      //0 if BEFORE, 1 if AFTER, 2 BEFORE AND AFTER the argument
+Unary_Func HeaviStep = {heavi_step, heavi_step_sign_pre, heavi_step_sign_post, &heavi_step_pos};
 
 

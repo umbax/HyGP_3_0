@@ -561,7 +561,10 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	      	pb->dummy_uni[NUM_U_FUNCS]=HfreqSine;
 			NUM_U_FUNCS++;
 	}
-
+	if (func_uni.find("heavistep") != string::npos) {
+		    pb->dummy_uni[NUM_U_FUNCS]=HeaviStep;
+		    NUM_U_FUNCS++;
+	}
 	
 	pb->num_u_funcs = NUM_U_FUNCS;
 

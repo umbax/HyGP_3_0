@@ -300,9 +300,10 @@ int main (int argc, char *argv[])
 		cout << "problem->show_data_validation() : show current data_test :" << endl;
 		P->problem->show_data_test();
 		// evaluate complete individuals on test data set provided by the user
-		P->evaluate_complete_trees(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
+		P->evaluate_complete_trees_on_test_dataset(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
 		// sort according to error (RMSE) - better not to use it to keep order and to recognise performance on building and test data sets...
 		//P->sort(last_gen,tree_comp_fitness); // non va: ordina in ordine decrescente e alcune volte pone a 0 RMSE e R2. Perché?
+
 		// find and print best individual on test data set as per RMSE (!!!!) to file "best_gp_TEST.txt"
 		pop_reporter.best2file_test(P, DIR_OUTPUT, last_gen);
 		// print archive evaluated on the test data set to file

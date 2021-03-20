@@ -105,7 +105,7 @@ class ProblemDefinition
 		//Andrey's idea to avoid dynamic allocation of functions list
 		// in the future use a vector
 		Unary_Func dummy_uni[15];  
-		Unary_Func *u_func_list[15];   // max of binary functions allowed is 15!
+		Unary_Func *u_func_list[15];   // max of unary functions allowed is 15!
 		int num_u_funcs;
 		
 		//Andrey's idea to avoid dynamic allocation of functions list

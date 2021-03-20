@@ -160,7 +160,7 @@ class Population {
 	double pso_objfunction(double*, int, Binary_Node*); // HyPSO parameter optimisation
 
 	void evaluate(int, int); // sets error, F and other attributes  of each tree
-	void evaluate_complete_trees(void); // evaluates fitness, hits, corrections, R2 of complete trees on a given data set
+	void evaluate_complete_trees_on_test_dataset(void); // evaluates fitness, hits, corrections, R2 of complete trees on test data set
 	void perform_editing(int i); // edits trees[i], individual without parameters
 	int tuning_individual(int, Binary_Node *, Binary_Node *, int);      //finds, extracts the terminal_const variables and optimise them through SQP
 	void tuning_individual_RMSE_single_guess(Binary_Node*, double*, int*, int*, Val*); // performs RMSE error evaluation on a single individual for a given set of parameters (tree coefficients)

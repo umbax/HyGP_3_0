@@ -2132,21 +2132,22 @@ void Population::evaluate(int gen, int G)
 
 }
 
-
-void Population::evaluate_complete_trees()
+// function that evaluate RMSE (fitness), hits and R2 of complete trees on test data set
+void Population::evaluate_complete_trees_on_test_dataset()
 {
 	int COMMENT = 1;
 	//-----------------------------------------------------------------
-	Val result[8];
-	//	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
-	//	result[1] = (Val)0.0;	// storing n of hits
-	//	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
-	//	result[3] = (Val)0.0; // storing value of R squared (R2)
-	//	result[4] = (Val)0.0;	// storing mean tree value on building data set
-	//	result[5] = (Val)0.0;	// storing variance of tree values on building data set
-	//	result[6] = (Val)0.0;	// storing min tree value on building data set
-	//	result[7] = (Val)0.0;	// storing max tree value on building data set
-
+	Val result[9];
+//	result_tree[0] = (Val)0.0;  // fitness value (error - RMSE)
+//	result_tree[1] = (Val)0.0;	// storing n of hits
+//	result_tree[2] = (Val)0.0;	// storing n of corrections done by protected operations
+//	result_tree[3] = (Val)0.0; 	// storing value of R squared (R2)
+//	result_tree[4] = (Val)0.0;	// storing mean tree value on building data set
+//	result_tree[5] = (Val)0.0;	// storing variance of tree values on building data set
+//	result_tree[6] = (Val)0.0;	// storing min tree value on building data set
+//	result_tree[7] = (Val)0.0;	// storing max tree value on building data set
+//	result_tree[8] = (Val)0.0;	// storing value first zero of tree autocorrelation function
+//	result_tree[9] = (Val)0.0;	// storing total variation
 
 	int repr_tot = get_repr_tot();
 	cout << "\n\nEVALUATION of the n. " << repr_tot << " complete trees in the archive on the TEST DATA SET";
@@ -2640,6 +2641,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F3 = (double)(complete_tree->n_corrections);
 		//SIZE
 		F4 = (double)(complete_tree->count());
+		//F4 = pow((double)(complete_tree->count()),2.0);
 		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
 		F7 = 0.0;
 		// statistical properties of the tree (mean and variance)
@@ -2663,6 +2665,8 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F3 = (double)(complete_tree->n_corrections);
 		//SIZE
 		F4 = (double)(complete_tree->count());
+		//F4 = pow((double)(complete_tree->count()),2.0);
+
 		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
 		F7 = 0.0;
 		// statistical properties of the tree (mean and variance)
@@ -2688,7 +2692,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
 	a8 = pr->w_strat_statp; // 0.000000001;
 	a9 = 0.0; //0.4; //0.3; //0.2; //0.1;
-	a10 = 3.0E-1; //1.0E-1;//0.05;  //23/1/21 test  // ACF first root
+	a10 = 1.0E-1; //1.0E-1;//0.05;  //23/1/21 test  // ACF first root
 	a11 = 1.0E-1; //1.0E-2; //1.0E-8;  	// total variation
 
 	// the weight of the primary objective, RMSE error, is the residual to 1 of the sum of previous coefficients a2 to a8
@@ -5031,7 +5035,10 @@ void Population::purge_diverging_terms(Binary_Node *tree, Node *cur_node)
 //		}
 		// 2. here the variable is replaced by a sin function of the same variable
 		// create "sin" node and attach child variable randomly selected
-		Unary_Node *new_edsin = new Unary_Node(NULL, &Sin);
+		//REPLACE DIVERGENT VARIABLE
+		Unary_Func *f=problem->u_func_list[int_rand(problem->num_u_funcs)];
+		Unary_Node *new_edsin = new Unary_Node(NULL, f);  //&Sin);
+
 		Terminal_Var *new_edvar = new Terminal_Var((Node*)new_edsin,problem->v_list[int_rand(parameters->nvar)]);
 		new_edsin->set_child((Node*)new_edvar);
 		if (COMMENT) {
