@@ -37,6 +37,10 @@ Given RMSE(i,t) the Root Mean Square Error of the i-th HyGP model at generation 
 
 	F = a_1 RMSE(i,t)/RMSE(i,t-1) + a_2 N_(tuning coeff)^2 + a_3 N_(illegal op) + a_4 N_nodes+ a_8 F_8
 
+  * Strategy 4 (STRAT_STATP=4):
+  
+  	  F_8=sqrt(|input_data_variance - tree_variance|) / [1 + |input_data_mean – tree_mean|]
+  
   * Strategy 6 (STRAT_STATP=6):
   
      F_8=(sqrt(|input_data_variance - tree_variance|))^3 + |input_data_mean – tree_mean|^3

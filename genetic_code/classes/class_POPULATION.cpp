@@ -2132,7 +2132,7 @@ void Population::evaluate(int gen, int G)
 
 }
 
-// function that evaluate RMSE (fitness), hits and R2 of complete trees on test data set
+// function that evaluate RMSE (fitness), hits and R2 of complete trees belonging to the archive (repr_tot) on test data set
 void Population::evaluate_complete_trees_on_test_dataset()
 {
 	int COMMENT = 1;
@@ -2503,7 +2503,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	double F11, a11; // ADDED 6/2/21: penalisation linked to total variation
 
 	//-------------------------------------------------------------
-	// first objective: FITNESS
+	// first objective: FITNESS (RMSE)
 	//-------------------------------------------------------------
 	//normalization: the fitness value (RMSE here) is divided by the average fitness in the last population
 	//double nt = (double)n_test_cases;
@@ -2590,27 +2590,6 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//F8 = sqrt(fabs(ppd->y_var - complete_tree->tree_variance))/(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean)));// Strategy 4
 	//F8 = fabs(ppd->y_var - complete_tree->tree_variance)/pow(fabs(1+fabs(ppd->y_ave-complete_tree->tree_mean)),2); // Strategy 5
 	// strategies below still under testing
-	if ((pr->strat_statp)==6) {
-		//Strategy 6
-		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3);//Strategy 6
-	}
-	if ((pr->strat_statp)==7) {
-		//Strategy 7
-		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2);//Strategy 7
-	}
-	if ((pr->strat_statp)==8) {
-		//Strategy 8
-		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3)+pow(fabs(ppd->y_max-complete_tree->tree_max),3)+pow(fabs(ppd->y_min-complete_tree->tree_min),3);//Strategy 8
-	}
-	if ((pr->strat_statp)==11) {
-		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3);
-		//F8 = pow(fabs(ppd->y_max-complete_tree->tree_max),3)+pow(fabs(ppd->y_min-complete_tree->tree_min),3);
-		// test to monitor ratio between difference in peaks and standard deviation
-		//F8= pow(fabs(ppd->y_max-complete_tree->tree_max)/(sqrt(ppd->y_var)),3)+pow(fabs(ppd->y_min-complete_tree->tree_min)/(sqrt(ppd->y_var)),3);
-		// test to monitor ratio between difference in peaks and target function amplitude
-		//F8= pow(100*fabs(ppd->y_max-complete_tree->tree_max)/(fabs(ppd->y_max-ppd->y_min)),3)+pow(100*fabs(ppd->y_min-complete_tree->tree_min)/(fabs(ppd->y_max-ppd->y_min)),3);
-	}
-
 
 	//F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),1)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),1); //Strategy 8
 	//(exp((fabs(ppd->y_ave-complete_tree->tree_mean)))-1.0);
@@ -2630,7 +2609,74 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//-------------------------------------------------------------------------
 	//F11=pow(sqrt(fabs(ppd->tot_variation_input-complete_tree->tot_variation_tree)),3);
 
-
+	// STRATEGY 4
+	if ((pr->strat_statp)==4) {
+		// fitness value (RMSE)
+		F1 = complete_tree->fitness/average_err;
+		// number of tuning parameters
+		F2 = pow((double)(complete_tree->n_tuning_parameters), 2.0);
+		//No of corrections performed by protected operations
+		F3 = (double)(complete_tree->n_corrections);
+		//SIZE
+		F4 = (double)(complete_tree->count());
+		F8 = sqrt(fabs(ppd->y_var-complete_tree->tree_variance))/(1.0+fabs(ppd->y_ave-complete_tree->tree_mean));
+		F9 = 0.0;
+		F10 = 0.0;
+		F11 = 0.0;
+	}
+	// STRATEGY 6
+	if ((pr->strat_statp)==6) {
+		// fitness value (RMSE)
+		F1 = complete_tree->fitness/average_err;
+		// number of tuning parameters
+		F2 = pow((double)(complete_tree->n_tuning_parameters), 2.0);
+		//No of corrections performed by protected operations
+		F3 = (double)(complete_tree->n_corrections);
+		//SIZE
+		F4 = (double)(complete_tree->count());
+		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3);
+		F9 = 0.0;
+		F10 = 0.0;
+		F11 = 0.0;
+	}
+	// STRATEGY 7
+	if ((pr->strat_statp)==7) {
+		// fitness value (RMSE)
+		F1 = complete_tree->fitness/average_err;
+		// number of tuning parameters
+		F2 = pow((double)(complete_tree->n_tuning_parameters), 2.0);
+		//No of corrections performed by protected operations
+		F3 = (double)(complete_tree->n_corrections);
+		//SIZE
+		F4 = (double)(complete_tree->count());
+		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),2)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),2);//Strategy 7
+		F9 = 0.0;
+		F10 = 0.0;
+		F11 = 0.0;
+	}
+	//STRATEGY 8
+	if ((pr->strat_statp)==8) {
+		// fitness value (RMSE)
+		F1 = complete_tree->fitness/average_err;
+		// number of tuning parameters
+		F2 = pow((double)(complete_tree->n_tuning_parameters), 2.0);
+		//No of corrections performed by protected operations
+		F3 = (double)(complete_tree->n_corrections);
+		//SIZE
+		F4 = (double)(complete_tree->count());
+		F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3)+pow(fabs(ppd->y_max-complete_tree->tree_max),3)+pow(fabs(ppd->y_min-complete_tree->tree_min),3);//Strategy 8
+		F9 = 0.0;
+		F10 = 0.0;
+		F11 = 0.0;
+	}
+		if ((pr->strat_statp)==11) {
+			F8 = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3);
+			//F8 = pow(fabs(ppd->y_max-complete_tree->tree_max),3)+pow(fabs(ppd->y_min-complete_tree->tree_min),3);
+			// test to monitor ratio between difference in peaks and standard deviation
+			//F8= pow(fabs(ppd->y_max-complete_tree->tree_max)/(sqrt(ppd->y_var)),3)+pow(fabs(ppd->y_min-complete_tree->tree_min)/(sqrt(ppd->y_var)),3);
+			// test to monitor ratio between difference in peaks and target function amplitude
+			//F8= pow(100*fabs(ppd->y_max-complete_tree->tree_max)/(fabs(ppd->y_max-ppd->y_min)),3)+pow(100*fabs(ppd->y_min-complete_tree->tree_min)/(fabs(ppd->y_max-ppd->y_min)),3);
+		}
 
 	if ((pr->strat_statp)==13) {
 		// fitness value (RMSE)
@@ -2645,7 +2691,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
 		F7 = 0.0;
 		// statistical properties of the tree (mean and variance)
-		F8 = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1)) + fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max); //+pow(fabs(ppd->y_ave-complete_tree->tree_mean)/fabs(ppd->y_max-ppd->y_min),3)
+		F8 = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1.0)) + fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max); //+pow(fabs(ppd->y_ave-complete_tree->tree_mean)/fabs(ppd->y_max-ppd->y_min),3)
 		// presence of high level polynomials that cause divergent behaviour
 		F9 = 0.0;
 		// difference in point at which ACF halves
@@ -2655,7 +2701,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F11 = pow(fabs(ppd->tot_variation_input-complete_tree->tot_variation_tree)/ppd->tot_variation_input,3);
 	}
 
-
+	// STRATEGY 14
 	if ((pr->strat_statp)==14) {
 		// fitness value (RMSE)
 		F1 = 0.0;  // the aim of stratehy 14 is to evolve a model with the same statistical properties of the original signal, not local accuracy is not a priority
@@ -2680,6 +2726,28 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F11 = pow(fabs(ppd->tot_variation_input-complete_tree->tot_variation_tree)/ppd->tot_variation_input,3);
 	}
 
+	// STRATEGY 15 : under test with SPOD data set
+	if ((pr->strat_statp)==15) {
+		// fitness value (RMSE)
+		F1 = exp(complete_tree->fitness/fabs(ppd->y_max-ppd->y_min)); //20/2/21 try exp(complete_tree->fitness/average_err);
+		// number of tuning parameters
+		F2 = pow((double)(complete_tree->n_tuning_parameters), 1.0);
+		//No of corrections performed by protected operations
+		F3 = (double)(complete_tree->n_corrections);
+		//SIZE
+		F4 = (double)(complete_tree->count());
+		//F4 = pow((double)(complete_tree->count()),2.0);
+		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
+		F7 = 0.0;
+		// statistical properties of the tree (mean, variance, max)
+		F8 = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var)-1.0; // + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)) + fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max); //+pow(fabs(ppd->y_ave-complete_tree->tree_mean)/fabs(ppd->y_max-ppd->y_min),3)
+		// presence of high level polynomials that cause divergent behaviour
+		F9 = 0.0;
+		// difference in point at which ACF halves
+		F10 = exp(10.0*fabs(ppd->first_acf_root_input-complete_tree->first_acf_root_tree)/ppd->first_acf_root_input)-1.0;
+		// difference in total variation
+		F11 = 0.0; //pow(fabs(ppd->tot_variation_input-complete_tree->tot_variation_tree)/ppd->tot_variation_input,3);
+	}
 
 	//-------------------------------------------------------------
 	// weights - this operation can be put in read input, as it can be executed just once at the beginning of the run
@@ -2692,8 +2760,8 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
 	a8 = pr->w_strat_statp; // 0.000000001;
 	a9 = 0.0; //0.4; //0.3; //0.2; //0.1;
-	a10 = 1.0E-1; //1.0E-1;//0.05;  //23/1/21 test  // ACF first root
-	a11 = 1.0E-1; //1.0E-2; //1.0E-8;  	// total variation
+	a10 = 1.0E-3;  //23/1/21 test  // ACF property
+	a11 = 0.0; //1.0E-1; //1.0E-1; //1.0E-2; //1.0E-8;  	// total variation
 
 	// the weight of the primary objective, RMSE error, is the residual to 1 of the sum of previous coefficients a2 to a8
 	a1= double(1.-a2-a3-a4-a5-a6-a8-a9-a10-a11); //-a7); // The sum of all a_i coefficients must be 1!!
@@ -5036,8 +5104,8 @@ void Population::purge_diverging_terms(Binary_Node *tree, Node *cur_node)
 		// 2. here the variable is replaced by a sin function of the same variable
 		// create "sin" node and attach child variable randomly selected
 		//REPLACE DIVERGENT VARIABLE
-		Unary_Func *f=problem->u_func_list[int_rand(problem->num_u_funcs)];
-		Unary_Node *new_edsin = new Unary_Node(NULL, f);  //&Sin);
+		Unary_Func *f=problem->u_func_list[int_rand(problem->num_u_funcs)]; // if this line works, a random function among unary functions is selected
+		Unary_Node *new_edsin = new Unary_Node(NULL,&Sin);  //f);  //&Sin);
 
 		Terminal_Var *new_edvar = new Terminal_Var((Node*)new_edsin,problem->v_list[int_rand(parameters->nvar)]);
 		new_edsin->set_child((Node*)new_edvar);
