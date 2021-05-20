@@ -297,8 +297,9 @@ int main (int argc, char *argv[])
 	// evaluate fitness (RMSE and R2) on test data set (only if test data has been provided)
 	if (argc==4) {
 		// show data_test
-		cout << "problem->show_data_validation() : show current data_test :" << endl;
-		P->problem->show_data_test();
+		//cout << "problem->show_data_validation() : show current data_test :" << endl;
+		//P->problem->show_data_test();
+
 		// evaluate complete individuals on test data set provided by the user
 		P->evaluate_complete_trees_on_test_dataset(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
 		// sort according to error (RMSE) - better not to use it to keep order and to recognise performance on building and test data sets...
