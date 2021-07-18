@@ -17,14 +17,15 @@
 
 
 // function to print evaluated points of the best individual (shape) to file "inputdata_stats.txt"
-void Reporter::inputdatastats2file(ProblemDefinition *pb, string DIR_OUTPUT)
+void Reporter::inputdatastats2file(ProblemDefinition *pb, const char* DIR_OUTPUT_char)
 {
-	string file, r,s;
+	string dir_output,file,r,s;
 	const char *expr1;
 	// string to char conversion
+	dir_output=DIR_OUTPUT_char;
 	file = "inputdata_stats.txt";
 	r = "/";
-	s =  DIR_OUTPUT+r+file;
+	s =  dir_output+r+file;
 	expr1 = s.c_str();
 	Val target=0.0;
 	Val tree=0.0;

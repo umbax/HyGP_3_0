@@ -351,15 +351,21 @@ void ProblemDefinition::initialise_variables(Variable**p_Z, double max_n_periods
 {
 	int COMMENT = 1;
 
-	// if variables already initialised exit...
+	// if variables already initialised skip this function
 	if (variables_initialised) {
 		cout << "\nProblemDefinition::initialise_variables : variables already initialised.";
 		cout << "\nLeaving function.";
 		return;
 	}
 
+	// the following is executed if variables have not been initialised previously
 
-	// here variables has not been initialised previously
+	// check if data has been defined
+	if (data==NULL) {
+		cerr << "\nProblemDefinition::initialise_variables() : ERROR! data not defined (data=NULL) ! Exit" << endl;
+		exit(-1);
+		return;
+	}
 
 	// check for errors in n_var
 	if (n_var<1) {

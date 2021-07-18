@@ -36,7 +36,7 @@ class Reporter
 	public:
 		
 		// functions to print input data statistics to file
-		void inputdatastats2file(ProblemDefinition*, string);
+		void inputdatastats2file(ProblemDefinition*, const char*);
 		//function to print generation statistics to file  - SINGLE RUN
 		void stats2file(RunParameters*, Population*, string, int, int);
 		//function to print points of the best tree to file - SINGLE RUN

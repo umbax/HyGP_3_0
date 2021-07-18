@@ -118,7 +118,8 @@ int main (int argc, char *argv[])
 	Mprobl.compute_inputdata_stats();
 
 	// print to file input data statistics
-	pop_reporter.inputdatastats2file(&Mprobl, DIR_OUTPUT);
+	const char* DIR_OUTPUT_c=DIR_OUTPUT.c_str();   //= new char [str.length()+1];
+	pop_reporter.inputdatastats2file(&Mprobl, DIR_OUTPUT_c);
 //cin.get();
 	// show imported data (input parameters and input data)
 	Mparam.show();  // run hyperparameters
@@ -158,7 +159,7 @@ int main (int argc, char *argv[])
     //for (int k=0; k<Mprobl.get_n_var(); k++)
     //	cout << "\n v_list" << k << " = " << Mprobl.v_list[k];
 
-	// do you really need new? no, but don't touch it for now
+	// do you really need new? Maybe yes, for scope issues
 	Population *P = new Population(&Mparam, &Mprobl);
 	if (!P) {
 		cerr << "\nmain : Error creating population!!!\n";

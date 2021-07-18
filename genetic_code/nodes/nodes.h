@@ -172,7 +172,7 @@ class Binary_Node : public Node {
 
 	//parameter tuning (the following variables and functions are meant to be used with the root node trees[i])
 	int find_parameters(void); //function that builds p_par
-	vector <Node *> p_par;  //array containing the addresses to terminal const nodes in the whole tree
+	vector <Node *> p_par;  // vector containing the addresses to terminal const nodes in the whole tree
 
 	// function to show tree attributes
 	void show_state(void);

@@ -256,6 +256,7 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	tot_variation_tree = 0.0;
 	index_puls = NULL; 		//address of the array containing the position of the pulsations in x[]
 	index_var = NULL;	 	//address of the array containing the position of the variable (in v_list) the corresponding pulsation in index_puls refers to
+	p_par.clear();		// vector containing the addresses to terminal const nodes in the whole tree
 	n_pulsations = -1;  // see find_pulsations(...)
 	depth_first_op = -1;   //depth of the first division found (if found). -1 means not found
 	pen_ord0 = 0.0;

@@ -2408,6 +2408,8 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 // - tree RMSE error (simple fitness, not aggregated one!)
 double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
 {
+	cout << "\nPopulation::pso_objfunction()" << endl;
+
 	double fitness; // actually an error (RMSE). Be aware that this should be a Val type...
 	Val result[10];
 	result[0] = (Val)0.0;  // fitness value (error - RMSE)
@@ -2422,6 +2424,11 @@ double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
 	result[9] = (Val)0.0;	// storing total variation
 
 	// update tree parameters with input values x
+	cout << "n_param= " << n_param << endl;
+	cout << "x is correctly initialised/passed to Population::pso_objfunction()?" << endl;
+	for (int i=0; i< n_param; i++) {
+		cout << "x[" << i << "]=" << x[i] << "  ";
+	}
 	update_complete_tree(ntree, x, n_param);
 
 	// evaluate tree fitness (RMSE error)
@@ -2680,14 +2687,15 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 			//F8= pow(100*fabs(ppd->y_max-complete_tree->tree_max)/(fabs(ppd->y_max-ppd->y_min)),3)+pow(100*fabs(ppd->y_min-complete_tree->tree_min)/(fabs(ppd->y_max-ppd->y_min)),3);
 		}
 
+	// STRATEGY 13
 	if ((pr->strat_statp)==13) {
 		// fitness value (RMSE)
 		F1 = exp(10.0*complete_tree->fitness/fabs(ppd->y_max-ppd->y_min)); //20/2/21 try exp(complete_tree->fitness/average_err);
-		// number of tuning parameters
+		// number of tuning parameters squared
 		F2 = pow((double)(complete_tree->n_tuning_parameters), 2.0);
-		//No of corrections performed by protected operations
+		// No of corrections performed by protected operations
 		F3 = (double)(complete_tree->n_corrections);
-		//SIZE
+		// SIZE (number of nodes)
 		F4 = (double)(complete_tree->count());
 		//F4 = pow((double)(complete_tree->count()),2.0);
 		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
@@ -2756,16 +2764,16 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//-------------------------------------------------------------
 	// weights - this operation can be put in read input, as it can be executed just once at the beginning of the run
 	//-------------------------------------------------------------
-	a2 = pr->w_complexity;
-	a3 = pr->w_n_corrections;
-	a4 = pr->w_size;
-	a5 = pr->w_pen_ord0;		// penalisation of unsatisfied inequality constraint, order 0 (value)
-	a6 = pr->w_pen_ord1;		// penalisation of unsatisfied inequality constraint, order 1 (first derivative)
-	a7 = pr->w_factorisation;   // penalisation for lack of factorisation (depth of first division)
-	a8 = pr->w_strat_statp; // 0.000000001;
-	a9 = 0.0; //0.4; //0.3; //0.2; //0.1;
-	a10 = 1.0E-1;  //23/1/21 test  // ACF property
-	a11 = 0.0; //1.0E-1; //1.0E-1; //1.0E-1; //1.0E-2; //1.0E-8;  	// total variation
+	a2 = pr->w_complexity;		// a2 -> number of tuning parameters (see strategy)
+	a3 = pr->w_n_corrections;	// a3 -> number of corrections performed by protected operations
+	a4 = pr->w_size;			// a4 -> model size (number of nodes)
+	a5 = pr->w_pen_ord0;		// a5 -> penalisation of unsatisfied inequality constraint, order 0 (value)
+	a6 = pr->w_pen_ord1;		// a6 -> penalisation of unsatisfied inequality constraint, order 1 (first derivative)
+	a7 = pr->w_factorisation;   // a7 -> penalisation for lack of factorisation (depth of first division)
+	a8 = pr->w_strat_statp; 	// a8 -> difference in mean and variance (see corresp. strategy) between original signal and evolved model
+	a9 = 0.0; //0.4; //0.3; //0.2; // a9 -> presence of high level polynomials that cause divergent behaviour
+	a10 = 1.0E-1;  //23/1/21 test  // a10 -> difference in point at which ACF halves for original signal and evolved model
+	a11 = 0.0; //1.0E-1; //1.0E-1; // a11 -> difference in total variation between original signal and evolved model
 
 	// the weight of the primary objective, RMSE error, is the residual to 1 of the sum of previous coefficients a2 to a8
 	a1= double(1.-a2-a3-a4-a5-a6-a8-a9-a10-a11); //-a7); // The sum of all a_i coefficients must be 1!!
@@ -3721,11 +3729,31 @@ Val Population::tree_value (Binary_Node* p_tree, int* p_n_corrections)
 
 // function to update the tree's parameters with the optimized ones (operates on complete_trees)
 // (called recursively by fdf_) 
+// Input:
+// - Pointer to Tree root (Binary Node*)
+// - Pointer to parameters array (tree new coefficients)
+// - Size of parameters array
+// Output: Null
 void Population::update_complete_tree(Binary_Node *ctree, double *x, int n)
 {	
-	//printf("\n\nEntered Population::update");
-	for (int i=0; i<n; i++) 
-		((Terminal_Const *)ctree->p_par[i])->assign(x[i]);
+	int COMMENT=0;
+	if (COMMENT) cout << "\n\nPopulation::update_complete_tree" << endl;
+	int u=0;
+
+	if (ctree->p_par.size()==0) {
+		cerr << "Error! Array of coefficients addresses not built! Exit..." << endl;
+		exit(-1);
+	}
+
+	for (int i=0; i<n; i++) {
+		 if (COMMENT) cout << "x[" << i << "]=" << x[i] << endl;
+		 u=0;
+		 if (COMMENT)cout << "p_par[" << i << "]=" << ((Terminal_Const *)ctree->p_par[i])->value(&u) << endl;
+		 ((Terminal_Const *)ctree->p_par[i])->assign(x[i]);
+		 if (COMMENT)cout << "p_par[" << i << "]=" << ((Terminal_Const *)ctree->p_par[i])->value(&u) << endl;
+	}
+
+	if (COMMENT) cout << "\n\nPopulation::update_complete_tree : exit" << endl;
 }
 
 
@@ -4022,8 +4050,7 @@ int Population::identical_trees(Binary_Node *p_tree1, Binary_Node* p_tree2)
 int Population::identical_nodes(Node*p_n1, Node*p_n2)
 {
 	// check type
-	if (p_n1->type != p_n2->type)
-		return 0;
+	if (p_n1->type != p_n2->type) return 0;
 	
 	// if you are here, the nodes are of the same type
 	switch (p_n1->type) {
@@ -4077,6 +4104,7 @@ int Population::identical_nodes(Node*p_n1, Node*p_n2)
 		
 	 //end of switch
 	}
+
 }
 
 
