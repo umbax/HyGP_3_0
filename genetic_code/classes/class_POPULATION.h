@@ -30,7 +30,7 @@
 #include "./problem_definition.h"
 #include "../tree_functions/vector_derivative_functions.h"
 #include "../tree_functions/tree_operations.h"
-//#include "../HyPSO/hypso_launcher.cpp"
+
 
 extern "C" {extern void opti_(int*, double*, int*, int*, int*);}  //for Andrey's method - TI0L2 and MI0L2 - IT WORKS PERFECTLY
 extern "C" {int fdf_c__ (double *,  double *, int *,int *); }
@@ -157,7 +157,6 @@ class Population {
 	void population_parameters_allocation(void);
 
 	int ntree_fdf_c; // SQP parameter optimisation: simple way to make fdf_c able to get the values of the tree whose costants are being optimized
-	double pso_objfunction(double*, int, Binary_Node*); // HyPSO parameter optimisation
 
 	void evaluate(int, int); // sets error, F and other attributes  of each tree
 	void evaluate_complete_trees_on_test_dataset(void); // evaluates fitness, hits, corrections, R2 of complete trees on test data set
@@ -269,6 +268,16 @@ class Population {
 	Binary_Node* external_tree;
 	void assign_external_tree(Binary_Node* tree) {external_tree = tree;};
 	Val ext_result[4];
+
+	// HyPSO optimiser
+	double pso_objfunction(double*, int, Binary_Node*); // HyPSO parameter optimisation
+	double** zeros(int, int);
+	double* zeros(int);
+	int regenerate_on_boundary(double**, int, double**);
+	int regenerate_from_swarm_best(double**, int, int, double**, double**);
+	int psominimize(Binary_Node*, int, double*, double*, int, int, double**, double*);
+	void hypso_launcher(Binary_Node*, int, double*);
+
 
 };
 

@@ -79,6 +79,9 @@ class ProblemDefinition
 		int n_validation;	 //ex n_evaluation;
 
 
+		// Nyquist omega max (or at least external constraint inspired by Nyquist theorem on sin/cos max frequency)
+		Val Ny_omega_max;  // has to be positive
+
 		// TEST DATA SET
 		Val** data_test;
 		int n_test;

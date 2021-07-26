@@ -21,14 +21,15 @@
 
 
 
-using namespace std;
+//using namespace std;
+//
+//#include <iostream>
+//#include <stdlib.h>     /* srand, rand */
+//#include <ctime>	 // to work with variables of type time_t and random number generator "srandom"
 
-#include <iostream>
-#include <stdlib.h>     /* srand, rand */
-#include <ctime>	 // to work with variables of type time_t and random number generator "srandom"
-
-#include "../nodes/nodes_types.h"
-#include "../nodes/nodes.h"
+//#include "../nodes/nodes_types.h"
+//#include "../nodes/nodes.h"
+//#include "../classes/class_POPULATION.h"
 #include "./hypso_launcher.h"
 
 // function that allocate a double array (matrix)
@@ -140,7 +141,7 @@ int regenerate_from_swarm_best(double** p_coord, int spacedim, int nparticles, d
 }
 
 
-
+//*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/**/*/*/*/*/*/*/*/*/*/*/*/*/
 
 
 /*
@@ -537,4 +538,6 @@ void hypso_launcher(Population* Pp, Binary_Node *ntree, int spacedim, double* x)
 
 }
 
+
+//*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/**/*/*/*/*/*/*/*/*/*/*/*/*/
 

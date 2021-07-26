@@ -13,7 +13,10 @@
 // limitations under the License.
 
 
+using namespace std;
+
 #include "./class_POPULATION.h"
+
 
 // class POPULATION - function definitions
 
@@ -2408,7 +2411,9 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 // - tree RMSE error (simple fitness, not aggregated one!)
 double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
 {
-	cout << "\nPopulation::pso_objfunction()" << endl;
+	int COMMENT=0;
+
+	if (COMMENT) cout << "\nPopulation::pso_objfunction()" << endl;
 
 	double fitness; // actually an error (RMSE). Be aware that this should be a Val type...
 	Val result[10];
@@ -2424,10 +2429,12 @@ double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
 	result[9] = (Val)0.0;	// storing total variation
 
 	// update tree parameters with input values x
-	cout << "n_param= " << n_param << endl;
-	cout << "x is correctly initialised/passed to Population::pso_objfunction()?" << endl;
-	for (int i=0; i< n_param; i++) {
-		cout << "x[" << i << "]=" << x[i] << "  ";
+	if (COMMENT) {
+		cout << "n_param= " << n_param << endl;
+		cout << "x is correctly initialised/passed to Population::pso_objfunction()?" << endl;
+		for (int i=0; i< n_param; i++) {
+			cout << "x[" << i << "]=" << x[i] << "  ";
+		}
 	}
 	update_complete_tree(ntree, x, n_param);
 
@@ -3334,6 +3341,14 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 
 //-/-/-/-/-/-/--/-/-/-/-/-/-/-/
 // function that performs standard RMS error evaluation on a single individual, for a single guess of the individual parameters
+// Inputs:
+// - ntree: pointer to the tree to be tuned
+// - x_original: pointer to array storing original values of the numerical coefficients (parameters)
+// - p_n_param: pointer to variable with number of numerical coefficients
+// - p_n_guess_ok: pointer to variable with number of guesses (check it...)
+// - p_result: pointer to array in which the results of the numerical optimisation - tree objectives - will be stored as output
+// Outputs:
+// - None
 void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double* x_original, int* p_n_param, int* p_n_guess_ok, Val* p_result)
 {
 	int COMMENT=0;
@@ -3378,13 +3393,22 @@ void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double*
 	// IF (CONDITION FOR TUNING is TRUE) THEN    - example n_param <= n_param_max = 0.5 * size training data set
 	if (*p_n_param<=n_param_threshold) {
 
-		// insert here call to HyPSO (just try to run HyPSO for a couple of iterations to search for global minima)
+		// PSO parameters optimisation (just try to run HyPSO for top get closer to global minima and provide good start guesses for SQP)
 		// steps involved: call to HYPSO/pso_launcher, launch psominimize, internal call to objective function in model.cpp (tree evaluator and error definition with weights for pulsations...)
-		//double (*p_objfun)(double*, int, Binary_Node*);
-		//p_objfun = &Population::pso_objfunction;  // method in Population
-		//hypso_launcher(p_objfun, ntree, n_param, x); // method NOT belonging to Population
+		// -------------------------------------------------------------------------------------------
+		if (COMMENT) {
+			cout << "\n\nPopulation::tuning_individual_RMSE_single_guess - x_original before HyPSO:" << endl;
+			for (int i=0; i<*p_n_param; i++) cout << "x_original[" << i << "]=" << x_original[i] << endl;
+			cout << "\n\nPopulation::tuning_individual_RMSE_single_guess : call hypso launcher";
+		}
+		hypso_launcher(ntree, *p_n_param, x_original); // method of Population
+		if (COMMENT) {
+			cout << "\n\nPopulation::tuning_individual_RMSE_single_guess - x_original after HyPSO:" << endl;
+			for (int i=0; i<*p_n_param; i++) cout << "x_original[" << i << "]=" << x_original[i] << endl;
+		}
 
 		// SQP parameters optimisation
+		// ---------------------------
 		if (COMMENT) cout << "\nPopulation::tuning_individual_RMSE_single_guess : before optimisation ICONTR = method = " << method;
 		// to perform optimization with TINL2_mod.cpp, MINL2.cpp through f2c: DOESN'T WORK
 		//c = opti_cpp(this, &method, n_param, n_test_cases, ntree,x);
@@ -3552,7 +3576,7 @@ void Population::tuning_individual_PRESS_single_guess(Binary_Node *ntree, double
 			// steps involved: call to HYPSO/pso_launcher, launch psominimize, internal call to objective function in model.cpp (tree evaluator and error definition with weights for pulsations...)
 			//double (*p_objfun)(double*, int, Binary_Node*);
 			//p_objfun = &Population::pso_objfunction;  // method in Population
-			//hypso_launcher(p_objfun, ntree, n_param, x); // method NOT belonging to Population
+			hypso_launcher(ntree, *p_n_param, x_original); // method of Population
 
 			// SQP parameters optimisation
 			if (COMMENT)
@@ -5294,4 +5318,526 @@ void Population::compute_selected_nodes_statistics(Binary_Node* p_tree, int node
 	selected_nodes_per_depth[node_depth]++;
 	selected_nodes_per_type[node_type]++; 
 }
+
+
+//*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/**/*/*/*/*/*/*/*/*/*/*/*/*/
+
+// function that allocate a double array (matrix)
+// input: no of rows, no of columns
+// output: address of the double array (pointer)
+double** Population::zeros(int nrow, int ncol)
+{
+	double** M;
+	M = new double*[nrow]; // dynamic array of pointers: number of rows specified first
+	for (int i=0; i<nrow; i++) {
+		M[i] = new double[ncol];
+		// set each entry equal to 0
+		for (int j=0; j<ncol; j++)
+			M[i][j] = 0.0;
+	}
+
+	return M;
+}
+
+
+// function that allocate a single array (vector)
+// input: no of entries
+// output: address of the single array (pointer)
+double* Population::zeros(int nentries)
+{
+	double* v;
+	// allocate
+	v = new double[nentries];
+	if (!v) {
+		// output error message
+	    cerr << "zeros(int nentries) : ERROR ! Can't allocate v pointer to double[nentries]!\n";
+	    exit(-1);
+	}
+
+	// initialise
+	for (int i=0; i<nentries; i++) {
+		// set each entry equal to 0
+		v[i]=0.0;
+	}
+
+	return v;
+}
+
+
+
+int Population::regenerate_on_boundary(double** p_coord, int spacedim, double** bounds)
+{
+	/*
+		Function that regenerate a point in case it is out of bounds.
+		The unfeasible point is regenerated on the boundary.
+		Inputs:
+		- p_coord    point coordinates - array spacedim x 1
+		- spacedim  number of dimensions
+		- bounds    array with lower and upper bounds (array spacedim x 2)
+		Output:
+		- p_coord    new feasible coordinates of the new point on the design space boundary
+	*/
+
+	// check current position - array
+	for (int i=0; i<spacedim; i++) {
+    	// check single coordinate is inside corresponding bounds
+        if (*(p_coord[i]) > bounds[i][1])
+        	// p_coord[i] exceeds upper bound
+        	*(p_coord[i]) = bounds[i][1];
+        if (*(p_coord[i]) < bounds[i][0])
+			// p_coord is below lower bound
+        	*(p_coord[i]) = bounds[i][0];
+
+	}
+    return 1;
+
+}
+
+
+
+
+int Population::regenerate_from_swarm_best(double** p_coord, int spacedim, int nparticles, double** bounds, double** zLocal)
+{
+    /*
+        Function that regenerate a particle in case it is out of bounds.
+        The unfeasible coordinates of the particle are selected randomly
+        from the coordinates of the swarm best particles (see Xu11).
+        Inputs:
+        - p_coord  	coordinates of the unfeasible particle - array spacedim x 1
+        - bounds   	array with lower and upper bounds (array spacedim x 2)
+        - zLocal   	matrix containing the coordinates of the personal best of each particle so far (n_var x Npop - 2D even for n_var =1))
+        Output:
+        - p_coord    new feasible coordinates of the new point on the design space boundary
+        - number of particle chosen for the regeneration
+    */
+
+	int s_particle=0;
+
+    // check current position - array
+	for (int i=0; i<spacedim; i++) {
+    	// check single coordinate is inside corresponding bounds
+    	if ((*(p_coord[i]) < bounds[i][0]) || (*(p_coord[i]) > bounds[i][1])) {
+        	// pick the corresponding coordinate of a randomly selected particle among best so far
+            s_particle = rand() % nparticles; // random integer between 0 and nparticles-1
+            // assign the new feasible coordinates
+            for (int i=0; i<spacedim; i++) *(p_coord[i])=zLocal[i][s_particle];
+    	}
+    }
+
+
+	return s_particle;
+
+}
+
+
+
+/*
+function to perform Particle Swarm Optimisation (minimisation of the given objective function)
+Inputs:
+- ntree 		pointer to root node of the tree whose numerical coefficients have to be optimised
+- p_objfun     	pointer to objective function whose minima have to be found
+- spacedim		number of independent variables (space dimension)
+- swarmcentre 	centre of the initial swarm or of the design space (array)
+- swarmspan   	radius of the sphere in which the particles are generated
+- nparticles  	number of particles
+- niterations   number of generations
+- bounds      	array with lower and upper bounds for each variable (spacedim x 2)
+- results		array where results are saved (spacedim+1, that is coordinates of the optimum in the design space and corresponding output)
+Outputs assigned to array passed by reference:
+- zIncumb  position of the global optimal point (minimum)
+- yIncumb  value of the objective function at the global minimum point found zIncumb
+- NOT YET: function_output_Incumb value of the metamodel (NOT the objective function) at zIncumb
+- NOT YET: constraints_output_Incumb  array containing the values of the output constraints at the found optimum
+*/
+//int psominimize(Binary_Node *ntree, Population *Pp, int spacedim, double* swarmcentre, double* swarmspan, int nparticles, int niterations, double** bounds, double* results)
+int Population::psominimize(Binary_Node *ntree, int spacedim, double* swarmcentre, double* swarmspan, int nparticles, int niterations, double** bounds, double* results)
+{
+	int COMMENT=0; //1=print comments; 0=silent
+
+	if (COMMENT) cout << "\n\nPopulation::psominimize()\n" << endl;
+
+	// check input
+	if (COMMENT) {
+		cout << "\npsominimize" << endl;
+		cout << "spacedim = " << spacedim << endl;
+		cout << "swarmcentre: ";
+		for (int i=0; i<spacedim; i++) {
+			cout << swarmcentre[i] << ", ";
+		}
+		cout << endl;
+		cout << "swarmspan: ";
+		for (int i=0; i<spacedim; i++) {
+			cout << swarmspan[i] << ", ";
+		}
+		cout << endl;
+		cout << "nparticles = " << nparticles << endl;
+		cout << "niterations = " << niterations << endl;
+		for (int i=0; i<spacedim; i++) {
+			cout << "Bounds of variable " << i << ": " << "(" << bounds[i][0] << ", " << bounds[i][1] << ")" << endl;
+		}
+	}
+
+	// random value generator
+	int seed = -1;
+	if (seed<0) {
+		// if seed = -1 use random seed (time)
+	    time_t *tp = NULL; // seed the random value generator
+		srand((unsigned int) time (tp));    //to be used normally
+		seed = time(tp); // attention! two runs that starts with the same seed are identical!
+		if (COMMENT) cout << "\n\nRandom value generator : seed =-1 : seed randomly generated = " << seed << endl;
+	} else {
+		// if seed >0 use the value given in input file
+	    srand(seed);
+	    if (COMMENT) cout << "\n\n Random value generator : used seed = " << seed << endl;
+	}
+
+
+	// list of variables (all the pointers are dynamically allocated, so remember to free memory!)
+	double MAX_VALUE = 1000000.0;
+	double** pop;		// matrix of particles' positions - matrix (spacedim x nparticles)
+	double** vel;		// matrix of particles' velocities - matrix (spacedim x nparticles)
+	double* yValues;	// objective function value associated to a particle - array (1xnparticles)
+
+	double** zLocal;	// archive storing the position of particles personal best  - matrix (spacedim x nparticles)
+	double* yLocal;		// best objective values obtained by each particle (particle/personal bests) - array (1 x nparticles)
+	double* zIncumb;	// archive storing position of the particle that corresponds to the global best value of objective function
+	double yIncumb;		// global best objective value - scalar
+
+	double* function_output_Local; // value of the metamodel at the local (particle) minimum of the objective function in the design space
+	double function_output_Incumb; // value of the metamodel at the global minimum (best among particles) of the objective function in the design space
+
+	double* constraints_output_Local; // array of scalars for now - values of constraints at particle best position - matrix (nparticles x n_constraints=1)
+	double constraints_output_Incumb; // scalar for now - values of constraints at global best position - array (1 x n_constraints)
+
+
+	double* thisZ=zeros(spacedim);	// coordinates of current particle, dynamically initialised to a vector of zeros
+	double** p_particle=new double*[spacedim]; // array of addresses of particle coordinates (used to modify/correct pop[][])
+
+	// PSO engine tuning parameters
+	double wCurr = 0.75;   // inertia weight: regulates the trade off between global and local exploration
+	// see dynamic version of wCurr in CSC2011 paper...
+	double wLocal = 0.15;  // coefficient of trust in the single particle
+	double wGlob = 0.15;   // coefficient of trust in the swarm or global trend
+
+	double r1=0; //random float value
+	double r2=0; //random float value
+	int v=0;
+	double g=0.0;
+
+	int ok=0;
+
+	// --------------------------------------------------------------------
+
+
+
+	// ------------------ INITIALISATION --------------------------
+	if (COMMENT) {
+		cout << "\nStart particles' position INITIALISATION" << endl;
+		cout << "\nnparticles=" << nparticles << endl;
+	}
+
+	// yValues is an array storing the values of the function whose minima are sought corresponding to the particles
+	// create and initialise yValues
+	yValues = zeros(nparticles);
+
+	// particles' position INITIALISATION ------------
+	// pop is a matrix of dimensions space_dimension x n_particles : each column contains the coordinates of a single particle
+	// create pop
+	pop = zeros(spacedim, nparticles);
+	// randomly initialise pop
+	for (int particle=0; particle<nparticles; particle++) {
+		for (int i=0; i<spacedim; i++) {
+			v = rand() % 200 + 1; // random integer between 1 and 200. ATENTION when you use a normalised space
+			g = (double(v)-100.0)/100.0; // random real number between -0.99 and 1.00
+			pop[i][particle] = swarmspan[i]*g + swarmcentre[i];
+		}
+
+		////// IMPORTANT! Check that the initial swarm is inside the design space and regenerate points in case
+		// necessary as swarmCentre and swarmSpan are not determined taking into account the input design space bounds...
+		for (int i=0; i<spacedim; i++) {
+			p_particle[i] = &(pop[i][particle]);
+		}
+		ok = regenerate_on_boundary(p_particle, spacedim, bounds);
+	}
+
+
+	// particles' velocity INITIALISATION ------------
+	// it's the first set of velocities randomly generated...
+    // vel is a matrix of the same dimensions of pop : each column represents a single particle velocity
+    // velocity - random in [-swarmSpan,swarmSpan]
+	// create vel
+	vel = zeros(spacedim, nparticles);
+	// initialise vel (FASTER IF IT IS DONE INSIDE THE CYCLE USED TO INITIALISE POP!!!)
+	for (int j=0; j<nparticles; j++) {
+		for (int i=0; i<spacedim; i++) {
+			int v = rand() % 200 + 1; // random integer between 1 and 200
+			double g = (double(v)-100.0)/100.0; // random real number between -0.99 and 1.00
+			vel[i][j] = swarmspan[i]*g;
+		}
+	}
+
+	// initialise best score so far in the swarm - global or incumbent
+    yIncumb = MAX_VALUE;       			// initial value of the objective function (univariate function)
+    zIncumb=zeros(spacedim);   			// initial position of the global minimum in the design space
+    function_output_Incumb = MAX_VALUE;  // initial value of the metamodel at the global minimum in the design space
+    constraints_output_Incumb = MAX_VALUE;   // scalar for now - it will be an array 1 x n_output_constraints
+
+    // initialise local best score - considering the position of the single particle so far only
+    yLocal = zeros(nparticles);
+    for (int j=0; j<nparticles; j++) yLocal[j]=MAX_VALUE;
+    zLocal = zeros(spacedim, nparticles);
+    function_output_Local = zeros(nparticles);
+    for (int j=0; j<nparticles; j++) function_output_Local[j]=MAX_VALUE;
+    constraints_output_Local = zeros(nparticles); // values of constraints - single scalar for now
+    // -------------------------------------------------------------------
+
+	// --------- INITIAL FITNESS EVALUATION -----------------------------------
+    if (COMMENT) cout << "\n\nPopulation::psominimize - Iteration = 0" << endl;
+    double out = 0.0;
+    for (int particle=0; particle<nparticles; particle++) {
+		// assign coordinates of current particle
+    	for (int i=0; i<spacedim; i++) thisZ[i] = pop[i][particle];
+
+        // evaluate objective function related to particle ii and assign value to yValues[ii]
+    	if (COMMENT) cout << "\nPopulation::psominimize - Particle n. " << particle << endl;
+    	out = pso_objfunction(thisZ, spacedim, ntree); //p_objfun(thisZ, spacedim, ntree);
+
+        yValues[particle]=out;    // assign objective function value to particle container
+
+        /* print particle position
+        cout << "\n Particle=" << particle << " (";
+        for (int i=0; i<spacedim; i++) cout << thisZ[i] << " ";
+        cout << ")   yValues=" << out;
+        */
+
+        function_output_Local[particle] = 0.0;   // assign metamodel value corresponding to particle best to particle container (identical to objective function for now)
+        constraints_output_Local[particle] = 0.0; 	// values of the output constraints (scalar and null for now)
+        // save minimisation objective and position of each particle in their respective container
+        yLocal[particle] = yValues[particle];  // if you want to save the history, turn yLocal into a matrix...
+        for (int i=0; i<spacedim; i++) zLocal[i][particle] = thisZ[i];
+
+        // update incumbents (or global best)
+		if (yValues[particle]<yIncumb) {
+			yIncumb = yValues[particle];
+			for (int i=0; i<spacedim; i++) zIncumb[i] = thisZ[i];
+			function_output_Incumb = function_output_Local[particle];
+			constraints_output_Incumb = constraints_output_Local[particle];
+		}
+
+    }
+
+    // average output in the initial swarm
+	//lastPopAve = mean(yValues)
+
+
+
+	// ------------------ SEARCH THROUGH GENERATIONS -----------------------
+	// generations/iterations
+    for (int gg=0; gg<niterations; gg++) {
+
+    	if (COMMENT) cout << "\n\nPopulation::psominimize - Iteration : " << gg << endl;
+
+        // particles
+        for (int particle=0; particle<nparticles; particle++) {
+        	if (COMMENT) cout << "\nPopulation::psominimize - Particle n. " << particle << endl;
+
+        	// GENERATE
+        	r1 = double(rand() % 100)/100.0; // random float between 0.00 and 0.99
+        	r2 = double(rand() % 100)/100.0; // random float between 0.00 and 0.99
+        	for (int i=0; i<spacedim; i++) {
+        		// update velocity
+        		vel[i][particle] = wCurr*vel[i][particle] + wLocal*r1*(zLocal[i][particle]-pop[i][particle]) + wGlob*r2*(zIncumb[i]-pop[i][particle]);
+        		// update position
+        		pop[i][particle] = pop[i][particle] + vel[i][particle];
+        	}
+
+			//// CHECK that the particle is inside the design space (bounds) and regenerate a feasible point in case
+        	// collect position
+        	for (int i=0; i<spacedim; i++) {
+        		p_particle[i] = &(pop[i][particle]);
+        	}
+            v = rand() % 100 + 1;     // v2 in the range 1 to 100
+            if (v >= 50) {
+                // regenerate on boundary
+        		ok = regenerate_on_boundary(p_particle, spacedim, bounds);
+            } else {
+            	ok=regenerate_from_swarm_best(p_particle, spacedim, nparticles, bounds, zLocal);
+            }
+        	////
+
+
+            // EVALUATE
+        	for (int i=0; i<spacedim; i++) thisZ[i] = pop[i][particle];
+        	//out = p_objfun(thisZ, spacedim, ntree);
+        	out = pso_objfunction(thisZ, spacedim, ntree);  //out is the result of fitness evaluation. so RMSE error
+			yValues[particle]=out;
+
+
+
+            // UPDATE
+			// if performance improved, update single particle and global performance
+			if (yValues[particle]<yLocal[particle]) {
+				// update particle best objective value so far
+				yLocal[particle] = yValues[particle];
+				// update position
+				for (int i=0; i<spacedim; i++) zLocal[i][particle]=pop[i][particle];
+				// update metamodel value corresponding to particle best
+				function_output_Local[particle] = 0.0;
+				// update constraints value corresponding to particle best
+			    constraints_output_Local[particle] = 0.0; // values of the output constraints;
+				// update incumbent (or global best)
+                if (yLocal[particle]<yIncumb) {
+                	// update global best objective value so far
+                	yIncumb = yLocal[particle];
+                	// update position
+                	for (int i=0; i<spacedim; i++) zIncumb[i]=zLocal[i][particle];
+                	// update metamodel value corresponding to global best
+                	function_output_Incumb = function_output_Local[particle];
+					// update constraints value corresponding to particle best
+					constraints_output_Incumb = constraints_output_Local[particle];
+                }
+			}
+
+		// end particles loop ---------------------------------------
+        }
+
+
+        if (COMMENT) {
+        	cout << "\nGlobal best so far: ( ";
+        	for (int i=0; i<spacedim; i++) cout << zIncumb[i] << " ";
+        	cout << ")   yIncumb=" << yIncumb;
+        }
+
+		//wCurr = wCurr*.8   # dynamic reduction of global weight
+
+        // average values and termination criterion
+        //lastPopAve = mean(yValues)
+
+        // STOP CRITERIA
+        /*
+        // if contour lines are targeted
+        best_abs_residual = abs(function_output_Incumb - output_level)
+        if best_abs_residual<= min_residual:
+            // terminate the search as the found point error is below the desired threshold
+            return zIncumb, yIncumb, function_output_Incumb, constraints_output_Incumb
+		*/
+
+
+    // end iterations (generations) loop ---------------------------------------
+    }
+
+    // update tree with best parameters found (is this the right position? Maybe it is better to update the tree inside Population)
+    update_complete_tree(ntree, zIncumb, spacedim);
+
+
+    if (COMMENT) {
+    	cout << "\n\nRESULT: Global best coordinates: ( ";
+    	for (int i=0; i<spacedim; i++) cout << zIncumb[i] << " ";
+    	cout << ")   yIncumb=" << yIncumb;
+    }
+
+	// store global minimum coordinates in results[0:spacedim-1] and corresponding function output in results[spacedim]
+    for (int i=0; i<spacedim; i++) results[i]=zIncumb[i];
+    results[spacedim]=yIncumb;
+    if (COMMENT) {
+    	cout << "\n\nCHECK RESULTS initialisation: Global best coordinates: ( ";
+    	for (int i=0; i<spacedim; i++) cout << results[i] << " ";
+    	cout << ")   yIncumb=" << results[spacedim];
+    }
+
+    // free all dynamically allocated variables (pop, vel, yValues, ..)
+    delete[] thisZ; //*
+    delete[] yValues; //*
+    delete[] zIncumb; //*
+    delete[] yLocal; //*
+
+    for (int i=0; i<spacedim; i++) {
+    	delete[] zLocal[i];  //*
+    	delete[] pop[i];	//*
+		delete[] vel[i];	//*
+    }
+    delete[] zLocal; //*
+    delete[] pop; //*
+    delete[] vel; //*
+
+    delete[] function_output_Local;
+    delete[] constraints_output_Local;
+    delete[] p_particle; //*
+
+
+    // ADD LATER ON: function_output_Incumb, constraints_output_Incumb;
+
+    if (COMMENT) cout << "\n\nPopulation::psominimize() - exit \n" << endl;
+    return 1;
+
+}
+
+
+
+
+
+// interface function called by Population::tuning_individual
+//void hypso_launcher(double (*p_objfun)(double*, int, Binary_Node*), Binary_Node *ntree, int spacedim, double* x)
+//void hypso_launcher(Population* Pp, Binary_Node *ntree, int spacedim, double* x)
+void Population::hypso_launcher(Binary_Node *ntree, int spacedim, double* x)
+{
+	int COMMENT=0;
+
+	if (COMMENT) cout << "\n\nPopulation::pso_launcher\n" << endl;
+
+	int out = 0;
+
+
+	// input parameters
+	int nparticles = 10;  //min 40
+	int niterations = 10;  //min 20
+	double* swarmcentre=zeros(spacedim);
+	double* swarmspan=zeros(spacedim);
+	double** bounds=zeros(spacedim,2); // rows corresponds to variable (1st row= 1st variable) - 1st column= lower bound - 2nd column= upper bound
+
+	// input parameters for swarm bounds: upper and lower bounds for sin/cos terms need to be computed from input data (Nyquist issue)
+	for (int i=0;i<spacedim;i++) {
+		swarmcentre[i]=1.0; // {1.0}; //swarmcentre[2] = {2.0, 2.0};  // for nD design spaces
+		swarmspan[i]= problem->Ny_omega_max; //0.5*3.14152/(6.40/100.0); //currently defined only for 1D problems  // for nD design spaces
+		bounds[i][0] = -(problem->Ny_omega_max); //-0.5*3.14152/(6.40/100.0); //currently defined only for 1D problems // i-th variable lower bound
+		bounds[i][1] = problem->Ny_omega_max; //0.5*3.14152/(6.40/100.0); // 200.0;  // i-th variable upper bound
+		//(problem->v_list[tree->index_var[i]])->omega_lim
+	}
+
+	// optimisation output container (just an array for now, easier to integrate into preexisting code)
+	double* res = zeros(spacedim+1);  // minimum coordinates [spacedim], value of the function at minimum [1],
+
+	// launch single PSO search for global minima (function for now)
+	out = psominimize(ntree, spacedim, swarmcentre, swarmspan, nparticles, niterations, bounds, res);
+
+	// checks and output
+	if (COMMENT) {
+		if (out==1) {
+			cout << "\n\nOK, psominimize executed correctly.";
+			cout << "\nCoordinates of global minimum: ( ";
+			for (int i=0; i<spacedim; i++) cout << res[i] << " ";
+			cout << ")   Function at global minimum=" << res[spacedim];
+		} else {
+			cout << "\nERROR in psominimize!";
+		}
+	}
+
+	// copy the optimised values found to the array provided as input
+	for (int i=0; i<spacedim; i++) x[i]=res[i];
+
+	// free dynamically allocated memory
+	for (int j=0;j<spacedim;j++) delete[] bounds[j];
+	delete[] bounds;
+	delete[] swarmspan;
+	delete[] swarmcentre;
+	delete[] res;
+
+	if (COMMENT) cout << "\n\nPopulation::exit pso_launcher\n" << endl;
+
+}
+
+
+//*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/**/*/*/*/*/*/*/*/*/*/*/*/*/
+
+
 

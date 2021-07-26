@@ -45,7 +45,7 @@ void Reporter::inputdatastats2file(ProblemDefinition *pb, const char* DIR_OUTPUT
 	fout <<"# Input data (whole - see input file) statistics" << endl;
 	fout << pb->get_n_data() << " # Number of record/fitness cases: n_data " << endl;
 	fout << pb->get_n_var() << " # Number of input variables: n_var " << endl;
-	fout << pb->sum_output << " # Sum of target values: sum_output " << endl;
+	fout << pb->sum_output << " # Sum of target values: sum_output  " << pb->Ny_omega_max << " # Ny_omega_max" << endl;
 	fout << pb->y_ave << " # Average target value: y_ave " << endl;
 	fout << pb->Sy << " # SStot Total sum of squares of (target- y_ave) : Sy " << endl;
 	fout << pb->y_var << " # Target variance: y_var" << endl;

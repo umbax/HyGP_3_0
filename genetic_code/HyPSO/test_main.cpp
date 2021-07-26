@@ -32,7 +32,7 @@
 #include "../classes/run_parameters.h"
 #include "../classes/class_POPULATION.h"
 
-#include "./hypso_launcher.h"
+//#include "./hypso_launcher.h"
 
 using namespace std;
 
@@ -169,10 +169,11 @@ int main ()
 	int spacedim=2;  //2 as 2 are the parameters to be optimised (x is an array of size 2)
 
 	// double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
-	hypso_launcher(P, &T7_tree, spacedim, x);
-
+	cout << "\nOriginal tree: ";
+	P->print_individual((Node *)&T7_tree);
+	P->hypso_launcher(&T7_tree, spacedim, x);
 	// print optimised model
-	cout << "Target model: y=sin(x)+cos(5*x)";
+	cout << "\nTarget model: y=sin(x)+cos(5*x)";
 	cout << "\nOptimised tree: ";
 	P->print_individual((Node *)&T7_tree);
 	cout << endl;

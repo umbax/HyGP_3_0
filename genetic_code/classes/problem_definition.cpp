@@ -55,6 +55,9 @@ ProblemDefinition::ProblemDefinition(void)
 	first_acf_root_input = 0.0; // closest root to 0 of autocorrelation function of input data - only for n_var=1
 	tot_variation_input = 0.0; // total variation
 
+	// Nyquist variable
+	Ny_omega_max = 0.0;
+
 	// statistics of corresponding output (target) of the TEST data set (TEST DATA SET)
 	data_test = NULL;
 	n_test = -1;
@@ -390,6 +393,15 @@ void ProblemDefinition::initialise_variables(Variable**p_Z, double max_n_periods
 
 	symbol = "Z";      //letter used for the variables - see problem definition
 
+
+	// Nyquist constraint on omega for sin/cos terms
+	// computed on independent variable values for n_var = 1: in the future create a "Nyquist" array so to store a different value for each variable depending on sampling frequency
+	if (n_var==1) {
+		cout << "ProblemDefinition::compute_inputdata_stats() - Ny_omega_max" << endl;
+		Ny_omega_max = 0.5*3.141592653/((data[n_data-1][0]-data[0][0])/(n_data-1.0));
+		cout << "ProblemDefinition::compute_inputdata_stats() - Ny_omega_max = " << Ny_omega_max;
+	}
+
 	for (int k=0; k<n_var; k++ ) {
 		// NAME
 		// establish first the link between the pointers' list and the Variable array
@@ -413,13 +425,14 @@ void ProblemDefinition::initialise_variables(Variable**p_Z, double max_n_periods
 		v_list[k]->lower_b = min;
 		v_list[k]->upper_b = max;
 		v_list[k]->range = max-min;
-		v_list[k]->omega_lim = 2.0*PI*(max_n_periods)/(max-min);
+		v_list[k]->omega_lim = 0.5*3.141592653/((max-min)/(n_data-1.0)); // Nyquist value  //=2.0*PI*(max_n_periods)/(max-min);  // historical value of omega_lim (see PhD thesis)
 
 		// print variable's status
 		if (COMMENT) v_list[k]->show_status();
 		//cout << "Have a go?" << endl;
 		//cin.get();
 	}
+
 
 	// change variables_initialised state
 	variables_initialised = 1;

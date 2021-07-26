@@ -8,8 +8,17 @@
 #ifndef GENETIC_CODE_HYPSO_HYPSO_LAUNCHER_H_
 #define GENETIC_CODE_HYPSO_HYPSO_LAUNCHER_H_
 
+#include <iostream>  // basic i/o commands: cout, cin, scientific, fixed
+#include <string>    // to manipulate strings (C)
+#include <cstring>   // to manipulate strings (C)
+#include <cmath>
+#include <stdio.h>
+#include <cstdlib>   // NULL, exit, EXIT_FAILURE
 
+#include "../nodes/nodes_types.h"
+#include "../nodes/nodes.h"
 #include "../classes/class_POPULATION.h"
+
 
 double** zeros(int, int);
 double* zeros(int);
