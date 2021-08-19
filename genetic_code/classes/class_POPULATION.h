@@ -276,7 +276,7 @@ class Population {
 	int regenerate_on_boundary(double**, int, double**);
 	int regenerate_from_swarm_best(double**, int, int, double**, double**);
 	int psominimize(Binary_Node*, int, double*, double*, int, int, double**, double*);
-	void hypso_launcher(Binary_Node*, int, double*);
+	void hypso_launcher(RunParameters*, Binary_Node*, int, double*);
 
 
 };

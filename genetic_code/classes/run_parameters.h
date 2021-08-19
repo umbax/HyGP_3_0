@@ -52,17 +52,22 @@ class RunParameters
 			bool normalised;		// 9/12/20 PARAMETER NOT USED ANY LONGER: 1 if normalised RMSE is used; 0 for normal RMSE (see Population::fitness_func)
 			bool minmax;			// 9/12/20 PARAMETER NOT USED ANY LONGER: 1 if MinMax F function, 0 if usual weighted function
 
-			int strat_statp;			// Strategy to handle statistical moments as objectives - see Population::aggregate_F
+			int pso_nparticles; 	// PSO no. of particles in case PSO is used before SQP to optimise numerical coefficients
+			int pso_niterations; 	// PSO no. of iterations in case PSO is used before SQP to optimise numerical coefficients
+
+			int strat_statp;		// Strategy to handle statistical moments as objectives - see Population::aggregate_F
 			double w_strat_statp;	// Numerical weight of strategy to handle statistical moments as objectives - see Population::aggregate_F
-			double w_complexity;		//weight given to the second normalized objective (measure of complexity of the tree)
-			double w_n_corrections;	//weight given to the number of times protected division "corrects" the result (division by zero)
-			double w_size;					 //weight given to the number of nodes a tree is made of
-			double w_factorisation;  //penalisation for lack of factorisation
-			int n_guesses;			 // no. of guesses for the SQP optimization
-			int crossvalidation;							// 1 if data set is split each generation, 0 if not
-			int folds_n;		//number of rows containing validating points (from the upper row of the matrix)
-			double threshold;				//value of fitness (RMSE) under which the evolution stops
-			int n_inequality0;  	 	//total number of order 0 inequality constraints (number of points constrained) 
+			double w_ACF;			// weight related to autocorrelation finction (ACF) properties - only used for 1D problems
+			double w_tvariation;	// weight related to total variation
+			double w_complexity;	// weight given to the second normalized objective (measure of complexity of the tree)
+			double w_n_corrections;	// weight given to the number of times protected division "corrects" the result (division by zero)
+			double w_size;			// weight given to the number of nodes a tree is made of
+			double w_factorisation; // penalisation for lack of factorisation
+			int n_guesses;			// no. of guesses for the SQP optimization
+			int crossvalidation;	// 1 if data set is split each generation, 0 if not
+			int folds_n;			// number of rows containing validating points (from the upper row of the matrix)
+			double threshold;		//value of fitness (RMSE) under which the evolution stops
+			int n_inequality0;  	//total number of order 0 inequality constraints (number of points constrained)
 			double w_pen_ord0;  	//weight for the penalisation on order 0 inequality constraint
 			int n_inequality1;    	//total number of order 1 inequality constraints (number of points constrained) 
 			double w_pen_ord1;    //weight for the penalisation on order 1 inequality constraint

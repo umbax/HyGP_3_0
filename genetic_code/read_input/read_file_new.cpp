@@ -57,42 +57,45 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	int m = 0;
 	int count=0;
 	string word;
-	double p_par_values[34]; // 9/12/20 added parameter BOUNDED   33->34
+	double p_par_values[37]; // 9/12/20 added parameter BOUNDED   33->34
 	int n_par = 33;
-	string PAR_LABELS[34]	=		 {	"SEED=",
-                                                            "NVAR=",
-															"MINRAND=",
-															"MAXRAND=",
-															"MAX_N_PERIODS=",
-															"STEP=",
-															"NFITCASES=",
-															"METHOD=",
-															"DEPTH_MAX=",
-															"DEPTH_MIN=",
-															"DEPTH_LIM=",
-															"p_FULL=",
-															"REPR_RATE=",
-															"CROSS_RATE=",
-															"MUT_RATE=",
-															"COMP_RATE=",
-															"NEW_RATE=",
-															"M=",
-															"G=",
-															"BOUNDED=",
-															"STRAT_STATP=",  //"NORMALISED_ERR=" not used any longer, slot used for another parameter
-															"W_STRAT_STATP=",			//"MINMAX=" not used any longer, slot used for another parameter
-															"W_COMPLEXITY=",
-															"W_N_CORRECTIONS=",
-															"W_SIZE=",
-															"W_FACTORISATION=",
-															"N_GUESSES=",
-															"CROSSVALIDATION=",
-															"FOLDS_N=",
-															"THRESHOLD=",
-															"N_INEQUALITY0=",
-															"W_PEN_ORD0=",
-															"N_INEQUALITY1=",
-															"W_PEN_ORD1="};
+	string PAR_LABELS[37]	=		 {	"SEED=", 			// 0
+                                        "NVAR=",			// 1
+										"MINRAND=",			// 2
+										"MAXRAND=",			// 3
+										"MAX_N_PERIODS=",	// 4
+										"PSO_NPARTICLES=",	// 5 //"STEP=" not used any longer, slot used for PSO no. of particles
+										"PSO_NITERATIONS=",	// 6
+										"NFITCASES=",		// 7
+										"METHOD=",			// 8
+										"DEPTH_MAX=",		// 9
+										"DEPTH_MIN=",		// 10
+										"DEPTH_LIM=",		// 11
+										"p_FULL=",			// 12
+										"REPR_RATE=",		// 13
+										"CROSS_RATE=",		// 14
+										"MUT_RATE=",		// 15
+										"COMP_RATE=",		// 16
+										"NEW_RATE=",		// 17
+										"M=",				// 18
+										"G=",				// 19
+										"BOUNDED=",			// 20
+										"STRAT_STATP=",  	// 21 //"NORMALISED_ERR=" not used any longer, slot used for another parameter
+										"W_STRAT_STATP=",	// 22 //"MINMAX=" not used any longer, slot used for another parameter
+										"W_ACF=",			// 23
+										"W_TVARIATION=",	// 24
+										"W_COMPLEXITY=",	// 25
+										"W_N_CORRECTIONS=",	// 26
+										"W_SIZE=",			// 27
+										"W_FACTORISATION=",	// 28
+										"N_GUESSES=",		// 29
+										"CROSSVALIDATION=",	// 30
+										"FOLDS_N=",			// 31
+										"THRESHOLD=",		// 32
+										"N_INEQUALITY0=",	// 33
+										"W_PEN_ORD0=",		// 34
+										"N_INEQUALITY1=",	// 35
+										"W_PEN_ORD1="};		// 36
 	string BIN_LABEL = "BINARY_FUN=";
 	string UNA_LABEL = "UNARY_FUN=";
 
@@ -158,37 +161,40 @@ void read_input_file(string FILE_INPUT,  RunParameters* pr, ProblemDefinition* p
 	pr->seed = (int)(p_par_values[0]);
 	pr->nvar = (int)(p_par_values[1]);
 	pr->minrand = p_par_values[2];   
-	pr->maxrand = p_par_values[3];  
-	pr->step = p_par_values[5];         
+	pr->maxrand = p_par_values[3];
 	pr->max_n_periods = p_par_values[4];
-	pr->nfitcases = (int)(p_par_values[6]);
-	pr->method = (int)(p_par_values[7]);
-	pr->depth_max = (int)(p_par_values[8]);
-	pr->depth_min = (int)(p_par_values[9]);
-	pr->depth_lim = (int)(p_par_values[10]);
-	pr->p_FULL = p_par_values[11];
-	pr->repr_rate = p_par_values[12];
-	pr->cross_rate = p_par_values[13];
-	pr->mut_rate = p_par_values[14];
-	pr->comp_rate = p_par_values[15];
-	pr->new_rate = p_par_values[16];
-	pr->M = (int)(p_par_values[17]);
-	pr->G = (int)(p_par_values[18]);
-	pr->bounded = (int)(p_par_values[19]);
-	pr->strat_statp=(int)(p_par_values[20]); //pr->normalised=(bool)(p_par_values[19]); not used any longer, slot used for another parameter
-	pr->w_strat_statp=p_par_values[21];	 //pr->minmax=(bool)(p_par_values[20]); not used any longer, slot used for another parameter
-	pr->w_complexity = p_par_values[22];
-	pr->w_n_corrections = p_par_values[23];
-	pr->w_size = p_par_values[24];
-	pr->w_factorisation = p_par_values[25];  // switch between standard approach (<0) and factorisation bonus (>0)
-	pr->n_guesses = (int)(p_par_values[26]);
-	pr->crossvalidation = (int)(p_par_values[27]);
-	pr->folds_n = (int)(p_par_values[28]);
-	pr->threshold = p_par_values[29];
-	pr->n_inequality0 = (int)p_par_values[30];
-	pr->w_pen_ord0 = p_par_values[31];
-	pr->n_inequality1 = (int)p_par_values[32];
-	pr->w_pen_ord1 = p_par_values[33];
+	pr->pso_nparticles= (int)(p_par_values[5]);   						//step = p_par_values[5];
+	pr->pso_niterations= (int)(p_par_values[6]);
+	pr->nfitcases = (int)(p_par_values[7]);
+	pr->method = (int)(p_par_values[8]);
+	pr->depth_max = (int)(p_par_values[9]);
+	pr->depth_min = (int)(p_par_values[10]);
+	pr->depth_lim = (int)(p_par_values[11]);
+	pr->p_FULL = p_par_values[12];
+	pr->repr_rate = p_par_values[13];
+	pr->cross_rate = p_par_values[14];
+	pr->mut_rate = p_par_values[15];
+	pr->comp_rate = p_par_values[16];
+	pr->new_rate = p_par_values[17];
+	pr->M = (int)(p_par_values[18]);
+	pr->G = (int)(p_par_values[19]);
+	pr->bounded = (int)(p_par_values[20]);
+	pr->strat_statp=(int)(p_par_values[21]); //pr->normalised=(bool)(p_par_values[19]); not used any longer, slot used for another parameter
+	pr->w_strat_statp= p_par_values[22];	 //pr->minmax=(bool)(p_par_values[20]); not used any longer, slot used for another parameter
+	pr->w_ACF= p_par_values[23];
+	pr->w_tvariation= p_par_values[24];
+	pr->w_complexity = p_par_values[25];
+	pr->w_n_corrections = p_par_values[26];
+	pr->w_size = p_par_values[27];
+	pr->w_factorisation = p_par_values[28];  // switch between standard approach (<0) and factorisation bonus (>0)
+	pr->n_guesses = (int)(p_par_values[29]);
+	pr->crossvalidation = (int)(p_par_values[30]);
+	pr->folds_n = (int)(p_par_values[31]);
+	pr->threshold = p_par_values[32];
+	pr->n_inequality0 = (int)p_par_values[33];
+	pr->w_pen_ord0 = p_par_values[34];
+	pr->n_inequality1 = (int)p_par_values[35];
+	pr->w_pen_ord1 = p_par_values[36];
 	
 
 	//----------------------------------------------------------------------------------------------------

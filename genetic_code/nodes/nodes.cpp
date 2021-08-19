@@ -583,7 +583,7 @@ void Binary_Node::show_state(void)
 	cout << "\nR2 = " << R2;
 	cout << "\nObjectives : " << endl;
 	//
-	cout << setw(27) << "O1 : Fitness (error) = " << scientific << setw(12) << fitness;
+	cout << setw(27) << "O1 : Fitness (RMSE) = " << scientific << setw(12) << fitness;
 	cout << setw(6) << "  T1 = " << scientific << setw(12) <<  T1;
 	cout << " % = "<< fixed << setw(12)  << 100.0*T1/F << endl;
 	//

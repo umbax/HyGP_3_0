@@ -89,7 +89,7 @@ Node *tree_copy(Node *src, Node *parent)
 // (element 0 with lowest F)
 int tree_comp_F(const void *a1, const void *a2)
 {
-    //REMEMBER! Now the criterion for sorting is F, not pure fitness!
+    //REMEMBER! Now the criterion for sorting is F, not pure fitness=RMSE!
 	// see void Population::evaluate(void)
 
 	// recast the args
@@ -114,7 +114,7 @@ int tree_comp_F(const void *a1, const void *a2)
 // (element 0 with lowest fitness)
 int tree_comp_fitness(const void *a1, const void *a2)
 {
-	//NOTE! Now the criterion for sorting is pure fitness!
+	//NOTE! Now the criterion for sorting is pure fitness=RMSE!
 
 	// recast the args
     const Binary_Node *x = *((const Binary_Node **)a1);
