@@ -257,6 +257,8 @@ int main (int argc, char *argv[])
 		pop_reporter.n_tree_eval2file(P, DIR_OUTPUT, i, check_end);
 		// write related to adaptive approach (eps_neutral, the constructive, destructive and neutral genetic operations rates, etc) to "adaptation_data.txt"
 		pop_reporter.adaptive_gen_ops_data2file(P, DIR_OUTPUT, i, check_end);
+		// write values of F (aggregate fitness) to file
+		pop_reporter.F_coefficients2file(P, DIR_OUTPUT, i, check_end);
 		cout << "OK";
 		// -------------------------------------------------------------------------------------
 

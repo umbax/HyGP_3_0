@@ -203,6 +203,20 @@ class Population {
 	Val constant_generation(Val, Val, Val);
 	Val constant_generation(Val, Val, Val, Val, Val);
 
+	// Aggregate F (fitness) weights and components (objectives)
+	double F[12]; // entry [0] stores the weighted sum of components F[i]
+	double Fweight[12]; // values of weights/coefficients of aggregate F - entry [0] has no useful purpose...
+//	double F1, a1;  //used to store the main objective, RMSE or PRESS value
+//	double F2, a2;  // second objective, related to complexity (no of tuning parameters) - W_COMPLEXITY
+//	double F3, a3; 	// third objective (no of corrections) - W_N_CORRECTIONS
+//	double F4, a4; 	// fourth objective (no of nodes - tree size) - W_SIZE
+//	double F5, a5;	//penalisation from inequality constraints order 0
+//	double F6, a6; 	//penalisation from inequality constraints order 1
+//	double F7, a7; 	// penalisation to increase factorisation (depth of first division)
+//	double F8, a8; 	// ADDED 11/8/20: penalisation on statistical properties of the tree (average and variance)
+//	double F9, a9; 	// ADDED 22/11/20: penalisation of diverging trees (high level polynomials - that is not argument of any function - are present)
+//	double F10, a10; // ADDED 23/1/21: penalisation linked to autocorrelation function (point at which ACF halves) - see ::fitness_func()
+//	double F11, a11; // ADDED 6/2/21: penalisation linked to total variation
 
 	// adaptive genetic operations rates
 	// adaptive approach settings
