@@ -613,8 +613,8 @@ void Reporter::F_coefficients2file(Population *P, string DIR_OUTPUT, int gi, int
 
 	// print to file generation no. and population size
 	fout << gi << "  " << fixed;
-	for (int i=1; i<12; i++) fout << P->Fweight[i] << " ";
-	fout << "  " << P->Fweight[0] << endl;
+	for (int i=1; i<12; i++) fout << P->Fweight[i] << " " << P->Fc_perc_ave[i] << "  ";
+	fout << "  " << P->Fweight[0] << endl;  //sum of all weights, it has to equal 1
 
 	// close the stream to file if termination criterion met or at the last generation
 	//if  ((gi== pr.G) || (check_end))

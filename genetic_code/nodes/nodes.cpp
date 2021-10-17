@@ -230,7 +230,8 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
     type = NODE_BINARY;
 
     // set left and right to null initially
-    left = right = NULL;
+    left = NULL;
+    right = NULL;
 
 	//initialise state
     diverging=0;
@@ -261,17 +262,15 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	depth_first_op = -1;   //depth of the first division found (if found). -1 means not found
 	pen_ord0 = 0.0;
 	pen_ord1 = 0.0;
-	T1 = 1.0e+10;
-	T2 = 1.0e+10;
-	T3 = 1.0e+10;
-	T4 = 1.0e+10;
-	T5 = 1.0e+10;
-	T6 = 1.0e+10;
-	T7 = 1.0e+10;
-	T8 = 1.0e+10;
-	T9 = 1.0e+10;
-	T10 = 1.0e+10;
-	T11 = 1.0e+10;
+
+	// tree aggregate F objectives initialisation
+	T[0]=0.0;
+	Fc[0]=0.0;
+	for (int i=1; i<12; i++) {
+		T[i]=1.0e+10;
+		Fc[i]=1.0e+10;
+	}
+
 	twin = 0;
 }
 
@@ -584,41 +583,41 @@ void Binary_Node::show_state(void)
 	cout << "\nObjectives : " << endl;
 	//
 	cout << setw(27) << "O1 : Fitness (RMSE) = " << scientific << setw(12) << fitness;
-	cout << setw(6) << "  T1 = " << scientific << setw(12) <<  T1;
-	cout << " % = "<< fixed << setw(12)  << 100.0*T1/F << endl;
+	cout << setw(6) << "  T1 = " << scientific << setw(12) <<  T[1];
+	cout << " % = "<< fixed << setw(12)  << 100.0*T[1]/F << endl;
 	//
 	cout << setw(27) << "O2 : n_tuning_parameters = " << setw(12) << n_tuning_parameters;
-	cout <<  setw(6) << "  T2 = " << scientific << setw(12) << T2;
-	cout << " % = " << fixed << setw(12)  << 100.0*T2/F << endl;
+	cout <<  setw(6) << "  T2 = " << scientific << setw(12) << T[2];
+	cout << " % = " << fixed << setw(12)  << 100.0*T[2]/F << endl;
 	//
 	cout << setw(27) << "O3 : n_corrections = " << scientific << setw(12) <<n_corrections;
-	cout << setw(6) << "  T3 = " << scientific << setw(12) << T3;
-	cout << " % = " << fixed << setw(12) << 100.0*T3/F << endl;
+	cout << setw(6) << "  T3 = " << scientific << setw(12) << T[3];
+	cout << " % = " << fixed << setw(12) << 100.0*T[3]/F << endl;
 	//
 	cout << setw(27) << "O4 : size = " << scientific << setw(12) << count();
-	cout << setw(6) << "  T4 = " << scientific << setw(12) << T4;
-	cout << " % = " << fixed << setw(12) << 100.0*T4/F << endl;
+	cout << setw(6) << "  T4 = " << scientific << setw(12) << T[4];
+	cout << " % = " << fixed << setw(12) << 100.0*T[4]/F << endl;
 	//
 	cout << setw(27) << "O5 : pen_ord0 = " << scientific << setw(12) << pen_ord0;
-	cout << setw(6) << "  T5 = " << scientific << setw(12) << T5;
-	cout << " % = " << fixed << setw(12) << 100.0*T5/F << endl;
+	cout << setw(6) << "  T5 = " << scientific << setw(12) << T[5];
+	cout << " % = " << fixed << setw(12) << 100.0*T[5]/F << endl;
 
 	cout << setw(27) << "O6 : pen_ord1 = " << scientific << setw(12) << pen_ord1;
-	cout << setw(6) << "  T6 = " << scientific << setw(12) << T6;
-	cout << " % = " << fixed << setw(12) << 100.0*T6/F << endl;
+	cout << setw(6) << "  T6 = " << scientific << setw(12) << T[6];
+	cout << " % = " << fixed << setw(12) << 100.0*T[6]/F << endl;
 
 	cout << setw(27) << "O7 : depth_first_op = " << scientific << setw(12) << depth_first_op;
-	cout << setw(6) << "  T7 = " << scientific << setw(12) << T7;
-	cout << " % = " << fixed << setw(12) << 100.0*T7/F << endl;
+	cout << setw(6) << "  T7 = " << scientific << setw(12) << T[7];
+	cout << " % = " << fixed << setw(12) << 100.0*T[7]/F << endl;
 
 	cout << setw(27) << "O8 : tree mean (train. data) = " << scientific << setw(12) << tree_mean;
 	cout << " tree variance (train. data) = " << scientific << setw(12) << tree_variance;
-	cout << setw(6) << "  T8 = " << scientific << setw(12) << T8;
-	cout << " % = " << fixed << setw(12) << 100.0*T8/F << endl;
+	cout << setw(6) << "  T8 = " << scientific << setw(12) << T[8];
+	cout << " % = " << fixed << setw(12) << 100.0*T[8]/F << endl;
 
 	cout << setw(27) << "O9 : high level polynomials : diverging = " << scientific << setw(12) << diverging;
-	cout << setw(6) << "  T9 = " << scientific << setw(12) << T9;
-	cout << " % = " << fixed << setw(12) << 100.0*T9/F << endl;
+	cout << setw(6) << "  T9 = " << scientific << setw(12) << T[9];
+	cout << " % = " << fixed << setw(12) << 100.0*T[9]/F << endl;
 
 	cout << setw(27) << "tree min = " << tree_min << "   tree max = " << tree_max << endl;
 
@@ -626,12 +625,12 @@ void Binary_Node::show_state(void)
 //	cout << "\nAutocorrelation r_k:" << endl;
 //	for (int i=0; i<r_k_size; i++) cout << r_k[i] << endl;
 	cout << setw(27) <<  "10 : Point at which Autocorrelation Function drops by half: " << first_acf_root_tree;
-	cout << setw(6) << "  T10 = " << scientific << setw(12) << T10;
-	cout << " % = " << fixed << setw(12) << 100.0*T10/F << endl;
+	cout << setw(6) << "  T10 = " << scientific << setw(12) << T[10];
+	cout << " % = " << fixed << setw(12) << 100.0*T[10]/F << endl;
 
 	cout << setw(27) <<  "11 : Tree total variation : " << scientific << tot_variation_tree;
-	cout << setw(6) << "  T11 = " << scientific << setw(12) << T11;
-	cout << " % = " << fixed << setw(12) << 100.0*T11/F << endl;
+	cout << setw(6) << "  T11 = " << scientific << setw(12) << T[11];
+	cout << " % = " << fixed << setw(12) << 100.0*T[11]/F << endl;
 
 }
 

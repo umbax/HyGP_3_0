@@ -123,7 +123,6 @@ class Binary_Node : public Node {
     double parent_fitness;	// fitness of best parent (for crossover parents are two...)
     double fitness;         // fitness of the tree, now called "error" (if this is the root). Building data set. IT SHOULD BE OF TYPE Val  !!
     double fitness_test;	// fitness of the tree, now called "error" (if this is the root). Test data set
-    Val F;					// value of the aggregative function used for multiobjective approach (see Population::evaluate(void), point 4)
 	Val R2; 				// coefficient of determination, useful to compare qualities (see Understanding Statistics pag. 553 in pencil...)
 	Val R2_test;
 	double tree_mean;		// mean of the values returned by the complete tree on the building data set
@@ -145,19 +144,14 @@ class Binary_Node : public Node {
 	int depth_first_op;  //former depth_first_div
 	double pen_ord0;		//score related to the no. of times 0-order ineq. constraints are not satisfied
 	double pen_ord1;		//score related to the no. of times first order ineq. constraints are not satisfied
-	double T1;
-	double T2;
-	double T3;
-	double T4;
-	double T5;
-	double T6;
-	double T7;      // factorisation term
-	double T8;
-	double T9;
-	double T10;
-	double T11;
 
-	int twin;										// if twin = 1, the current tree structure is identical to another tree structure (perhaps the best tree in the previous gen)
+	// tree aggregate F objectives (see Population::aggregate_F)
+	Val F;	// value of the aggregate function used for multiobjective approach (see Population::aggregate_F and evaluate(void), point 4). F[0] is the total aggregate F, sum of components F[i]
+	Val Fc[12]; // Fc[1-11]: different aggregate F objectives for the tree. Fc[0] is not used (maybe in the future use it as F?)
+	Val T[12]; 	// T[1-11]: different aggregate F objectives multiplied by weights for the tree. T[0] is not used
+
+
+	int twin;		// if twin = 1, the current tree structure is identical to another tree structure (perhaps the best tree in the previous gen)
 
     // value function just needs to pass the values of the children to f
     Val value(int*);            			// value function: returns the value of the tree (assign the values of the variables first!!!)

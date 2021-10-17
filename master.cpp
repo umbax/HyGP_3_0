@@ -210,13 +210,16 @@ int main (int argc, char *argv[])
 
 		}
 
+		// adjust aggregate fitness (F) weights
+		//if (i%2==0) P->adjust_Fweight(i);
+
 		// evaluate fitness function (in hybrid/memetic GP parameters are added and tuned first, then the evaluation is performed)
 		P->evaluate(i,Mparam.G);
 
-		// sort according to F (aggregate fitness, not RMSE!) : VITAL! Both populations must be sorted, trees[] and complete_trees[]
+		// sort according to F (aggregate fitness F, not RMSE!) : VITAL! Both populations must be sorted, trees[] and complete_trees[]
 		P->sort(i,tree_comp_F);
 
-		// update the best individual - structure and complete tree (for PARAMETER INHERITANCE)
+		// update the external archive made of the best individual - structure and complete tree (for PARAMETER INHERITANCE)
 		P->update_ext_archive();
 
 		// compute elapsed time
@@ -225,10 +228,8 @@ int main (int argc, char *argv[])
 		if (VERBOSE) {
 			// print elapsed time
 			cout << "\nElapsed time: " << elapsed_time << " sec";  //total seconds
-
 			// print out the best member - population WITHOUT parameters
 			P->print_population_without_parameters(i);
-	
 			// print out the best member - population WITH parameters
 			P->print_population_with_parameters(i);
 		}
@@ -267,8 +268,7 @@ int main (int argc, char *argv[])
 			break;
 	
 		// update genetic operators rates (adaptive approach - can be turned on and off inside the function)
-		if (i)
-			P->adapt_genetic_operators_rates();
+		if (i) P->adapt_genetic_operators_rates();
   
 	}
 	// end evolution
@@ -303,7 +303,7 @@ int main (int argc, char *argv[])
 		//cout << "problem->show_data_validation() : show current data_test :" << endl;
 		//P->problem->show_data_test();
 
-		// evaluate complete individuals on test data set provided by the user
+		// evaluate first repr_tot complete individuals on test data set provided by the user
 		P->evaluate_complete_trees_on_test_dataset(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
 		// sort according to error (RMSE) - better not to use it to keep order and to recognise performance on building and test data sets...
 		//P->sort(last_gen,tree_comp_fitness); // non va: ordina in ordine decrescente e alcune volte pone a 0 RMSE e R2. Perché?
@@ -315,7 +315,7 @@ int main (int argc, char *argv[])
 	}
 
 	// free memory allocated to Population, as not used anymore (in the future declare statically P, as you will always need one population...)
-	delete P;
+	delete P;  // 4/10/21 stack smashing detected after calling ProblemDefinition destructor...
 
 	// PARALLELISATION ... TO HERE.
 

@@ -88,7 +88,11 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 	// aggregate fitness function (::aggregate_F) weights and components initialisation
 	for (int i=0; i<12; i++) 	{
 		F[i]=0.0; // entry [0] stores the weighted sum of components F[i]
+		Fc_perc_ave[i]=0.0;
+		T_perc_ave[i]=0.0;
 	}
+	Fc_perc_ave[0]=0.0;
+	T_perc_ave[0]=0.0;
 	Fweight[2]=pr->w_complexity;		// a2 -> number of tuning parameters (see strategy)
 	Fweight[3]=pr->w_n_corrections;	// a3 -> number of corrections performed by protected operations
 	Fweight[4]=pr->w_size;			// a4 -> model size (number of nodes)
@@ -1193,7 +1197,9 @@ void Population::print_individual(Node *tree)
 
 void Population::print_population_without_parameters(int gen)
 {
-	int COMMENT = 0;
+	// if COMMENT=1 prints all trees, if COMMENT=0 prints only the best tree (lowest F)
+	int COMMENT = 1;
+
 	char *expr;	
 	cout <<"\n\n --------------------  GENERATION " << gen << " without parameters -------------------" << endl; 
 	cout << " n F fitness hits n_nodes depth expr" << endl; 	
@@ -1206,7 +1212,7 @@ void Population::print_population_without_parameters(int gen)
 		// free memory used for single expression	
 		delete [] expr;		
 
-		//print only the best complete individual if wordless execution (see COMMENT in main)
+		//print only the best parameterless tree if COMMENT=0
 		if (!COMMENT) break; 
 	}
 	cout << "------------------------------------------------------------------------" << endl; 
@@ -1216,17 +1222,37 @@ void Population::print_population_without_parameters(int gen)
 
 void Population::print_population_with_parameters(int gen)
 {
-	int COMMENT =0;
+	// if COMMENT=1 prints all trees, if COMMENT=0 prints only the best tree (lowest F)
+	int COMMENT =1;
 
 	char *expr;	
 	cout <<"\n\n --------------------  GENERATION " << gen << " with parameters -------------------" << endl; 
-	cout << " n F fitness hits n_nodes depth expr" << endl; 	
-	for (int j=0;j<(int)(floor(parameters->repr_rate*parameters->M));j++) {
-		cout << "\n\nComplete tree n. " << j;
-		complete_trees[j]->show_state();
-		//print only the best complete individual if COMMENT=0
+	cout << " n F RMSE R2 n_nodes depth expr" << endl;
+	//for (int j=0;j<(int)(floor(parameters->repr_rate*parameters->M));j++) {  // to print the first repr_rate*size trees
+
+	for (int j=0;j<size; j++) {  // to print all the trees in the population
+
+		// for test purposes
+		expr = print(j,complete_trees);
+		cout << j << "  " << scientific << complete_trees[j]->F;
+		cout << " " << complete_trees[j]->fitness;
+		cout << "  " << complete_trees[j]->R2;
+		cout << "  " << complete_trees[j]->count();
+		cout << "  " << complete_trees[j]->calc_depth() << "  " << expr << endl; // to show just the expression
+		//for (int k=1;k<12;k++) cout << complete_trees[j]->Fc[k] << " ";
+		cout << endl;
+
+		// usual approach to print trees' features
+		//cout << "\n\nComplete tree n. " << j;
+		//complete_trees[j]->show_state(); // to show all the data referring to the trees
+
+		// free memory used for single expression
+		delete [] expr;
+
+		//prints only the best complete individual if COMMENT=0
 		if (!COMMENT) break; 
 	}
+
 	cout << "------------------------------------------------------------------------\n" << endl; 
 	cout << "Population::print_population_with_parameters: selected strategy = " << parameters->strat_statp << endl;
 	
@@ -1457,75 +1483,77 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 }
 
 
- void Population::population_reproduction(Binary_Node **trees, Binary_Node **new_trees,
-																	int n_repr, bool flag_no_copies, int *counter)
+ void Population::population_reproduction(Binary_Node **trees, Binary_Node **new_trees, int n_repr, bool flag_no_copies, int *counter)
 {
-	 int COMMENT =0;
-	 char *expr;
+	int COMMENT =0;
+	char *expr;
+
+	// counter[0]: stores the number of trees belonging to old population copied to the new one
+	// counter[1]: stores the number of trees generated from scratch to reach n_repr individuals in the new population
 
 	 //REPRODUCTION (elite)
 
 	int unique = 1;
-	if (COMMENT)
-		cout << "\nREPRODUCTION" << endl;
+	if (COMMENT) cout << "\nPopulation::population_reproduction() : start" << endl;
 	if (n_repr) {
-	// copy the first tree (not identical to any other tree, of course!)
-	new_trees[0] = (Binary_Node *)tree_copy(trees[0],NULL);
-	// update son_of and parent_fitness
-	new_trees[0]->parent_fitness = trees[0]->fitness;
-	new_trees[0]->son_of = 0;
-	counter[0]++;
-	if (COMMENT) {
-		expr = trees[0]->print();
-		cout << "\ntrees[0] = " << expr;
-		delete [] expr;
-		expr = new_trees[0]->print();
-		cout << "\n ==> new_trees[0] = " << expr;
-		delete [] expr;
-	}
+		// copy best tree of old population trees[0] to new_trees[0] (not identical to any other tree, as it is the first one)
+		new_trees[0] = (Binary_Node *)tree_copy(trees[0],NULL);
+		// update son_of and parent_fitness
+		new_trees[0]->parent_fitness = trees[0]->fitness;
+		new_trees[0]->son_of = 0;
+		counter[0]++;
 
-	int i;
- 	for (i=1; i<n_repr; i++) {   //for (i=1; i<n_repr; i++) {
- 		// TRUNCATION
- 		// copy the i-th individual in trees[] in i-th individual in new_trees[]
- 		unique = 1;
- 		if (COMMENT) {
- 			expr = trees[i]->print();
- 			cout << "\ntrees[" << i << "] = " << expr;
- 			delete [] expr;
- 		}
- 		 //start NO COPIES---------
-		//if flag_no_copies is true, copies are filtered out, that is only unique individuals are copied into the new population
- 		if (flag_no_copies) {
- 			for (int j=0; j< counter[0]; j++) {
-				if (COMMENT) {
-					expr = new_trees[j]->print();
-					cout << "\n		new_trees[" << j << "] = " << expr;
-					delete [] expr;
-				}
-				if (identical_trees(trees[i], new_trees[j])) {
-					if (COMMENT) cout << "\nIdentical trees : trees["<< i << "] not copied!" << endl;
-					unique = 0;
-				}
-				if (!unique) break;
+		//if (COMMENT) {
+			expr = trees[0]->print();
+			cout << "\ntrees[0] = " << expr;
+			delete [] expr;
+			expr = new_trees[0]->print();
+			cout << "\n ==> new_trees[0] = " << expr;
+			delete [] expr;
+		//}
+
+		int i;
+		for (i=1; i<n_repr; i++) {   //for (i=1; i<n_repr; i++) {
+			// TRUNCATION
+			// copy the i-th individual in trees[] in i-th individual in new_trees[]
+			unique = 1;
+			if (COMMENT) {
+				expr = trees[i]->print();
+				cout << "\ntrees[" << i << "] = " << expr;
+				delete [] expr;
 			}
- 		}
- 		// end NO COPIES--------------------------------------
+			//start NO COPIES---------
+			//if flag_no_copies is true, copies are filtered out, that is only unique individuals are copied into the new population
+			if (flag_no_copies) {
+				for (int j=0; j< counter[0]; j++) {
+					if (COMMENT) {
+						expr = new_trees[j]->print();
+						cout << "\n		new_trees[" << j << "] = " << expr;
+						delete [] expr;
+					}
+					if (identical_trees(trees[i], new_trees[j])) {
+						if (COMMENT) cout << "\nIdentical trees : trees["<< i << "] not copied!" << endl;
+						unique = 0;
+					}
+					if (!unique) break;
+				}
+			}
+			// end NO COPIES--------------------------------------
 
- 		if (unique) {
- 			new_trees[counter[0]] = (Binary_Node *)tree_copy(trees[i],NULL);
- 			// update son_of and parent_fitness
- 			new_trees[counter[0]]->parent_fitness = trees[i]->fitness;
- 			new_trees[counter[0]]->son_of = 0;
- 			if (COMMENT) {
- 				expr = new_trees[counter[0]]->print();
- 				cout << "\n ==> new_trees[" << counter[0] << "] = " << expr;
- 				delete [] expr;
- 			}
- 			counter[0]++;
- 		}
- 	}
- 	// %&%& end individual copying
+			if (unique) {
+				new_trees[counter[0]] = (Binary_Node *)tree_copy(trees[i],NULL);
+				// update son_of and parent_fitness
+				new_trees[counter[0]]->parent_fitness = trees[i]->fitness;
+				new_trees[counter[0]]->son_of = 0;
+ 				if (COMMENT) {
+ 					expr = new_trees[counter[0]]->print();
+ 					cout << "\n ==> new_trees[" << counter[0] << "] = " << expr;
+ 					delete [] expr;
+ 				}
+ 				counter[0]++;
+			}
+		}
+ 	// end individual copying (end if (n_repr) {)
 	}
  
  	// FILL THE MISSING TREES (DELETED COPIES...) WITH RANDOMLY INITIALISED INDIVIDUALS
@@ -1871,42 +1899,42 @@ void Population::new_spawn(RunParameters pr, int n_test_cases, int gen)  //Probl
     }
 
 	
-	// SORTING both trees and complete_trees first (with respect to F, not fitness=RMSE value)
-   sort(gen, tree_comp_F);  // do you really need to sort the population? This is already done in master.cpp after trees evaluation
+    // SORTING both trees and complete_trees first (with respect to F, not fitness=RMSE value)
+    // do you really need to sort the population? This is already done in master.cpp after trees evaluation. So turned off.
+    //sort(gen, tree_comp_F);
 
-   // genetic operations
-   // initialise the counter copied/generated by genetic operators
-   // ([0] for copied, [1] for new, [2] for crossover, [3] for mutation)
-   for (int k=0; k<4; k++)
-   		composition[k] = 0;
+    // genetic operations
+    // initialise the counter copied/generated by genetic operators
+    // ([0] for copied, [1] for new, [2] for crossover, [3] for mutation)
+    for (int k=0; k<4; k++) composition[k] = 0;
 
-   //REPRODUCTION (elite) : results written to composition[0] (no. individuals copied) and composition[1] (no. individuals new)
-   population_reproduction(trees, new_trees, repr_tot, true, composition);
+    //REPRODUCTION (elite) : results written to composition[0] (no. individuals copied) and composition[1] (no. individuals new)
+    population_reproduction(trees, new_trees, repr_tot, true, composition);   // "true" removes the copies when performing reproduction
 
-   //CROSSOVER : number of offspring generated written to composition[2]
-   population_crossover(trees, new_trees, cross_tot, composition);
+    //CROSSOVER : number of offspring generated written to composition[2]
+    population_crossover(trees, new_trees, cross_tot, composition);
 
     //MUTATION: alternate point and subtree mutation. Number of individual mutated written to composition[3]
-   if (mut_tot) population_mutation(trees, new_trees, mut_tot, gen, composition);
+    if (mut_tot) population_mutation(trees, new_trees, mut_tot, gen, composition);
 
   
-  // CHECK THAT NUMBER OF GENERATED/REPLICATED INDIVIDUALS = POPULATION SIZE
-  int total_new_trees = 0;
-  for (int k=0; k<4; k++)
-   		total_new_trees = total_new_trees + composition[k];
-  cout << "Total number of new trees generated/replicated : " << total_new_trees;
-  cout << "\n  by reproduction : " << composition[0];
-  cout << "\n  generated from scratch : " << composition[1];
-  cout << "\n  by crossover : " << composition[2];
-  cout << "\n  by mutation : " << composition[3];
+    // CHECK THAT NUMBER OF GENERATED/REPLICATED INDIVIDUALS = POPULATION SIZE
+    int total_new_trees = 0;
+    for (int k=0; k<4; k++) total_new_trees = total_new_trees + composition[k];
+
+    cout << "\nTotal number of new trees generated/replicated : " << total_new_trees;
+    cout << "\n  by reproduction : " << composition[0];
+    cout << "\n  generated from scratch : " << composition[1];
+    cout << "\n  by crossover : " << composition[2];
+    cout << "\n  by mutation : " << composition[3];
   
   
-  if (total_new_trees != size) {
-     cout << "\n\nPopulation::new_spawn : ERROR! total_new_trees ("<< total_new_trees <<") different from size (" << size << ")! Exit...\n";
-     exit(-1);
-  }	
+    if (total_new_trees != size) {
+    	cout << "\n\nPopulation::new_spawn : ERROR! total_new_trees ("<< total_new_trees <<") different from size (" << size << ")! Exit...\n";
+    	exit(-1);
+    }
  
-  // PRUNING  (experimental...  still to be checked)
+    // PRUNING  (experimental...  still to be checked)
 	// try to prune the best complete tree (remember that complete_trees[], was sorted before reproduction)
 	//prune_tree(complete_trees[0]);    
 
@@ -1932,13 +1960,13 @@ void Population::new_spawn(RunParameters pr, int n_test_cases, int gen)  //Probl
 	}
 
 	//delete new_trees
-	cout << "\nStart new_trees deletion process ...";
+	cout << "\nStart new_trees deletion process... ";
 	int last_k=0;
 	for (int k=0; k<size; k++) {
 		delete new_trees[k];
 		last_k = k;
 	}
-	cout << "\nDeleted up to new_trees[ " << last_k << " ] on " << size << " individuals";
+	cout << "Deleted up to new_trees[ " << last_k << " ] on " << size << " individuals";
 	delete[] new_trees;
 	
 	//if (COMMENT)
@@ -1962,7 +1990,7 @@ void Population::evaluate(int gen, int G)
 	Val F;				 //used to store the F aggregated value
 
 	//if (COMMENT)
-		cout << "\n\nPopulation :: evaluate()" << endl;
+		cout << "\nPopulation :: evaluate()" << endl;
 
 	// initialisation of genetic operations performance counters referring to current generation
 	for (int i=0; i<3; i++) {
@@ -2153,7 +2181,7 @@ void Population::evaluate(int gen, int G)
 		cout << "\np_mutation_perf=" << p_mutation_perf[0] << ", " << p_mutation_perf[1] << ", " << p_mutation_perf[2] << ", " << " : tot_pmut = " << tot_pmut;
 	}
 
-	cout << "\n\nPopulation :: evaluate() : exit" << endl;
+	cout << "\nPopulation :: evaluate() : exit" << endl;
 
 }
 
@@ -2162,7 +2190,7 @@ void Population::evaluate_complete_trees_on_test_dataset()
 {
 	int COMMENT = 1;
 	//-----------------------------------------------------------------
-	Val result[9];
+	Val result[10];
 //	result_tree[0] = (Val)0.0;  // fitness value (error - RMSE)
 //	result_tree[1] = (Val)0.0;	// storing n of hits
 //	result_tree[2] = (Val)0.0;	// storing n of corrections done by protected operations
@@ -2175,7 +2203,7 @@ void Population::evaluate_complete_trees_on_test_dataset()
 //	result_tree[9] = (Val)0.0;	// storing total variation
 
 	int repr_tot = get_repr_tot();
-	cout << "\n\nEVALUATION of the n. " << repr_tot << " complete trees in the archive on the TEST DATA SET";
+	cout << "\n\nEVALUATION of the n. " << repr_tot << " first repr_tot complete trees on the TEST DATA SET";
 	for (int i=0; i<repr_tot; i++) {
 		fitness_func(problem->Sy_test, problem->data_test, problem->n_test, complete_trees[i], result, parameters->normalised, parameters->crossvalidation);   //IMPORTANT: fitness evaluated on data_test !!!
 
@@ -2261,6 +2289,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 
 	if (COMMENT) {
 		cout << "\nPopulation::fitness_func" << endl;
+		cout << "Node *current_tree= " << current_tree << endl;
 		cout << "Tree to be evaluated:\n" << endl;
 		print_individual(current_tree);
 		cout << "\nnum_vars = " << parameters->nvar << " n_cases = " << n_cases << endl;
@@ -2519,6 +2548,43 @@ double Population::constraint_evaluation(Val**data, int n_cases, char* constrain
 }
 
 
+// function to adjust adaptively the weights of aggregate fitness function F
+void Population::adjust_Fweight(int gen) {
+	int COMMENT = 0; //1 comments, 0 silent...
+
+	Fweight[9]= 0.0;
+
+	// main objective, RMSE value
+	if ((Fc_perc_ave[1]>5.0) && (Fweight[8]>0.05) && (Fweight[10]>0.05)) {
+		Fweight[8]= Fweight[8]-0.05;		// statistical properties
+		Fweight[10]= Fweight[10]-0.05;	// difference in point at which ACF halves
+		// The sum of all a_i coefficients must be 1!!
+		Fweight[1]=double(1.-Fweight[2]-Fweight[3]-Fweight[4]-Fweight[5]-Fweight[6]-Fweight[7]-Fweight[8]-Fweight[9]-Fweight[10]-Fweight[11]);
+		return;
+	}
+
+	// penalisation on statistical properties of the tree (average and variance)
+	if ((Fc_perc_ave[8]>5.0) && (Fweight[10]>0.05) && (Fweight[1]>0.05)) {
+		Fweight[8]= Fweight[8]+0.1;		// statistical properties
+		Fweight[10]= Fweight[10]-0.05;	// difference in point at which ACF halves
+		// The sum of all a_i coefficients must be 1!!
+		Fweight[1]=double(1.-Fweight[2]-Fweight[3]-Fweight[4]-Fweight[5]-Fweight[6]-Fweight[7]-Fweight[8]-Fweight[9]-Fweight[10]-Fweight[11]);
+		return;
+	}
+
+	// penalisation linked to autocorrelation function (point at which ACF halves)
+	if ((Fc_perc_ave[10]>5.0) && (Fweight[1]>0.05) && (Fweight[8]>0.05)) {
+		Fweight[8]= Fweight[8]-0.05;		// statistical properties
+		Fweight[10]= Fweight[10]+0.1;	// difference in point at which ACF halves
+		// The sum of all a_i coefficients must be 1!!
+		Fweight[1]=double(1.-Fweight[2]-Fweight[3]-Fweight[4]-Fweight[5]-Fweight[6]-Fweight[7]-Fweight[8]-Fweight[9]-Fweight[10]-Fweight[11]);
+		return;
+	}
+
+	//  Fweight 2, 3, 4, 5, 6, 7 are constant and equal to the values in the input file
+}
+
+
 // function to compute the aggregate version of fitness (called F)
 // input: number of the tree in trees[]  (and complete_trees[])
 // output: value of the aggregate function F
@@ -2758,7 +2824,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F[2] = pow((double)(complete_tree->n_tuning_parameters), 1.0);
 		//No of corrections performed by protected operations
 		F[3] = (double)(complete_tree->n_corrections);
-		//SIZE
+		// SIZE
 		F[4] = (double)(complete_tree->count());
 		//F4 = pow((double)(complete_tree->count()),2.0);
 		F[5] = complete_tree->pen_ord0;
@@ -2781,17 +2847,29 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//------------------------------------------------------------
 	// calculation of contributions (objectives multiplied by weights) at tree level
 	//------------------------------------------------------------
-	complete_tree->T1 = Fweight[1]*F[1];
-	complete_tree->T2 = Fweight[2]*F[2];
-	complete_tree->T3 = Fweight[3]*F[3]*1.0E6;
-	complete_tree->T4 = Fweight[4]*F[4];
-	complete_tree->T5 = (1000000.0)*(exp(F[5]*F[5]*F[5])-1.0)*Fweight[5]; //megadistexp3
-	complete_tree->T6 = Fweight[6]*F[6];
-	complete_tree->T7 = 0.0; // not used in the standard approach
-	complete_tree->T8 = Fweight[8]*F[8];
-	complete_tree->T9 = Fweight[9]*F[9];
-	complete_tree->T10 = Fweight[10]*F[10];
-	complete_tree->T11 = Fweight[11]*F[11];
+	complete_tree->Fc[1] = F[1];
+	complete_tree->Fc[2] = F[2];
+	complete_tree->Fc[3] = F[3]*1.0E6;
+	complete_tree->Fc[4] = F[4];
+	complete_tree->Fc[5] = 1.0E6*(exp(F[5]*F[5]*F[5])-1.0); //megadistexp3
+	complete_tree->Fc[6] = F[6];
+	complete_tree->Fc[7] = 0.0; // not used in the standard approach
+	complete_tree->Fc[8] = F[8];
+	complete_tree->Fc[9] = F[9];
+	complete_tree->Fc[10] = F[10];
+	complete_tree->Fc[11] = F[11];
+
+	complete_tree->T[1] = Fweight[1]*complete_tree->Fc[1];
+	complete_tree->T[2] = Fweight[2]*complete_tree->Fc[2];
+	complete_tree->T[3] = Fweight[3]*complete_tree->Fc[3];
+	complete_tree->T[4] = Fweight[4]*complete_tree->Fc[4];
+	complete_tree->T[5] = Fweight[5]*complete_tree->Fc[5];
+	complete_tree->T[6] = Fweight[6]*complete_tree->Fc[6];
+	complete_tree->T[7] = Fweight[7]*complete_tree->Fc[7];
+	complete_tree->T[8] = Fweight[8]*complete_tree->Fc[8];
+	complete_tree->T[9] = Fweight[9]*complete_tree->Fc[9];
+	complete_tree->T[10] = Fweight[10]*complete_tree->Fc[10];
+	complete_tree->T[11] = Fweight[11]*complete_tree->Fc[11];
 
 	//------------------------------------------------------------
 	// fitness function definition
@@ -2806,11 +2884,11 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	if (pr->strat_statp==11) {	// if (pr->minmax) {
 		// build the list of elements among which you want to find the maximum
 		double list[5];
-		list[0] = complete_tree->T1;
-		list[1] = complete_tree->T2;
-		list[2] = complete_tree->T3;
-		list[3] = complete_tree->T4;
-		list[4] = complete_tree->T8;
+		list[0] = complete_tree->T[1];
+		list[1] = complete_tree->T[2];
+		list[2] = complete_tree->T[3];
+		list[3] = complete_tree->T[4];
+		list[4] = complete_tree->T[8];
 
 		complete_tree->F = *max_element(list, list+5);
 	}
@@ -2824,14 +2902,16 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		
 		if (pr->w_factorisation<=0) {
 			// STANDARD APPROACH (HyGP)
-			complete_tree->F = complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T8 + complete_tree->T9 + complete_tree->T10 + complete_tree->T11;  // removed "+ complete_tree->T7;"
+			complete_tree->F = 0.0;
+			for (int i=1; i<12; i++) complete_tree->F = complete_tree->F + complete_tree->T[i];  // 11 objectives, from 1 to 11
 		}
 			// adaptive approach
 			//	complete_tree->F = complete_tree->T1 + (-1.0*((double)learning_on-1.0))*complete_tree->T2 + complete_tree->T3 + ((double)learning_on+1.0)*complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T7;
 		else {
 			// FACTORISE APPROACH (also called FACTORISATION BONUS)
 			// mind that "search_first_op" has to be enabled for factorisation bonus to work!
-			complete_tree->F = F[7]*(complete_tree->T1 + complete_tree->T2 + complete_tree->T3 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6);
+			complete_tree->F = F[7]*(complete_tree->T[1] + complete_tree->T[2] + complete_tree->T[3] + complete_tree->T[4] + complete_tree->T[5] + complete_tree->T[6]);
+			if (isinf(complete_tree->F)) complete_tree->F=MAX_F_VALUE;
 		}
 		// factorise2
 		//complete_tree->F = F7*(complete_tree->T1 + complete_tree->T2 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6) + complete_tree->T3 ;
@@ -2845,13 +2925,13 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		cout << "\nd_lim = " <<parameters->depth_lim;
 		cout << "\ncomplete_tree->fitness = " << complete_tree->fitness;
 		cout << "\nFit_ave = " << Fit_ave;
-		cout << "\na1 = " << Fweight[1] << "  F1 = " << F[1] << "  a1*F1 = " << Fweight[1]*F[1];
-		cout << "\na2 = " << Fweight[2] << "  F2 = " << F[2] << "  a2*F2 = " << Fweight[2]*F[2];
-		cout << "\na3 = " << Fweight[3] << "  F3 = " << F[3] << "  a3*F3 = " << Fweight[3]*F[3];
-		cout << "\na4 = " << Fweight[4] << "  F4 = " << F[4] << "  a4*F4 = " << Fweight[4]*F[4];
-		cout << "\na5 = " << Fweight[5] << "  F5 = " << F[5] << "  a5*F5 = " << Fweight[5]*F[5];
-		cout << "\na7 = " << Fweight[7] << "  F7 = " << F[7] << "  a7*F7 = " << Fweight[6]*F[6];
-		cout << "\na8 = " << Fweight[8] << "  F8 = " << F[8] << "  a8*F8 = " << Fweight[7]*F[7];
+		cout << "\na1 = " << Fweight[1] << "  F1 = " << F[1] << "  a1*F1 = " << complete_tree->T[1];
+		cout << "\na2 = " << Fweight[2] << "  F2 = " << F[2] << "  a2*F2 = " << complete_tree->T[2];
+		cout << "\na3 = " << Fweight[3] << "  F3 = " << F[3] << "  a3*F3 = " << complete_tree->T[3];
+		cout << "\na4 = " << Fweight[4] << "  F4 = " << F[4] << "  a4*F4 = " << complete_tree->T[4];
+		cout << "\na5 = " << Fweight[5] << "  F5 = " << F[5] << "  a5*F5 = " << complete_tree->T[5];
+		cout << "\na7 = " << Fweight[7] << "  F7 = " << F[7] << "  a7*F7 = " << complete_tree->T[7];
+		cout << "\na8 = " << Fweight[8] << "  F8 = " << F[8] << "  a8*F8 = " << complete_tree->T[8];
 		//for (int k=0; k<4; k++) cout << "\nlist[ " << k << " ] = " << list[k];
 		cout << "\nF = " << complete_tree->F << endl;
 	}
@@ -2964,7 +3044,7 @@ void Population::perform_editing(int i)
 
 
 // function to tune a single tree (single or more initial guesses)
-// input: address of the parameterless tree, address of the complete tree, corresponding number of the tree
+// input: number of guesses, address of the parameterless tree, address of the complete tree, corresponding number of the tree
 // output: integer (just to check)
 int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binary_Node *ntree, int tree_no)
 {	
@@ -2974,6 +3054,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	int n_param, n_nodes, hits, hits_best;
 	int IW;
 	int n_tuning_parameters, n_tuning_parameters_best, n_corrections, n_corrections_best;
+	bool param_inherited=false;
 			
 	double node_value; 
 	double* x;	// array of tree parameters (numerical coefficients)
@@ -3064,7 +3145,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	//-----------------------------------------------------------------------------------------------------------
 	// Array x (parameters)  
 	x = new (nothrow) double [n_param];
-	if (x == 0) {
+	if (x==NULL) {
 		cerr << "\nPopulation::tuning_individual : ERROR ! Not enough memory to create x";
 		exit(-1);
 	}
@@ -3074,7 +3155,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	
 	// Array x_best (best set of parameters)
 	x_best = new (nothrow) double [n_param];
-	if (x_best == 0) {
+	if (x_best==NULL) {
 		cerr << "\nPopulation::tuning_individual : ERROR! Not enough memory to create x_best ";
 		exit (-1);
 	}
@@ -3124,8 +3205,9 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	for (int i_guess=0; i_guess<n_guesses; i_guess++) {     
 	//while (n_guess_ok < n_guesses) {
 		// ----------------------------------------------------------------------------------------------------------------------------
+		param_inherited=false;
 		if (COMMENT) cout << "\nRANDOM GUESS n. " << i_guess << endl; 
-		//first guess and not initial generation (best_tree is not defined for generation 0)
+		// if first guess and not initial generation (best_tree is not defined for generation 0) and the current tree is identical to best_tree in terms of structure
 		if ((i_guess==0) && (best_tree) && (identical_trees(tree_no_par, best_tree))) {    
 		// PARAMETERS INHERITED
 			if (COMMENT) { //start comment
@@ -3145,16 +3227,16 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 					node_value = ((Terminal_Const *)best_complete_tree->p_par[i])->value(NULL);
 					cout << "value [" << i << "] = " << node_value << endl;
 				}
-			cout << "\n  x inherited (size " << n_param << ").";
+				cout << "\n  x inherited (size " << n_param << ").";
 			} //end comment
 
 			//fetch the parameters from best_complete_tree
-			for (int i=0; i<n_param; i++)
-				x[i] = ((Terminal_Const *)best_complete_tree->p_par[i])->value(NULL); //values of the parameters		
+			for (int i=0; i<n_param; i++) x[i] = ((Terminal_Const *)best_complete_tree->p_par[i])->value(NULL); //values of the parameters
+			param_inherited=true;
 		} // end if
 
 		else {
-			// RANDOM GUESSES
+			// PARAMETERS RANDOMLY GENERATED
 			// initialization of x (random guess)
 			int r=0;			
 			for (int j=0; j<n_param; j++) {
@@ -3179,7 +3261,10 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 
 		// show parameters (inherited or randomly chosen)
 		if (COMMENT) {
-			cout << "\nTuning_individual : parameters randomly generated";			
+			if (param_inherited)
+				cout << "\nTuning_individual : parameters inherited";
+			else
+				cout << "\nTuning_individual : parameters randomly generated";
 			cout << "\nx = [";
 			for (int j=0; j<n_param-1; j++) 
 					cout << x[j] << " , ";
@@ -3199,22 +3284,43 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		ntree_fdf_c = tree_no;
 		if (COMMENT) cout << "\n  ntree_fdf_c = " << ntree_fdf_c;
 
-		// tune and validate a single individual (RMSE or Crossvalidation PRESS), using one or more initial guesses for cofficients
-		if (parameters->crossvalidation==1) tuning_individual_PRESS_single_guess(ntree, x, &n_param, &n_guess_ok, result);
-		if (parameters->crossvalidation==0) tuning_individual_RMSE_single_guess(ntree, x, &n_param, &n_guess_ok, result);
 
-		// as a result of tuning, result[] is used to update tree properties:
-		fitness = result[0];  // RMSE error (CROSSVALIDATION=0) or PressRMSE error (CROSSVALIDATION=1)
-		hits = (int)result[1];
-		n_corrections = (int)result[2];
-		R2 = result[3];
-		tree_mean = result[4];
-		tree_variance = result[5];
-		tree_min=result[6];
-		tree_max=result[7];
-		tree_acf_root = result[8];
-		tree_tot_variation = result[9];
-		// also the array of coefficients x is returned...
+		// if parameters are inherited from best tree, then just reevaluate objectives without tuning
+		if (param_inherited) {
+			ntree->n_corrections=0;
+			fitness_func(problem->Sy, problem->get_data_address(), problem->get_n_data(), ntree, result, parameters->normalised, parameters->crossvalidation);
+
+			// update tree properties:
+			fitness = result[0];  // RMSE error (CROSSVALIDATION=0) or PressRMSE error (CROSSVALIDATION=1)
+			hits = (int)result[1];
+			n_corrections = (int)result[2];
+			R2 = result[3];
+			tree_mean = result[4];
+			tree_variance = result[5];
+			tree_min=result[6];
+			tree_max=result[7];
+			tree_acf_root = result[8];
+			tree_tot_variation = result[9];
+		} else {
+			// if parameters are randomly generated then tune the tree
+			// tune and validate a single individual (RMSE or Crossvalidation PRESS), using one or more initial guesses for cofficients
+			if (parameters->crossvalidation==1) tuning_individual_PRESS_single_guess(ntree, x, &n_param, &n_guess_ok, result);
+			if (parameters->crossvalidation==0) tuning_individual_RMSE_single_guess(ntree, x, &n_param, &n_guess_ok, result);
+
+			// as a result of tuning, result[] is used to update tree properties:
+			fitness = result[0];  // RMSE error (CROSSVALIDATION=0) or PressRMSE error (CROSSVALIDATION=1)
+			hits = (int)result[1];
+			n_corrections = (int)result[2];
+			R2 = result[3];
+			tree_mean = result[4];
+			tree_variance = result[5];
+			tree_min=result[6];
+			tree_max=result[7];
+			tree_acf_root = result[8];
+			tree_tot_variation = result[9];
+			// also the array of coefficients x is returned...
+		}
+
 /*
 		// SELECTION of the BEST SET of PARAMETERS (x_best update) 
 		// -------------------------------------------
@@ -4518,7 +4624,7 @@ void Population::compute_statistics(void)
 {
 	int COMMENT = 0;
 
-	int trepr = composition[0]+composition[1];   //archive size
+	int trepr = composition[0]+composition[1];   //archive size (although composition[1] is no. of new individuals generated from scratch... correct to include them?)
 	double *af = new double[trepr];
 
 	//compute statistics for Fit: min, max, mean and unb. est. of the pop. variance evaluated on the ARCHIVE!!!
@@ -4611,7 +4717,29 @@ void Population::compute_statistics(void)
 
 	pen_ord1_ave = C1_ave;
 
+
+	// compute statistics for each single objective of aggregate F evaluated on the ARCHIVE!!!
+	trepr=composition[0];
+	if (COMMENT) cout << "\n\nError of the archive members";
+	double a=0.0;
+	double b=0.0;
+	T_perc_ave[0]=1.0e+10;
+	Fc_perc_ave[0]=1.0e+10;
+	// objective cycle
+	for (int j=1; j < 12; j++) {   // objective j
+		// trees cycle, same objective
+		a=0.0;
+		b=0.0;
+		for (int i=0; i < trepr; i++) {
+			a=a+100*complete_trees[i]->T[j]/complete_trees[i]->F;  // percentual error (includes weights)
+			b=b+100*complete_trees[i]->Fc[j]/complete_trees[i]->F; // percentual error (does NOT include weights)
+		}
+		T_perc_ave[j]=a/trepr;  // includes Fweight[i]
+		Fc_perc_ave[j]=b/trepr;  // does NOT include Fweight[i]
+	}
 }
+
+
 
 /*
 void Population::inherit_parameters(Binary_Node *p_tree1, Binary_Node *p_tree2)
@@ -4624,6 +4752,7 @@ void Population::inherit_parameters(Binary_Node *p_tree1, Binary_Node *p_tree2)
 }
 */
 
+// Function that updates the external archive, storing the best tree found in the current generation (and its parameterless version)
 void Population::update_ext_archive(void)
 {
 	int COMMENT=0;   //1 comments, 0 silent...
@@ -5790,10 +5919,10 @@ void Population::hypso_launcher(RunParameters* pr, Binary_Node *ntree, int space
 
 	// input parameters for swarm bounds: upper and lower bounds for sin/cos terms need to be computed from input data (Nyquist issue)
 	for (int i=0;i<spacedim;i++) {
-		swarmcentre[i]=1.0; // {1.0}; //swarmcentre[2] = {2.0, 2.0};  // for nD design spaces
-		swarmspan[i]= problem->Ny_omega_max; //0.5*3.14152/(6.40/100.0); //currently defined only for 1D problems  // for nD design spaces
-		bounds[i][0] = -(problem->Ny_omega_max); //-0.5*3.14152/(6.40/100.0); //currently defined only for 1D problems // i-th variable lower bound
-		bounds[i][1] = problem->Ny_omega_max; //0.5*3.14152/(6.40/100.0); // 200.0;  // i-th variable upper bound
+		swarmcentre[i]=(11.0+1.0)/2.0; // {1.0}; //swarmcentre[2] = {2.0, 2.0};  // for nD design spaces
+		swarmspan[i]= (11.0-1.0)/2.0; //problem->Ny_omega_max; //0.5*3.14152/(6.40/100.0); //currently defined only for 1D problems  // for nD design spaces
+		bounds[i][0] = 1.0; //-(problem->Ny_omega_max); //-0.5*3.14152/(6.40/100.0); //currently defined only for 1D problems // i-th variable lower bound
+		bounds[i][1] = 11.0; //problem->Ny_omega_max; //0.5*3.14152/(6.40/100.0); // 200.0;  // i-th variable upper bound
 		//(problem->v_list[tree->index_var[i]])->omega_lim
 	}
 
