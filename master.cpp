@@ -206,7 +206,7 @@ int main (int argc, char *argv[])
 			//P->split_data(i,G,split); // not used...
 
 			// GENETIC OPERATORS: sorting, reproduction, crossover, mutation, pruning
-			P->new_spawn(Mparam, Mparam.nfitcases,i);   // 2nd argument Mprobl
+			P->new_spawn(Mparam, Mparam.nfitcases,i);
 
 		}
 

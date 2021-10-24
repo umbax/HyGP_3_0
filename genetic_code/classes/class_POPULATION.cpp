@@ -2695,7 +2695,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	// STRATEGY 4
 	if ((pr->strat_statp)==4) {
 		// fitness value (RMSE)
-		F[1] = complete_tree->fitness/average_err;
+		F[1] = complete_tree->fitness/average_err;  //MIND that this expression of error does not allow to reduce monotonically the error by the generation (it is not absoluite, the average error reduces by generation...)
 		// number of tuning parameters
 		F[2] = pow((double)(complete_tree->n_tuning_parameters), 2.0);
 		//No of corrections performed by protected operations
@@ -3288,6 +3288,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		// if parameters are inherited from best tree, then just reevaluate objectives without tuning
 		if (param_inherited) {
 			ntree->n_corrections=0;
+			// update ntree with inherited parameters prior to fitness evaluation
+			update_complete_tree(ntree, x, n_param);
 			fitness_func(problem->Sy, problem->get_data_address(), problem->get_n_data(), ntree, result, parameters->normalised, parameters->crossvalidation);
 
 			// update tree properties:
