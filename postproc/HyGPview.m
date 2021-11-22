@@ -36,7 +36,7 @@ clear all;
 close all;
 format long e;
 
-% settings and variables ---------------------------------------
+% settings and variables ----------------------------------------
 plot_char = '-b';
 size_title = 11;
 pi=3.141592653589793e+00;
