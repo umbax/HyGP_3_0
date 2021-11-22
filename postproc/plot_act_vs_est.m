@@ -17,7 +17,7 @@
 %%% MATLAB function to evaluate the individual on the training or test data set
 %%% it also plots the actual vs estimated response on the given data set
 
-function plot_act_vs_est(NFITCASES, NVAR, R, tree_string, experiment, run, cur_gen, dataset_type)
+function [tree_output, objectives]=plot_act_vs_est(NFITCASES, NVAR, R, tree_string, experiment, run, cur_gen, dataset_type)
     %-----------------------------------------------
     % data analysis on given data set R (may be building or test data set)
     %-----------------------------------------------
@@ -28,6 +28,9 @@ function plot_act_vs_est(NFITCASES, NVAR, R, tree_string, experiment, run, cur_g
     pi=3.141592653589793e+00;
     
     tree_output = zeros(NFITCASES,1);
+    sum_tree_output=0.0;
+    sum_squared_tree_output=0.0;
+    tot_variation=0.0;
     errorabs=0.;
     errorsq = 0.;
     error = 0.0;
@@ -51,6 +54,11 @@ function plot_act_vs_est(NFITCASES, NVAR, R, tree_string, experiment, run, cur_g
         %x
         %tree_output(k)
         
+        sum_tree_output=sum_tree_output+tree_output(k);
+        sum_squared_tree_output=sum_squared_tree_output+tree_output(k)*tree_output(k);
+        if (k>1) 
+            tot_variation=tot_variation+abs(tree_output(k)-tree_output(k-1)); 
+        end
         error = tree_output(k) - R(k,NVAR+1);
         error_rel = 100.0*(error/R(k,NVAR+1));
         
@@ -85,18 +93,39 @@ function plot_act_vs_est(NFITCASES, NVAR, R, tree_string, experiment, run, cur_g
     max_perc_var = max(abs(comp(:,3)));
     disp(['Maximum absolute % variation = ' num2str(max_perc_var)])
     
-    disp('fitness value of the tree')
+    % output values of HyGP tree on the given data set (build or test)
+    %--------------------------------------------------------------------
     N = cast(NFITCASES,'double');
-    rmse = sqrt(errorsq/N)
-    rmse = sqrt(mean((comp(:,1)-comp(:,2)).^2))
-    errorabs
+    % 1) RMSE
+    rmse = sqrt(errorsq/N);
+    rmse = sqrt(mean((comp(:,1)-comp(:,2)).^2));
+    objectives.RMSE=rmse;    
+    % 3) R2  
     Serr = sum(((comp(:,1)-comp(:,2)).^2));
     y_ave = mean(R(:,NVAR+1))*ones(N,1);
     Sy =  sum((R(:,NVAR+1)-y_ave).^2);
-    R2_post=1.- Serr/Sy
-    norm_RMSE = sqrt(norm_errorsq/N)
-    error_max
-    error_rel_max
+    objectives.R2=1.- Serr/Sy;
+    % 4) Mean
+    objectives.Mean=sum_tree_output/N;
+    % 5) Variance (see reformulation in http://datagenetics.com/blog/november22017/index.html)
+    objectives.Var=sum_squared_tree_output/N - objectives.Mean*objectives.Mean;
+    % 6) Min
+    objectives.Min=min(tree_output);
+    % 7) Max
+    objectives.Max=max(tree_output);
+    % 8) ACF
+    % 18/11/21 to be completed!
+    % 9) Total variation
+    objectives.Tot_variation=tot_variation;
+    
+    % norm_RMSE = sqrt(norm_errorsq/N);
+    % error_max; % to be added to objectives instead of hits? Is it L-infinite norm? 
+    % error_rel_max;
+    % errorabs;
+    
+    
+    
+    
     
     %------------------------------------------
     % plot estimated against actual response
@@ -106,8 +135,8 @@ function plot_act_vs_est(NFITCASES, NVAR, R, tree_string, experiment, run, cur_g
     line1_title = experiment;
     line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - ' dataset_type ' data set'];
     %line3_title = [dataset_type ' data set'];
-    line4_title = ['Matlab RMSE = ' num2str(rmse, '%e')];
-    line5_title = ['Matlab R2 = ' num2str(R2_post, '%e')];
+    line4_title = ['Matlab RMSE = ' num2str(objectives.RMSE, '%e')];
+    line5_title = ['Matlab R2 = ' num2str(objectives.R2, '%e')];
     line6_title = ['Matlab Max error = ' num2str(error_max, '%e')];
     line7_title = ['Matlab Max rel error (%) = ' num2str(error_rel_max, '%e')];
     line8_title = [' '];
@@ -120,5 +149,9 @@ function plot_act_vs_est(NFITCASES, NVAR, R, tree_string, experiment, run, cur_g
         xlim(outbut_bounds);
         ylim(outbut_bounds);
     end
+    
+   
+
+return
 end
 

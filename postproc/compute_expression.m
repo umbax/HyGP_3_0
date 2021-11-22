@@ -40,6 +40,7 @@ if (nvar==2)
 end
 if (nvar>2)
     % 31/12/2020 to be completed (the id number of the variables to be updated is needed)
+    f = msgbox('compute_expression.m : No. of variables >2 : function still not implemented!','ATTENTION!');
 end
 
 % find the boundaries of the hierarchical "blocks" that make up the model expression

@@ -52,7 +52,8 @@ PAR_name  ={'SEED',
             'MINRAND',
             'MAXRAND',
             'MAX_N_PERIODS',
-            'STEP',
+            'PSO_NPARTICLES',
+            'PSO_NITERATIONS',
             'NFITCASES',
             'METHOD',
             'DEPTH_MAX',
@@ -69,6 +70,8 @@ PAR_name  ={'SEED',
             'BOUNDED',
             'STRAT_STATP',
             'W_STRAT_STATP',
+            'W_ACF',
+            'W_TVARIATION',
             'W_COMPLEXITY',
             'W_N_CORRECTIONS',
             'W_SIZE',
@@ -107,9 +110,9 @@ while ((~strcmp(label,'BINARY_FUN=')) & (k_PAR<n_PAR+1))
        
 end
 
-% important numerical parameters        
+% define explicitly NVAR and NFTICASES so to avoid using PAR_value(...) in the rest of the script        
 NVAR = int16(PAR_value(2));
-NFITCASES = int16(PAR_value(7));
+NFITCASES = int16(PAR_value(8));
 
 
 %read binary operations
