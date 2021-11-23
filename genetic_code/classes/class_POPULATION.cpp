@@ -1483,7 +1483,10 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 }
 
 
- void Population::population_reproduction(Binary_Node **trees, Binary_Node **new_trees, int n_repr, bool flag_no_copies, int *counter)
+// function that performs the reproduction of a portion of the population (elite)
+// input: pointer to old population, pointer to new population, no. of trees to copy, flag to keep or eliminate copies, pointer to counter variable)
+// output: none
+void Population::population_reproduction(Binary_Node **trees, Binary_Node **new_trees, int n_repr, bool flag_no_copies, int *counter)
 {
 	int COMMENT =0;
 	char *expr;
@@ -1601,8 +1604,10 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 
 }
 
- void Population::population_crossover(Binary_Node **trees, Binary_Node **new_trees,
-																	int n_cross, int *counter)
+// function that performs crossover
+// input: pointer to old population, pointer to new population, no. of trees to cross, pointer to counter variable)
+// output: none
+void Population::population_crossover(Binary_Node **trees, Binary_Node **new_trees, int n_cross, int *counter)
  {
 	 char *expr;
 	 int COMMENT = 0;
@@ -1622,7 +1627,7 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 		while (crossover_invalid) {
 	 		//select two parents randomly ( build a function for it!)
 	 		p1 = tournament(0, counter[0]+counter[1]-1, 3);		//TRUNCATION with T=repr_rate:parent 1 taken from the copied elite. NON ADAPTIVE VERSION
-      //p1 = tournament(0, (int)(floor(mut_rate*size))-1, 3); // ADAPTIVE VERSION
+	 		//p1 = tournament(0, (int)(floor(mut_rate*size))-1, 3); // ADAPTIVE VERSION
 	 		p2 = tournament(0, size-1, 3);				// = int_rand(size); // for TRUNCATION with T=1: parent 2 taken from the entire population
 	 		// select two nodes randomly (crossover points), one in each parent (use member variables crossover_point1 and crossover_point2)
 	 		crossover_point1 = select_node(trees[p1]);
@@ -1719,7 +1724,7 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 
 	 		for (int i=0; i<(size-(counter[0]+counter[1]+counter[2])); i++) {     	// instead of i<(size-cross_tot-repr_tot), so that not more than "size" individuals are actually created
 	 			while (mutation_invalid) { //££
-	 				//select an individual for mutation
+	 				//select an individual for mutation from the ones copied by reproduction
 	 				pm = tournament(0, counter[0]+counter[1]-1, 3);	 //TRUNCATION with T=repr_rate NON ADAPTIVE VERSION
           //pm = tournament(0, (int)floor(mut_rate*size)-1, 3);    // ADAPTIVE VERSION   
 	 				//select a mutation point in the chosen individual
@@ -1827,7 +1832,7 @@ void Population::kill_and_fill (ProblemDefinition *pb)
 	 			new_trees[no_so_far] = (Binary_Node *)tree_copy(trees[pm],NULL);
 
 	 			// subtree mutation. Arguments: pointers to old and new subtrees' root nodes.
-	 				//remember to set the fitness of the mutated tree to 999999E99!
+	 			//remember to set the fitness of the mutated tree to 999999E99!
 	 			if (!insert_subtree((Node**)(&(new_trees[no_so_far])), (Node*)(new_trees[no_so_far]->find(node_mutation)), (Node*)p_new_subtree))
 	 					if (COMMENT) cout << "\nMutation on " << i << "tree not performed" << endl;
 
@@ -2709,6 +2714,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F[10] = 0.0;
 		F[11] = 0.0;
 	}
+
 	// STRATEGY 6
 	if ((pr->strat_statp)==6) {
 		// fitness value (RMSE)
@@ -2724,6 +2730,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F[10] = 0.0;
 		F[11] = 0.0;
 	}
+
 	// STRATEGY 7
 	if ((pr->strat_statp)==7) {
 		// fitness value (RMSE)
@@ -2739,6 +2746,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F[10] = 0.0;
 		F[11] = 0.0;
 	}
+
 	//STRATEGY 8
 	if ((pr->strat_statp)==8) {
 		// fitness value (RMSE)
@@ -2754,6 +2762,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F[10] = 0.0;
 		F[11] = 0.0;
 	}
+
 	//STRATEGY 11
 	if ((pr->strat_statp)==11) {
 		F[8] = pow(sqrt(fabs(ppd->y_var-complete_tree->tree_variance)),3)+pow(fabs(ppd->y_ave-complete_tree->tree_mean),3);
@@ -2764,7 +2773,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		//F8= pow(100*fabs(ppd->y_max-complete_tree->tree_max)/(fabs(ppd->y_max-ppd->y_min)),3)+pow(100*fabs(ppd->y_min-complete_tree->tree_min)/(fabs(ppd->y_max-ppd->y_min)),3);
 	}
 
-	// STRATEGY 13
+	// STRATEGY 13 - all objectives
 	if ((pr->strat_statp)==13) {
 		// fitness value (RMSE)
 		F[1] = exp(10.0*complete_tree->fitness/fabs(ppd->y_max-ppd->y_min)); //20/2/21 try exp(complete_tree->fitness/average_err);
@@ -2790,7 +2799,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F[11] = pow(fabs(ppd->tot_variation_input-complete_tree->tot_variation_tree)/ppd->tot_variation_input,3);
 	}
 
-	// STRATEGY 14
+	// STRATEGY 14 - RMSE is not used as objective
 	if ((pr->strat_statp)==14) {
 		// fitness value (RMSE)
 		F[1] = 0.0;  // the aim of stratehy 14 is to evolve a model with the same statistical properties of the original signal, not local accuracy is not a priority
@@ -3043,7 +3052,8 @@ void Population::perform_editing(int i)
 }
 
 
-// function to tune a single tree (single or more initial guesses)
+// function to tune the numerical coefficients of a single tree (single or more initial guesses),
+// based on RMSE computed on building data set (simple RMSE or PRESS approach)
 // input: number of guesses, address of the parameterless tree, address of the complete tree, corresponding number of the tree
 // output: integer (just to check)
 int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binary_Node *ntree, int tree_no)
@@ -3208,7 +3218,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		param_inherited=false;
 		if (COMMENT) cout << "\nRANDOM GUESS n. " << i_guess << endl; 
 		// if first guess and not initial generation (best_tree is not defined for generation 0) and the current tree is identical to best_tree in terms of structure
-		if ((i_guess==0) && (best_tree) && (identical_trees(tree_no_par, best_tree))) {    
+		if ((i_guess==0) && (best_tree) && (identical_trees(tree_no_par, best_tree))) { // why not leaving only i_guess==0 ?
+
 		// PARAMETERS INHERITED
 			if (COMMENT) { //start comment
 				cout << "\nbest_tree and trees[" << ntree << "] are identical:";
@@ -3305,8 +3316,9 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			tree_tot_variation = result[9];
 		} else {
 			// if parameters are randomly generated then tune the tree
-			// tune and validate a single individual (RMSE or Crossvalidation PRESS), using one or more initial guesses for cofficients
+			// tune and validate a single individual using PRESS crossvalidation, using randomly generated initial guesses for x (numerical coefficients)
 			if (parameters->crossvalidation==1) tuning_individual_PRESS_single_guess(ntree, x, &n_param, &n_guess_ok, result);
+			// tune and validate a single individual using simple RMSE approach, using randomly generated initial guesses for x (numerical coefficients)
 			if (parameters->crossvalidation==0) tuning_individual_RMSE_single_guess(ntree, x, &n_param, &n_guess_ok, result);
 
 			// as a result of tuning, result[] is used to update tree properties:
@@ -3488,25 +3500,30 @@ void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double*
 	// call the optimization functions: HYPSO (C++) and/or SQP (Fortran) (LINKS TO EXTERNAL FUNCTION)
 	//-----------------------------------------------------------
 
+
+
+	// PSO parameters optimisation (just try to run HyPSO for top get closer to global minima and provide good start guesses for SQP)
+	// steps involved: call to HYPSO/pso_launcher, launch psominimize, internal call to objective function in model.cpp (tree evaluator and error definition with weights for pulsations...)
+	// 8/11/21 test: PSO brought out of the control on number of coefficients
+	// -------------------------------------------------------------------------------------------
+	if (COMMENT) {
+		cout << "\n\nPopulation::tuning_individual_RMSE_single_guess - x_original before HyPSO:" << endl;
+		for (int i=0; i<*p_n_param; i++) cout << "x_original[" << i << "]=" << x_original[i] << endl;
+		cout << "\n\nPopulation::tuning_individual_RMSE_single_guess : call hypso launcher";
+	}
+	hypso_launcher(parameters, ntree, *p_n_param, x_original); // method of Population
+	if (COMMENT) {
+		cout << "\n\nPopulation::tuning_individual_RMSE_single_guess - x_original after HyPSO:" << endl;
+		for (int i=0; i<*p_n_param; i++) cout << "x_original[" << i << "]=" << x_original[i] << endl;
+	}
+
 	// 25/7/2016 : HERE YOU COULD ADD A CHECK TO SKIP TUNING (AND SO LEAVE CONSTANT NODES RANDOMLY INITIALISED)
 	//             IF THE NUMBER OF PARAMETERS IS LARGER THAN SAY HALF THE QUANTITY OF THE TRAINING POINTS...
 	//             SEE BISHOP 1996 ARTICLE
 	// IF (CONDITION FOR TUNING is TRUE) THEN    - example n_param <= n_param_max = 0.5 * size training data set
 	if (*p_n_param<=n_param_threshold) {
 
-		// PSO parameters optimisation (just try to run HyPSO for top get closer to global minima and provide good start guesses for SQP)
-		// steps involved: call to HYPSO/pso_launcher, launch psominimize, internal call to objective function in model.cpp (tree evaluator and error definition with weights for pulsations...)
-		// -------------------------------------------------------------------------------------------
-		if (COMMENT) {
-			cout << "\n\nPopulation::tuning_individual_RMSE_single_guess - x_original before HyPSO:" << endl;
-			for (int i=0; i<*p_n_param; i++) cout << "x_original[" << i << "]=" << x_original[i] << endl;
-			cout << "\n\nPopulation::tuning_individual_RMSE_single_guess : call hypso launcher";
-		}
-		hypso_launcher(parameters, ntree, *p_n_param, x_original); // method of Population
-		if (COMMENT) {
-			cout << "\n\nPopulation::tuning_individual_RMSE_single_guess - x_original after HyPSO:" << endl;
-			for (int i=0; i<*p_n_param; i++) cout << "x_original[" << i << "]=" << x_original[i] << endl;
-		}
+		// 8/11/21 PSO removed from here
 
 		// SQP parameters optimisation
 		// ---------------------------
@@ -3533,7 +3550,7 @@ void Population::tuning_individual_RMSE_single_guess(Binary_Node *ntree, double*
 		}
 
 	} else {
-		// if tuning is not performed, the tree coefficients stay as they are, randomly generated
+		// if tuning is not performed, the tree coefficients stay as they are (randomly generated or improved by PSO)
 		if (COMMENT) cout << "\nPopulation::tuning_individual_RMSE_single_guess : *p_n_param>n_param_threshold : tuning not performed, tree coefficients remain randomly generated" << endl;
 	}
 
@@ -4773,8 +4790,10 @@ void Population::update_ext_archive(void)
 		//if (trees[0]->fitness < best_tree->fitness) {   //if you want to use fitness, sort according to fitness first!!
 		//	if (COMMENT) cout << "\ntrees[0].fitness < best_tree.fitness : SUBSTITUTION... ";
 
+	// copy the parameterless tree
 	best_tree = (Binary_Node *)tree_copy(trees[0],NULL);
 	best_tree->F = trees[0]->F;
+	// copy the full tree (numerical coefficients included)
 	best_complete_tree = (Binary_Node *)tree_copy(complete_trees[0],NULL);
 	best_complete_tree->F = trees[0]->F;
 

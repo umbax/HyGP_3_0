@@ -211,7 +211,7 @@ int main (int argc, char *argv[])
 		}
 
 		// adjust aggregate fitness (F) weights
-		//if (i%2==0) P->adjust_Fweight(i);
+		if (i%4==0) P->adjust_Fweight(i);
 
 		// evaluate fitness function (in hybrid/memetic GP parameters are added and tuned first, then the evaluation is performed)
 		P->evaluate(i,Mparam.G);
