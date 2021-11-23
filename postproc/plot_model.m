@@ -45,11 +45,11 @@ f_llim = min(R(:,NVAR+1)); %0;  %.95  %&1.2*min(min(f_obj));
 % define parameters for objective function visualization
 % 1 INPUT VARIABLE 
 if (NVAR==1)    
-    npoints_1D=500.0;
-    Z1 = [lim_var(1,1) : abs(lim_var(1,2)- lim_var(1,1))/(npoints_1D-1.0) : lim_var(1,2)];
+    npoints_1D=size(R,1);     %6000 %1000.0;
+    Z1 = [lim_var(1,1) : abs(lim_var(1,2)- lim_var(1,1))/(npoints_1D-1.0) : lim_var(1,2)]
     % compute HyGP model values in Z1
     tree_values=zeros(1,size(Z1,2));
-    tree_values_size = size(tree_values,2);
+    tree_values_size = size(tree_values,2)
     for i=1:tree_values_size
         tree_values(i)= compute_expression(tree_string, Z1(i));  % not possible to use as input the whole vector x
     end
@@ -125,7 +125,7 @@ if (f_obj)
 end
 %%%
 
-% plot operations
+% tricks for plotting correctly
 if (NVAR<3)
     figure
     set(gca, 'nextplot', 'replacechildren');
@@ -140,10 +140,13 @@ if (NVAR==1)
     % plot the sample points
     plot(R(:,1), R(:,NVAR+1), '-ok', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k', 'MarkerSize',2);
     % visualize specified tree
-    plot(Z1,tree_values,'b','LineWidth', 3);
-    %hold off
+      %tree_string_c = correct_equation(tree_string);  %% if there are problems in computing tree_values
+      %plot(Z1,eval(tree_string_c),'b','LineWidth', 1);    
+    plot(Z1,tree_values,'r','LineWidth', 1); 
+    plot ([11 11], [min(tree_values) max(tree_values)], 'b', 'Linewidth', 4)  %&%&% line beyond which there is extrapolation
+    hold off
     xlim([lim_var(1,1) lim_var(1,2)]);
-    ylim([f_llim f_ulim]);
+    %ylim([f_llim f_ulim]);
     % problem specific
     %line([.3 .92],[0 0], 'LineStyle','--',  'Color', 'k')
     xlabel('Z1')
@@ -160,7 +163,7 @@ if (NVAR==2)
     % visualize specified tree
     %axes(r)
     % plot the objective function
-    mesh(Z1,Z2,tree_values, 'EdgeColor','b');
+    mesh(Z1,Z2,tree_values, 'EdgeColor','r');
     % Az -38 El 30
     view(-38,30)
     xlabel('Z1')
@@ -170,7 +173,8 @@ end
 if (NVAR>2)    
     % space left empty on purpose
 end
-    
+
+legend('Original signal','HyGP model','Location','best')    
 % captions
 line1_title = experiment;
 line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - ' dataset_type ' data set'];
