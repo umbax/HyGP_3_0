@@ -494,7 +494,7 @@ void ProblemDefinition::compute_inputdata_stats(void)
 	for (int k=0; k < n_data; k++) Sy = Sy + (data[k][n_var] - y_ave)*(data[k][n_var] - y_ave);
 	y_var = Sy/(double)(n_data-1);
 
-	// autocorrelation r_k (only for 1D case)
+	// autocorrelation r_k of original signal (only for 1D case) on building data set (also r_k on test data set should be computed...)
 	if (n_var==1) {
 		delay_max=(int)floor(n_data/2); // 9/1/21 value to be discussed, this is just temporary. Also used in Population::fitness_func
 		r_k= new Val[delay_max]; 	//array storing autocorrelation values

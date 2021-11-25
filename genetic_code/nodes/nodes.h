@@ -126,15 +126,21 @@ class Binary_Node : public Node {
 	Val R2; 				// coefficient of determination, useful to compare qualities (see Understanding Statistics pag. 553 in pencil...)
 	Val R2_test;
 	double tree_mean;		// mean of the values returned by the complete tree on the building data set
+	double tree_mean_test;		// mean of the values returned by the complete tree on the test data set
 	double tree_variance;	// variance of the values returned by the complete tree on the building data set
+	double tree_variance_test;	// variance of the values returned by the complete tree on the test data set
 	double tree_min;		// minimum value returned by tree on building data set
+	double tree_min_test;		// minimum value returned by tree on test data set
 	double tree_max;		// maximum value returned by tree on building data set
+	double tree_max_test;		// maximum value returned by tree on test data set
 	Val* r_k; 			//array storing autocorrelation values on building data set (only if nvar=1)
 	int r_k_size; 		// size of r_k array (number of lags + initial value (1))
-	Val first_acf_root_tree; // smallest root of tree autocorrelation function (the one closest to 0)
-	Val tot_variation_tree; // total variation
-	int hits;				// number of hits of the tree (if this is the root). Building data set
-	int hits_test;			// number of hits of the tree (if this is the root). Test data set
+	Val first_acf_root_tree; 	// property related to tree autocorrelation function on the building data set (see ::fitness_func)
+	Val first_acf_root_tree_test; // property related to tree autocorrelation function on test data set (see ::fitness_func)
+	Val tot_variation_tree; // total variation on building data set
+	Val tot_variation_tree_test; // total variation on building data set
+	Val maxabserror;		// maximum absolute error on building data set
+	Val maxabserror_test;		// maximum absolute error on test data set
 	int n_tuning_parameters;   	//number of tuning parameters (holds only for complete trees - with parameters...)
 	int n_corrections;						// corrections are due to protected operations, like safe division
 	int n_corrections_test;

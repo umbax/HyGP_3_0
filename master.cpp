@@ -211,7 +211,7 @@ int main (int argc, char *argv[])
 		}
 
 		// adjust aggregate fitness (F) weights
-		if (i%4==0) P->adjust_Fweight(i);
+		//if (i%4==0) P->adjust_Fweight(i);
 
 		// evaluate fitness function (in hybrid/memetic GP parameters are added and tuned first, then the evaluation is performed)
 		P->evaluate(i,Mparam.G);
@@ -286,8 +286,6 @@ int main (int argc, char *argv[])
 		P->print_population_with_parameters(last_gen);
 	}
 
-	// just for test
-	//P->get_tree_derivative_given_norm_vector(Mprobl, P->complete_trees[0]);
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -304,13 +302,12 @@ int main (int argc, char *argv[])
 		//P->problem->show_data_test();
 
 		// evaluate first repr_tot complete individuals on test data set provided by the user
-		P->evaluate_complete_trees_on_test_dataset(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
+		P->evaluate_complete_trees_on_test_dataset();
 		// sort according to error (RMSE) - better not to use it to keep order and to recognise performance on building and test data sets...
 		//P->sort(last_gen,tree_comp_fitness); // non va: ordina in ordine decrescente e alcune volte pone a 0 RMSE e R2. Perché?
-
-		// find and print best individual on test data set as per RMSE (!!!!) to file "best_gp_TEST.txt"
+		// find and print best individual on test data set as per RMSE (!!) to file "best_gp_TEST.txt"
 		pop_reporter.best2file_test(P, DIR_OUTPUT, last_gen);
-		// print archive evaluated on the test data set to file
+		// print archive evaluated on the test data set to file - to be improved with evaluation of F on the test data set
 		pop_reporter.archive2file_test(P, DIR_OUTPUT, last_gen);  // insert a function to order in rmse decreasing order, leaving however the name of the run
 	}
 

@@ -1030,12 +1030,12 @@ void Population::prune_tree (Binary_Node *p_tree)
 	
 	
 	// find the maximum and the minimum absolute values of the parameters
-	min = abs( ((Terminal_Const *)copyp_tree->p_par[0])->value(NULL) );
+	min = fabs( ((Terminal_Const *)copyp_tree->p_par[0])->value(NULL) );
 	max = min;
 	min_pos = 0;
 	max_pos = 0;
 	for (int k=1; k<n_param; k++) {
-		cur = abs(((Terminal_Const *)copyp_tree->p_par[k])->value(NULL)); //values of the parameters
+		cur = fabs(((Terminal_Const *)copyp_tree->p_par[k])->value(NULL)); //values of the parameters
 		// update minimum
 		if (cur<min) {
 			min=cur;
@@ -1057,13 +1057,13 @@ void Population::prune_tree (Binary_Node *p_tree)
 	// create an array of the same size of p_par and store the importance of each parameter
 	double *importance = new double[n_param_copy];
 	// set importance: for now it's just the absolute value of the parameter...
-	importance[0] = abs(((Terminal_Const *)copyp_tree->p_par[0])->value(NULL)); 
+	importance[0] = fabs(((Terminal_Const *)copyp_tree->p_par[0])->value(NULL));
 	min = importance[0];
 	min_pos = 0;
 	
 	for (int k=1; k<n_param_copy; k++) {
 		// set importance: for now it's just the absolute value of the parameter...
-		importance[k] = abs(((Terminal_Const *)copyp_tree->p_par[k])->value(NULL)); 
+		importance[k] = fabs(((Terminal_Const *)copyp_tree->p_par[k])->value(NULL));
 		cur = importance[k];
 		// update minimum
 		if (cur<min) {
@@ -2191,46 +2191,48 @@ void Population::evaluate(int gen, int G)
 }
 
 // function that evaluate RMSE (fitness), hits and R2 of complete trees belonging to the archive (repr_tot) on test data set
+// 25/11/21 expanded with all the 10 objectives currently in use on building data set
 void Population::evaluate_complete_trees_on_test_dataset()
 {
 	int COMMENT = 1;
 	//-----------------------------------------------------------------
 	Val result[10];
-//	result_tree[0] = (Val)0.0;  // fitness value (error - RMSE)
-//	result_tree[1] = (Val)0.0;	// storing n of hits
-//	result_tree[2] = (Val)0.0;	// storing n of corrections done by protected operations
-//	result_tree[3] = (Val)0.0; 	// storing value of R squared (R2)
-//	result_tree[4] = (Val)0.0;	// storing mean tree value on building data set
-//	result_tree[5] = (Val)0.0;	// storing variance of tree values on building data set
-//	result_tree[6] = (Val)0.0;	// storing min tree value on building data set
-//	result_tree[7] = (Val)0.0;	// storing max tree value on building data set
-//	result_tree[8] = (Val)0.0;	// storing value first zero of tree autocorrelation function
-//	result_tree[9] = (Val)0.0;	// storing total variation
+	for (int k=0; k<10; k++) result[k]=0.0;
+//	result[0] = (Val)0.0;  // fitness value (error - RMSE)
+//	result[1] = (Val)0.0;	// storing max absolute error
+//	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
+//	result[3] = (Val)0.0; 	// storing value of R squared (R2)
+//	result[4] = (Val)0.0;	// storing mean tree value on building data set
+//	result[5] = (Val)0.0;	// storing variance of tree values on building data set
+//	result[6] = (Val)0.0;	// storing min tree value on building data set
+//	result[7] = (Val)0.0;	// storing max tree value on building data set
+//	result[8] = (Val)0.0;	// storing inipd. variable at which the tree autocorrelation function reduces by half
+//	result[9] = (Val)0.0;	// storing total variation
 
 	int repr_tot = get_repr_tot();
 	cout << "\n\nEVALUATION of the n. " << repr_tot << " first repr_tot complete trees on the TEST DATA SET";
 	for (int i=0; i<repr_tot; i++) {
+		// evaluate tree errors on test data set
 		fitness_func(problem->Sy_test, problem->data_test, problem->n_test, complete_trees[i], result, parameters->normalised, parameters->crossvalidation);   //IMPORTANT: fitness evaluated on data_test !!!
 
 		complete_trees[i]->n_corrections_test = (int)result[2];
-		if (!(complete_trees[i]->n_corrections_test)) {
-			// individual defined on the test data set
-			complete_trees[i]->fitness_test = result[0];  // basically RMSE, see fitness_func
-			complete_trees[i]->hits_test = (int)result[1];
-			complete_trees[i]->R2_test = result[3];
-			// 11/8/20 tree_mean_test and tree_variance_test to be added!! Now mean and variance only computed on training data set
-		} else {
-			// individual NOT defined on the test data set - to be thrown away!
-			complete_trees[i]->fitness_test = 9.999e99;  // basically RMSE, see fitness_func
-			complete_trees[i]->hits_test = -1;
-			complete_trees[i]->R2_test = -9.999e99;
-			// 11/8/20 tree_mean_test and tree_variance_test to be added!! Now mean and variance only computed on training data set
-		}
+		complete_trees[i]->fitness_test = result[0];  // basically RMSE, see fitness_func
+		complete_trees[i]->maxabserror_test = result[1];
+		complete_trees[i]->R2_test = result[3];
+		complete_trees[i]->tree_mean_test = result[4];
+		complete_trees[i]->tree_variance_test = result[5];
+		complete_trees[i]->tree_min_test = result[6];
+		complete_trees[i]->tree_max_test = result[7];
+		complete_trees[i]->first_acf_root_tree_test = result[8];
+		complete_trees[i]->tot_variation_tree_test = result[9];
+
+		// evaluate F - the line below will not work on test data set features as aggregate_F uses features evaluated on building data set
+		// aggregate_F(problem, parameters, Fit_ave, complete_trees[i], gen, G);
 
 		if (COMMENT) cout << "\n complete_trees[" << i << "]->n_corrections_test = " << scientific << complete_trees[i]->n_corrections_test;
 		if (COMMENT) cout << "\n complete_trees[" << i << "]->fitness_test = " << scientific << complete_trees[i]->fitness_test;
-		if (COMMENT) cout << "\n complete_trees[" << i << "]->R2_test = " << scientific << complete_trees[i]->R2_test << endl;
-
+		if (COMMENT) cout << "\n complete_trees[" << i << "]->R2_test = " << scientific << complete_trees[i]->R2_test;
+		if (COMMENT) cout << "\n Aggregate F not evaluated"<< endl;
 	}
 	//-----------------------------------------------------------------
 	if (COMMENT) cout << "\n Exiting Population::evaluate_complete_trees()";
@@ -2245,10 +2247,7 @@ void Population::evaluate_complete_trees_on_test_dataset()
 // - address of the complete tree to be evaluated (root node)
 // - address of the array where to put results
 // Output (stored indirectly in result_tree[] and referring to the specific dataset fed in):
-// - error on data set (RMSE or normalised RMSE) : result_tree[0]
-// - no of hits : result_tree[1]
-// - no of corrections done by protected operations : result_tree[2]
-// - value of R2 (coefficient of determination) : result_tree[3]
+// - result_tree[]
 void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *current_tree, Val *result_tree, bool normalised, bool crossvalid)
 {
 
@@ -2267,7 +2266,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	Val result_tree_norm = 0.0;
 	Val threshold = 0.0001;   // for counting hits
 	Val tot_variation=0.0;
-	int hits=0;
+	Val maxabserror=0.0;
 	int n_corrections = 0;
 	((Binary_Node*)current_tree)->n_corrections=0;
 	// autocorrelation function
@@ -2282,7 +2281,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 
 	// initialization of output array
 	result_tree[0] = (Val)0.0;  // fitness value (error - RMSE)
-	result_tree[1] = (Val)0.0;	// storing n of hits
+	result_tree[1] = (Val)0.0;	// maxabserror - 24/11/21 previously storing n of hits, from today storing maxabserror
 	result_tree[2] = (Val)0.0;	// storing n of corrections done by protected operations
 	result_tree[3] = (Val)0.0; 	// storing value of R squared (R2)
 	result_tree[4] = (Val)0.0;	// storing mean tree value on building data set
@@ -2328,7 +2327,7 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 			if (treeval[i]<a_min) a_min=treeval[i];
 		}
 
-		// ERROR FUNCTION
+		// ERRORS
 		// 	RMSE versions
 		error =  (Val)(treeval[i] - data_used[i][parameters->nvar]);
 		if (COMMENT) {
@@ -2341,20 +2340,25 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 		if (parameters->nvar==1) {
 			if (i>0) tot_variation=tot_variation+fabs(treeval[i]-treeval[i-1]);
 		}
+		// maximum absolute error
+		if (i==0) {
+			maxabserror=fabs(error);
+		} else {
+			if (fabs(error)>maxabserror) maxabserror=fabs(error);
+		}
 		
+
 		// normalised RMSE version
 		if (normalised) { 
-    		if (abs(data_used[i][parameters->nvar])>1.0e-12)   //1.0e-12
-				error_norm =  (Val)abs((data_used[i][parameters->nvar] - treeval[i])/data_used[i][parameters->nvar]);
+    		if (fabs(data_used[i][parameters->nvar])>1.0e-12)   //1.0e-12
+				error_norm =  (Val)fabs((data_used[i][parameters->nvar] - treeval[i])/data_used[i][parameters->nvar]);
 			else
-				error_norm =  (Val)abs(data_used[i][parameters->nvar] - treeval[i]);
+				error_norm =  (Val)fabs(data_used[i][parameters->nvar] - treeval[i]);
     		//
 			result_tree_norm = result_tree_norm + error_norm*error_norm;   //sum of the square of the errors - for RMSE *
 		}
 		//---------------------------------------
 		
-		// HITS
-		if (fabs(error) <= threshold) hits++;     // increase number of hits
 
 	}   // end cycle on the fitness cases
 	//+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -2378,8 +2382,8 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	}
 	if (COMMENT) cout << "\nRMSE  = " << result_tree[0] << endl;
 
-	// HITS - result_tree[1]
-	result_tree[1] = hits;
+	// MAX ABSOLUTE ERROR - result_tree[1]
+	result_tree[1]=maxabserror;					// before 24/11/21 it stored hits;
 	if (COMMENT) cout << "Hits  = " << result_tree[1] << endl;
 
 	// CORRECTIONS - result_tree[2]
@@ -2413,9 +2417,10 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 		for (int i=0; i<n_cases; i++) {
 			SStot_tree = SStot_tree + (treeval[i]-result_tree[4])*(treeval[i]-result_tree[4]);
 		}
-		// then compute autocorrelation function
+		// then compute autocorrelation function r_k
 		int ACF_first_root_found=0;
-		for (int delay=0; delay<problem->delay_max; delay++) {
+		int delay_max=(int)floor(n_cases/2);
+		for (int delay=0; delay<delay_max; delay++) {
 			for (int k=0; k < n_cases-delay; k++) {
 				((Binary_Node*)current_tree)->r_k[delay] = ((Binary_Node*)current_tree)->r_k[delay] + (treeval[k]-result_tree[4])*(treeval[k+delay]-result_tree[4]);
 			}
@@ -2474,7 +2479,7 @@ double Population::pso_objfunction(double* x, int n_param, Binary_Node *ntree)
 	double fitness; // actually an error (RMSE). Be aware that this should be a Val type...
 	Val result[10];
 	result[0] = (Val)0.0;  // fitness value (error - RMSE)
-	result[1] = (Val)0.0;	// storing n of hits
+	result[1] = (Val)0.0;	// storing max absolute error
 	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
 	result[3] = (Val)0.0; 	// storing value of R squared (R2)
 	result[4] = (Val)0.0;	// storing mean tree value on building data set
@@ -2529,14 +2534,14 @@ double Population::constraint_evaluation(Val**data, int n_cases, char* constrain
 				// 1st approach: just count the unfeasible points
 				//leak++;
 				// 2nd approach: measure the distance from the feasible region (dist)
-				leak = leak + abs(data[i][n_vars] - value);
+				leak = leak + fabs(data[i][n_vars] - value);
 		}
 		if (constraints[i]=='<') {
 			if (value >= data[i][n_vars])
 				// 1st approach: just count the unfeasible points
 				//leak++;
 				// 2nd approach: measure the distance from the feasible region (dist)
-				leak = leak + abs(data[i][n_vars] - value);
+				leak = leak + fabs(data[i][n_vars] - value);
 		}
 
 		if (COMMENT) {
@@ -3070,6 +3075,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	double* x;	// array of tree parameters (numerical coefficients)
 	double* x_best;   // best array of tree parameters (numerical coefficients)
 	Val fitness, fitness_best;
+	Val maxabserror, maxabserror_best;
 	Val R2, R2_best;
 	Val tree_mean, tree_mean_best;
 	Val tree_variance, tree_variance_best;
@@ -3079,10 +3085,10 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	Val tree_tot_variation, tree_tot_variation_best;
 	Val result[10];
 	
-	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
-	result[1] = (Val)0.0;	// storing n of hits
+	result[0] = (Val)0.0;  	//storing fitness value (error - RMSE)
+	result[1] = (Val)0.0;	// storing maxabserror
 	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
-	result[3] = (Val)0.0; // storing value of R squared (R2)
+	result[3] = (Val)0.0; 	// storing value of R squared (R2)
 	result[4] = (Val)0.0;	// storing mean tree value on building data set
 	result[5] = (Val)0.0;	// storing variance of tree values on building data set
 	result[6] = (Val)0.0;	// storing min tree value on building data set
@@ -3183,7 +3189,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	//initialization of state variables of best tree
 	//---------------------------------------------------------------------	
 	fitness_best = 999999E99;
-	hits_best = 0;
+	maxabserror_best = 999999E99;
 	n_tuning_parameters_best = 999999;
 	n_corrections_best = 999999;
 	R2_best = 999999;
@@ -3193,7 +3199,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	tree_max_best=999999;
 	tree_tot_variation_best=999999;
 	//	result[0] = (Val)0.0;  	// fitness value (error - RMSE)
-	//	result[1] = (Val)0.0;	// n of hits
+	//	result[1] = (Val)0.0;	// maxabserror
 	//	result[2] = (Val)0.0;	// n of corrections done by protected operations
 	//	result[3] = (Val)0.0; 	// value of R squared (R2)
 	//	result[4] = (Val)0.0;	// mean tree value on building data set
@@ -3220,7 +3226,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		// if first guess and not initial generation (best_tree is not defined for generation 0) and the current tree is identical to best_tree in terms of structure
 		if ((i_guess==0) && (best_tree) && (identical_trees(tree_no_par, best_tree))) { // why not leaving only i_guess==0 ?
 
-		// PARAMETERS INHERITED
+		// PARAMETERS INHERITED if tree is identical to best tree. Why not inheriting coefficients for all individuals reproduced?
 			if (COMMENT) { //start comment
 				cout << "\nbest_tree and trees[" << ntree << "] are identical:";
 				cout << "\nbest_tree : ";
@@ -3305,7 +3311,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 
 			// update tree properties:
 			fitness = result[0];  // RMSE error (CROSSVALIDATION=0) or PressRMSE error (CROSSVALIDATION=1)
-			hits = (int)result[1];
+			maxabserror = result[1];
 			n_corrections = (int)result[2];
 			R2 = result[3];
 			tree_mean = result[4];
@@ -3323,7 +3329,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 
 			// as a result of tuning, result[] is used to update tree properties:
 			fitness = result[0];  // RMSE error (CROSSVALIDATION=0) or PressRMSE error (CROSSVALIDATION=1)
-			hits = (int)result[1];
+			maxabserror = result[1];
 			n_corrections = (int)result[2];
 			R2 = result[3];
 			tree_mean = result[4];
@@ -3369,8 +3375,8 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 		// what if the paramaters x is not acceptable (all NaN)? Implement a function to check! Here or in tuning_individual_PRESS_single_guess
 		if (fitness < fitness_best)  {	   // single-objective comparison on validation error (measured on data_validation)- RMSE or PressRMSE (CROSSVALIDATION=1)
 			fitness_best = fitness;
-			hits_best = hits;
-			n_tuning_parameters_best = n_param;  // n_param is always the same, so that is not needed...
+			maxabserror_best = maxabserror;
+			//n_tuning_parameters_best = n_param;  // n_param is always the same, so that is not needed...
 			n_corrections_best = n_corrections; 
 			R2_best = R2;
 			tree_mean_best = tree_mean;
@@ -3379,6 +3385,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 			tree_max_best=tree_max;
 			tree_acf_root_best = tree_acf_root;
 			tree_tot_variation_best = tree_tot_variation;
+
 			for (int j=0; j<n_param; j++)
 				 x_best[j] = x[j];  //
 		}
@@ -3399,7 +3406,7 @@ int Population::tuning_individual(int n_guesses, Binary_Node *tree_no_par, Binar
 	//---------------------------------------------------------------------------------------------------------------
 	update_complete_tree(ntree, x_best, n_param);
 	ntree->fitness = fitness_best;
-	ntree->hits = hits_best;
+	ntree->maxabserror = maxabserror_best;
 	ntree->n_tuning_parameters = n_tuning_parameters_best;	
 	ntree->n_corrections = n_corrections_best;	
 	ntree->R2 = R2_best;
@@ -4124,14 +4131,14 @@ double Population::get_tree_derivative_given_norm_vector(ProblemDefinition pb, B
 				// 1st approach: just count the unfeasible points
 				//leak++;
 				// 2nd approach: measure the distance from the feasible region
-				leak = leak + abs(pb.data_inequality1[row][2*n_var] - tree_der);
+				leak = leak + fabs(pb.data_inequality1[row][2*n_var] - tree_der);
 			}
 		if (pb.constraints1[row] == '<') {
 			if (tree_der  >= pb.data_inequality1[row][2*n_var])
 				// 1st approach: just count the unfeasible points
 				//leak++;
 				// 2nd approach: measure the distance from the feasible region
-				leak = leak + abs(pb.data_inequality1[row][2*n_var] - tree_der);
+				leak = leak + fabs(pb.data_inequality1[row][2*n_var] - tree_der);
 		}
 
 	}
@@ -4279,7 +4286,7 @@ void Population::measure_genetic_op_performance(Binary_Node* tree)
 				reproduction_perf[2]++;
 				repr_av_delta[2] = repr_av_delta[2] - delta;
 			}
-			if (abs(delta)<=eps_neutral) {
+			if (fabs(delta)<=eps_neutral) {
 				// neutral
 				reproduction_perf[1]++;
 				repr_av_delta[1] = repr_av_delta[1] - delta;
@@ -4299,7 +4306,7 @@ void Population::measure_genetic_op_performance(Binary_Node* tree)
 				crossover_perf[2]++;
 				cross_av_delta[2] = cross_av_delta[2] - delta;
 			}
-			if (abs(delta)<=eps_neutral) {
+			if (fabs(delta)<=eps_neutral) {
 				// neutral
 				crossover_perf[1]++;
 				cross_av_delta[1] = cross_av_delta[1] - delta;
@@ -4319,7 +4326,7 @@ void Population::measure_genetic_op_performance(Binary_Node* tree)
 				s_mutation_perf[2]++;
 				smut_av_delta[2]=smut_av_delta[2]-delta;
 			}
-			if (abs(delta)<=eps_neutral) {
+			if (fabs(delta)<=eps_neutral) {
 				// neutral
 				s_mutation_perf[1]++;
 				smut_av_delta[1]=smut_av_delta[1]-delta;
@@ -4340,7 +4347,7 @@ void Population::measure_genetic_op_performance(Binary_Node* tree)
 				p_mutation_perf[2]++;
 				pmut_av_delta[2]=pmut_av_delta[2]-delta;
 			}
-			if (abs(delta)<=eps_neutral) {
+			if (fabs(delta)<=eps_neutral) {
 				// neutral
 				p_mutation_perf[1]++;
 				pmut_av_delta[1]= pmut_av_delta[1]-delta;
@@ -5859,7 +5866,7 @@ int Population::psominimize(Binary_Node *ntree, int spacedim, double* swarmcentr
         // STOP CRITERIA
         /*
         // if contour lines are targeted
-        best_abs_residual = abs(function_output_Incumb - output_level)
+        best_abs_residual = fabs(function_output_Incumb - output_level)
         if best_abs_residual<= min_residual:
             // terminate the search as the found point error is below the desired threshold
             return zIncumb, yIncumb, function_output_Incumb, constraints_output_Incumb
