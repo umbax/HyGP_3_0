@@ -518,7 +518,7 @@ void Reporter::n_tree_eval2file(Population *P, string DIR_OUTPUT, int gi, int ch
 }
 
 
-// function that writes to file all data related to adaptive approach
+// function that writes to file all data related to adaptive approach for genetic operators
 // (eps_neutral, learning_window, the constructive, destructive and
 // neutral genetic operations rates, so that they can be plotted (write script in matlab).
 void Reporter::adaptive_gen_ops_data2file(Population *P, string DIR_OUTPUT, int gi, int check_end)
@@ -604,19 +604,19 @@ void Reporter::F_coefficients2file(Population *P, string DIR_OUTPUT, int gi, int
 		// open file for writing, truncating
 		fout.open(expr1, ios_base::out | ios_base::trunc);
 		fout << "# Values of F weight coefficients throughout the evolution"  << endl;
-		fout << "# Fweight[0] sum of all weights" << endl;
-		fout << "# Fweight[1]  //used to store the main objective, RMSE or PRESS value" << endl;
-		fout << "# Fweight[2]  // second objective, related to complexity (no of tuning parameters) - W_COMPLEXITY" << endl;
-		fout << "# Fweight[3] 	// third objective (no of corrections) - W_N_CORRECTIONS" << endl;
-		fout << "# Fweight[4] 	// fourth objective (no of nodes - tree size) - W_SIZE" << endl;
-		fout << "# Fweight[5]	//penalisation from inequality constraints order 0" << endl;
-		fout << "# Fweight[6] 	//penalisation from inequality constraints order 1" << endl;
-		fout << "# Fweight[7] 	// penalisation to increase factorisation (depth of first division)" << endl;
-		fout << "# Fweight[8] 	// ADDED 11/8/20: penalisation on statistical properties of the tree (average and variance)" << endl;
-		fout << "# Fweight[9] 	// ADDED 22/11/20: penalisation of diverging trees (high level polynomials - that is not argument of any function - are present)" << endl;
-		fout << "# Fweight[10] // ADDED 23/1/21: penalisation linked to autocorrelation function (point at which ACF halves) - see ::fitness_func()" << endl;
-		fout << "# Fweight[11] // ADDED 6/2/21: penalisation linked to total variation" << endl;
-		fout << "# Gen Fweight[1] Fweight[2] Fweight[3] Fweight[4] Fweight[5] Fweight[6] Fweight[7] Fweight[8] Fweight[9] Fweight[10] Fweight[11]   SUM Fweight[0] "  << endl;
+		fout << "# Fweight[0]	sum of all weights (must be 1)" << endl;
+		fout << "# Fweight[1]  	RMSE or PRESS value" << endl;
+		fout << "# Fweight[2]  	complexity - no of tuning parameters - W_COMPLEXITY" << endl;
+		fout << "# Fweight[3] 	no of corrections - W_N_CORRECTIONS" << endl;
+		fout << "# Fweight[4] 	no of nodes - tree size - W_SIZE" << endl;
+		fout << "# Fweight[5]	penalisation from inequality constraints order 0 - W_PEN_ORD0" << endl;
+		fout << "# Fweight[6] 	penalisation from inequality constraints order 1 - W_PEN_ORD1" << endl;
+		fout << "# Fweight[7] 	penalisation to increase factorisation (depth of first division) - W_FACTORISATION" << endl;
+		fout << "# Fweight[8] 	penalisation on statistical properties of the tree - W_STRAT_STATP " << endl;
+		fout << "# Fweight[9] 	penalisation of diverging trees (high level polynomials are present)" << endl;
+		fout << "# Fweight[10]  penalisation linked to autocorrelation function (point at which ACF halves) - W_ACF" << endl;
+		fout << "# Fweight[11]  penalisation linked to total variation - W_TVARIATION" << endl;
+		fout << "# Gen Fweight[i] Fc_perc_ave[i] for i=1,...,11 Fweight[0]"  << endl;
 
 	} else {
 		// open file for writing, appending
@@ -625,8 +625,12 @@ void Reporter::F_coefficients2file(Population *P, string DIR_OUTPUT, int gi, int
 
 	// print to file generation no. and population size
 	fout << gi << "  " << fixed;
-	for (int i=1; i<12; i++) fout << P->Fweight[i] << " " << P->Fc_perc_ave[i] << "  ";
-	fout << "  " << P->Fweight[0] << endl;  //sum of all weights, it has to equal 1
+	for (int i=1; i<12; i++) {
+		// save F weight value and average objective error in the archive
+		fout << P->Fweight[i] << " " << P->Fc_perc_ave[i] << "  ";
+	}
+
+	fout << "  " << P->Fweight[0] << endl;  //sum of all weights, it must be 1
 
 	// close the stream to file if termination criterion met or at the last generation
 	//if  ((gi== pr.G) || (check_end))

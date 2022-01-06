@@ -89,9 +89,11 @@ Population::Population(RunParameters* pr, ProblemDefinition* pb)
 	for (int i=0; i<12; i++) 	{
 		F[i]=0.0; // entry [0] stores the weighted sum of components F[i]
 		Fc_perc_ave[i]=0.0;
+		Fc_ave[i]=0.0;
 		T_perc_ave[i]=0.0;
 	}
 	Fc_perc_ave[0]=0.0;
+	Fc_ave[0]=0.0;
 	T_perc_ave[0]=0.0;
 	Fweight[2]=pr->w_complexity;		// a2 -> number of tuning parameters (see strategy)
 	Fweight[3]=pr->w_n_corrections;	// a3 -> number of corrections performed by protected operations
@@ -2559,39 +2561,97 @@ double Population::constraint_evaluation(Val**data, int n_cases, char* constrain
 
 
 // function to adjust adaptively the weights of aggregate fitness function F
+// 5/12/21 currently applied only to 3 objectives: Fc_perc_ave[1], Fc_perc_ave[8], Fc_perc_ave[10]
 void Population::adjust_Fweight(int gen) {
-	int COMMENT = 0; //1 comments, 0 silent...
+	int COMMENT = 1; //1 comments, 0 silent...
 
 	Fweight[9]= 0.0;
 
-	// main objective, RMSE value
-	if ((Fc_perc_ave[1]>5.0) && (Fweight[8]>0.05) && (Fweight[10]>0.05)) {
-		Fweight[8]= Fweight[8]-0.05;		// statistical properties
-		Fweight[10]= Fweight[10]-0.05;	// difference in point at which ACF halves
-		// The sum of all a_i coefficients must be 1!!
-		Fweight[1]=double(1.-Fweight[2]-Fweight[3]-Fweight[4]-Fweight[5]-Fweight[6]-Fweight[7]-Fweight[8]-Fweight[9]-Fweight[10]-Fweight[11]);
-		return;
+//	// ADAPTIVE STRATEGY A1 - first idea
+//	// objective 1: main objective, RMSE value Fweight[1]
+//	if ((Fc_perc_ave[1]>5.0) && (Fweight[8]>0.05) && (Fweight[10]>0.05)) {
+//		Fweight[8]= Fweight[8]-0.05;		// statistical properties
+//		Fweight[10]= Fweight[10]-0.05;	// difference in point at which ACF halves
+//		// The sum of all a_i coefficients must be 1!!
+//		Fweight[1]=double(1.-Fweight[2]-Fweight[3]-Fweight[4]-Fweight[5]-Fweight[6]-Fweight[7]-Fweight[8]-Fweight[9]-Fweight[10]-Fweight[11]);
+//		return;
+//	}
+//
+//	// objective 2: penalisation on statistical properties of the tree (average and variance) Fweight[8]
+//	if ((Fc_perc_ave[8]>5.0) && (Fweight[10]>0.05) && (Fweight[1]>0.05)) {
+//		Fweight[8]= Fweight[8]+0.1;		// statistical properties
+//		Fweight[10]= Fweight[10]-0.05;	// difference in point at which ACF halves
+//		// The sum of all a_i coefficients must be 1!!
+//		Fweight[1]=double(1.-Fweight[2]-Fweight[3]-Fweight[4]-Fweight[5]-Fweight[6]-Fweight[7]-Fweight[8]-Fweight[9]-Fweight[10]-Fweight[11]);
+//		return;
+//	}
+//
+//	// objective 3: penalisation linked to autocorrelation function (point at which ACF halves) Fweight[10]
+//	if ((Fc_perc_ave[10]>5.0) && (Fweight[1]>0.05) && (Fweight[8]>0.05)) {
+//		Fweight[8]= Fweight[8]-0.05;		// statistical properties
+//		Fweight[10]= Fweight[10]+0.1;	// difference in point at which ACF halves
+//		// The sum of all a_i coefficients must be 1!!
+//		Fweight[1]=double(1.-Fweight[2]-Fweight[3]-Fweight[4]-Fweight[5]-Fweight[6]-Fweight[7]-Fweight[8]-Fweight[9]-Fweight[10]-Fweight[11]);
+//		return;
+//	}
+//	//  Fweight 2, 3, 4, 5, 6, 7 are constant and equal to the values in the input file
+
+
+//	// ADAPTIVE STRATEGY A2 - MINMAX
+//	// objective 1: main objective, RMSE value Fweight[1]
+//	if ((Fc_perc_ave[1]>Fc_perc_ave[8]) && (Fc_perc_ave[1]>Fc_perc_ave[10])) {
+//		Fweight[1]=0.8;		// RMSE on building data set
+//		Fweight[8]= 0.1;		// statistical properties
+//		Fweight[10]= 0.0;	// difference in point at which ACF halves
+//		// The sum of all a_i coefficients must be 1!!
+//		return;
+//	}
+//
+//	// objective 2: penalisation on statistical properties of the tree (average and variance) Fweight[8]
+//	if ((Fc_perc_ave[8]>Fc_perc_ave[10]) && (Fc_perc_ave[8]>Fc_perc_ave[1])) {
+//		Fweight[1]=0.1;
+//		Fweight[8]= 0.8;		// statistical properties
+//		Fweight[10]= 0.0;	// difference in point at which ACF halves
+//		// The sum of all a_i coefficients must be 1!!
+//		return;
+//	}
+//
+//	// objective 3: penalisation linked to autocorrelation function (point at which ACF halves) Fweight[10]
+//	if ((Fc_perc_ave[10]>Fc_perc_ave[1]) && (Fc_perc_ave[10]>Fc_perc_ave[8])) {
+//		Fweight[1]=0.0;
+//		Fweight[8]= 0.0;		// statistical properties
+//		Fweight[10]= 1.0;	// difference in point at which ACF halves
+//		// The sum of all a_i coefficients must be 1!!
+//		return;
+//	}
+//  Fweight 2, 3, 4, 5, 6, 7 are constant and equal to the values in the input file
+
+	// ADAPTIVE STRATEGY A3 - Sergey's adaptation of conjugate gradients
+	// find largest objective in absolute value and update only the corresponding weight
+	double Fc_ave_abs[12];
+	int index_max_abs=0;
+	for (int i=1; i<12; i++) Fc_ave_abs[i]=fabs(Fc_ave[i]);
+	index_max_abs=distance(Fc_ave_abs, max_element(Fc_ave_abs, Fc_ave_abs + 12));  // defines the largest objective in absolute value
+
+	double sum=0.0;
+	for (int i=1; i<12; i++) {
+		if (i!=index_max_abs) {
+			sum=sum+Fweight[i]*Fc_ave[i];
+		}
 	}
 
-	// penalisation on statistical properties of the tree (average and variance)
-	if ((Fc_perc_ave[8]>5.0) && (Fweight[10]>0.05) && (Fweight[1]>0.05)) {
-		Fweight[8]= Fweight[8]+0.1;		// statistical properties
-		Fweight[10]= Fweight[10]-0.05;	// difference in point at which ACF halves
-		// The sum of all a_i coefficients must be 1!!
-		Fweight[1]=double(1.-Fweight[2]-Fweight[3]-Fweight[4]-Fweight[5]-Fweight[6]-Fweight[7]-Fweight[8]-Fweight[9]-Fweight[10]-Fweight[11]);
-		return;
+	if (COMMENT) {
+		for (int i=1; i<12; i++) cout << "\nFweight[ " << i << "] = " << Fweight[i] << "  Fc_ave[ " << i << "] = " << Fc_ave[i];
+		cout << "\nMax abs value for i_max=" << index_max_abs;
+
 	}
 
-	// penalisation linked to autocorrelation function (point at which ACF halves)
-	if ((Fc_perc_ave[10]>5.0) && (Fweight[1]>0.05) && (Fweight[8]>0.05)) {
-		Fweight[8]= Fweight[8]-0.05;		// statistical properties
-		Fweight[10]= Fweight[10]+0.1;	// difference in point at which ACF halves
-		// The sum of all a_i coefficients must be 1!!
-		Fweight[1]=double(1.-Fweight[2]-Fweight[3]-Fweight[4]-Fweight[5]-Fweight[6]-Fweight[7]-Fweight[8]-Fweight[9]-Fweight[10]-Fweight[11]);
-		return;
+	Fweight[index_max_abs]=-sum/Fc_ave[index_max_abs]; // does it make sense to have negative weights!!?
+
+	if (COMMENT) {
+		cout << "\nNew weight for i_max: Fweight[ " << index_max_abs << "] = " << Fweight[index_max_abs];
 	}
 
-	//  Fweight 2, 3, 4, 5, 6, 7 are constant and equal to the values in the input file
 }
 
 
@@ -2783,15 +2843,16 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		// fitness value (RMSE)
 		F[1] = exp(10.0*complete_tree->fitness/fabs(ppd->y_max-ppd->y_min)); //20/2/21 try exp(complete_tree->fitness/average_err);
 		// number of tuning parameters squared
-		F[2] = pow((double)(complete_tree->n_tuning_parameters), 2.0);
+		F[2] = 0.0001*(complete_tree->n_tuning_parameters);
+		// F[2] = pow((double)(complete_tree->n_tuning_parameters), 2.0); // 12/12/21 currently in use, but very large
 		// No of corrections performed by protected operations
 		F[3] = (double)(complete_tree->n_corrections);
 		// SIZE (number of nodes)
 		F[4] = (double)(complete_tree->count());
 		//F4 = pow((double)(complete_tree->count()),2.0);
 		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
-		F[5] = complete_tree->pen_ord0;
-		F[6] = (complete_tree->pen_ord1)/(pen_ord1_ave+.001);
+		F[5] = 0.0;     //complete_tree->pen_ord0;
+		F[6] = 0.0;     //(complete_tree->pen_ord1)/(pen_ord1_ave+.001);
 		F[7] = 0.0;
 		// statistical properties of the tree (mean and variance)
 		F[8] = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1.0)) + fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max); //+pow(fabs(ppd->y_ave-complete_tree->tree_mean)/fabs(ppd->y_max-ppd->y_min),3)
@@ -2859,7 +2920,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 
 
 	//------------------------------------------------------------
-	// calculation of contributions (objectives multiplied by weights) at tree level
+	// calculation of objectives values at tree level
 	//------------------------------------------------------------
 	complete_tree->Fc[1] = F[1];
 	complete_tree->Fc[2] = F[2];
@@ -2873,6 +2934,9 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	complete_tree->Fc[10] = F[10];
 	complete_tree->Fc[11] = F[11];
 
+	//------------------------------------------------------------
+	// calculation of contributions (objectives multiplied by weights) at tree level
+	//------------------------------------------------------------
 	complete_tree->T[1] = Fweight[1]*complete_tree->Fc[1];
 	complete_tree->T[2] = Fweight[2]*complete_tree->Fc[2];
 	complete_tree->T[3] = Fweight[3]*complete_tree->Fc[3];
@@ -2894,7 +2958,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	//	dc = (double)(gen/G);
 	// else dc = 1.;
 
-	// MINMAX approach
+	// MINMAX approach - Strategy 11
 	if (pr->strat_statp==11) {	// if (pr->minmax) {
 		// build the list of elements among which you want to find the maximum
 		double list[5];
@@ -2907,7 +2971,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		complete_tree->F = *max_element(list, list+5);
 	}
 
-	// AGGREGATED (WEIGHTED SUM) approach
+	// AGGREGATED (WEIGHTED SUM) approach - not strategy 11
 	if (pr->strat_statp!=11) {
 		// compute F as linear combination of fitness value and other objectives
 		//F = a1*F1+a2*dc*dc*F2+a3*dc*dc*F3+a4*dc*dc*F4;   //dynamic weights
@@ -2918,14 +2982,15 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 			// STANDARD APPROACH (HyGP)
 			complete_tree->F = 0.0;
 			for (int i=1; i<12; i++) complete_tree->F = complete_tree->F + complete_tree->T[i];  // 11 objectives, from 1 to 11
+			if (isinf(complete_tree->F)) complete_tree->F=MAX_F_VALUE;    // see Population.h
 		}
 			// adaptive approach
 			//	complete_tree->F = complete_tree->T1 + (-1.0*((double)learning_on-1.0))*complete_tree->T2 + complete_tree->T3 + ((double)learning_on+1.0)*complete_tree->T4 + complete_tree->T5 + complete_tree->T6 + complete_tree->T7;
-		else {
+		if (pr->w_factorisation>0) {
 			// FACTORISE APPROACH (also called FACTORISATION BONUS)
 			// mind that "search_first_op" has to be enabled for factorisation bonus to work!
 			complete_tree->F = F[7]*(complete_tree->T[1] + complete_tree->T[2] + complete_tree->T[3] + complete_tree->T[4] + complete_tree->T[5] + complete_tree->T[6]);
-			if (isinf(complete_tree->F)) complete_tree->F=MAX_F_VALUE;
+			if (isinf(complete_tree->F)) complete_tree->F=MAX_F_VALUE;    // see Population.h
 		}
 		// factorise2
 		//complete_tree->F = F7*(complete_tree->T1 + complete_tree->T2 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6) + complete_tree->T3 ;
@@ -4747,21 +4812,27 @@ void Population::compute_statistics(void)
 	// compute statistics for each single objective of aggregate F evaluated on the ARCHIVE!!!
 	trepr=composition[0];
 	if (COMMENT) cout << "\n\nError of the archive members";
-	double a=0.0;
-	double b=0.0;
+	double a,b,c;
 	T_perc_ave[0]=1.0e+10;
 	Fc_perc_ave[0]=1.0e+10;
+	Fc_ave[0]=1.0e+10;
 	// objective cycle
 	for (int j=1; j < 12; j++) {   // objective j
 		// trees cycle, same objective
 		a=0.0;
 		b=0.0;
+		c=0.0;
 		for (int i=0; i < trepr; i++) {
-			a=a+100*complete_trees[i]->T[j]/complete_trees[i]->F;  // percentual error (includes weights)
-			b=b+100*complete_trees[i]->Fc[j]/complete_trees[i]->F; // percentual error (does NOT include weights)
+			a=a+100*(complete_trees[i]->T[j])/(complete_trees[i]->F);  // percentual contribution (includes weights)
+			b=b+100*(complete_trees[i]->Fc[j])/(complete_trees[i]->F); // percentual contribution (does NOT include weights)
+			c=c+(complete_trees[i]->Fc[j]);  // contribution (does NOT include weights)
 		}
-		T_perc_ave[j]=a/trepr;  // includes Fweight[i]
-		Fc_perc_ave[j]=b/trepr;  // does NOT include Fweight[i]
+		// average percentage contribution relative to objective j throughout the archive trepr
+		T_perc_ave[j]=a/(double)trepr;  // includes Fweight[i]
+		// average percentage contribution relative to objective j throughout the archive trepr
+		Fc_perc_ave[j]=b/(double)trepr;  // does NOT include Fweight[i]
+		// average contribution relative to objective j throughout the archive trepr
+		Fc_ave[j]=b/(double)trepr;  // does NOT include Fweight[i]
 	}
 }
 
