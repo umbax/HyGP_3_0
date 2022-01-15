@@ -2895,14 +2895,16 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	if ((pr->strat_statp)==15) {
 		// fitness value (RMSE)
 		F[1] = exp(complete_tree->fitness/fabs(ppd->y_max-ppd->y_min)); //20/2/21 try exp(complete_tree->fitness/average_err);
-		// number of tuning parameters
+		// complexity - number of tuning parameters
 		F[2] = pow((double)(complete_tree->n_tuning_parameters), 1.0);
-		//No of corrections performed by protected operations
+		// No of corrections performed by protected operations
 		F[3] = (double)(complete_tree->n_corrections);
 		// SIZE
 		F[4] = (double)(complete_tree->count());
 		//F4 = pow((double)(complete_tree->count()),2.0);
+		// penalisation 0 order
 		F[5] = complete_tree->pen_ord0;
+		// penalisation 1st order
 		F[6] = (complete_tree->pen_ord1)/(pen_ord1_ave+.001);
 		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
 		F[7] = 0.0;

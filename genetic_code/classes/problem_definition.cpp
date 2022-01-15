@@ -55,7 +55,7 @@ ProblemDefinition::ProblemDefinition(void)
 	first_acf_root_input = 0.0; // closest root to 0 of autocorrelation function of input data - only for n_var=1
 	tot_variation_input = 0.0; // total variation
 
-	// Nyquist variable
+	// "Nyquist" variable
 	Ny_omega_max = 0.0;
 
 	// statistics of corresponding output (target) of the TEST data set (TEST DATA SET)
@@ -78,12 +78,10 @@ ProblemDefinition::ProblemDefinition(void)
 	n_inequality1 = -1;
 	constraints1 = NULL;
 
-
-
+	// variables initialisation
 	variables_initialised = 0;
 	symbol = "not_initialised";      //letter used for the variables
 	v_list = NULL;    //list of variables addresses
-
 
 	//Andrey's idea to avoid dynamic allocation of functions list
 	// in the future use a vector
@@ -102,220 +100,223 @@ ProblemDefinition::ProblemDefinition(void)
 	num_b_funcs = -1;
 	division = NULL;
 
+	// input data autocorrelation
+	delay_max=0;
+	r_k=NULL;
 }
 
-// ProblemDefinition copy constructor (used for parallelisation - see firstprivate)
-ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
-{
-	int COMMENT = 0;
-
-# pragma omp critical
-	{
-	// here the instructions to make a deep copy
-	if (COMMENT) cout << "\n\ncopy constructor entered" << endl;
-
-	// COPY PRIVATE MEMBERS
-	// copy n_data, n_var, n_cols, data
-	n_data = p.n_data;			//total number of rows in data
-	n_var = p.n_var;			// number of variables
-	n_cols = p.n_cols;			//number of columns in data (n_var+1)
-	data = new Val*[n_data];
-	if (data==NULL)  {
-		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data failed!! Input data can't be imported" << endl;
-		exit(-1);
-	}
-	for (int i=0; i<n_data; i++) {
-		data[i] = new Val[n_var+1];
-		if (data[i]==NULL)  {
-			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data[" << i << "]  failed!! Input data can't be imported" << endl;
-			exit(-1);
-		}
-	}
-	for (int i=0; i<n_data; i++)
-		for (int j=0; j<n_var+1; j++)
-			data[i][j]= p.data[i][j];
-
-	// copy n_folds, validation_fold, folds_table (matrix n_datax2), points_per_fold (n_foldsx1)
-	n_folds = p.n_folds;
-	validation_fold = p.validation_fold;
-	folds_table = new int*[n_data];
-	if (folds_table==NULL)  {
-		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of folds_table failed!!" << endl;
-		exit(-1);
-	}
-	for (int i=0; i<n_data; i++) {
-		folds_table[i] = new int[2];
-		if (folds_table[i]==NULL)  {
-			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of folds_table[" << i << "]  failed!!" << endl;
-			exit(-1);
-		}
-	}
-	for (int i=0; i<n_data; i++)
-		for (int j=0; j<2; j++)
-			folds_table[i][j]= p.folds_table[i][j];
-
-	points_per_fold = new int[n_folds];
-	if (points_per_fold==NULL)  {
-		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of points_per_fold failed!!" << endl;
-		exit(-1);
-	}
-	for (int i=0; i<n_folds; i++)
-		points_per_fold[i]= p.points_per_fold[i];
-
-
-
-
-	// COPY PUBLIC MEMBERS
-
-	// data_tuning, validation and test
-	// data tuning
-	n_tuning = p.n_tuning;
-	data_tuning = new Val*[n_tuning];
-	if (data_tuning==NULL)  {
-		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_tuning failed!! Input data can't be imported" << endl;
-		exit(-1);
-	}
-	for (int i=0; i<n_tuning; i++) {
-		data_tuning[i] = new Val[n_var+1];
-		if (data_tuning[i]==NULL)  {
-			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_tuning[" << i << "]  failed!! Input data can't be imported" << endl;
-			exit(-1);
-		}
-	}
-	for (int i=0; i<n_tuning; i++)
-		for (int j=0; j<n_var+1; j++)
-			data_tuning[i][j]= p.data_tuning[i][j];
-
-	// a little statistics on tuning data corresponding output
-	sum_output = p.sum_output;
-	y_ave = p.y_ave;
-	Sy = p.Sy;
-	y_var = p.y_var;
-
-	// data validation
-	n_validation = p.n_validation;
-	data_validation = new Val*[n_validation];
-	if (data_validation==NULL)  {
-		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_validation failed!! Input data can't be imported" << endl;
-		exit(-1);
-	}
-	for (int i=0; i<n_validation; i++) {
-		data_validation[i] = new Val[n_var+1];
-		if (data_validation[i]==NULL)  {
-			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_validation[" << i << "]  failed!! Input data can't be imported" << endl;
-			exit(-1);
-		}
-	}
-	for (int i=0; i<n_validation; i++)
-			for (int j=0; j<n_var+1; j++)
-				data_validation[i][j]= p.data_validation[i][j];
-
-	// data test
-	n_test = p.n_test;
-	data_test = new Val* [n_test];
-	if (data_test==NULL)  {
-		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_test failed!! Test data can't be imported" << endl;
-		exit(-1);
-	}
-	for (int i=0; i<n_test; i++) {
-		data_test[i] = new Val[n_var+1];
-		if (data_test[i]==NULL)  {
-			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_test[" << i << "]  failed!! Input data can't be imported" << endl;
-			exit(-1);
-		}
-	}
-	for (int i=0; i<n_test; i++)
-			for (int j=0; j<n_var+1; j++)
-				data_test[i][j]= p.data_test[i][j];
-
-	// a little statistics on testing data corresponding output
-	sum_output_test = p.sum_output_test;
-	y_ave_test = p.y_ave_test;
-	Sy_test = p.Sy_test;
-
-
-	// inequality constraints on values (order 0)
-	n_inequality0 = p.n_inequality0;
-	//char* constraints0;   no need to be copied
-	data_inequality0= new Val*[n_inequality0];
-	if (data_inequality0==NULL)  {
-		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_inequality0 failed!! Input data can't be imported" << endl;
-		exit(-1);
-	}
-	for (int i=0; i<n_inequality0; i++) {
-		data_inequality0[i] = new Val[n_var+1];
-		if (data_inequality0[i]==NULL)  {
-			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_inequality0[" << i << "]  failed!! Input data can't be imported" << endl;
-			exit(-1);
-		}
-	}
-	for (int i=0; i<n_inequality0; i++)
-		for (int j=0; j<n_var+1; j++)
-			data_inequality0[i][j]= p.data_inequality0[i][j];
-
-	// inequality constraints on first derivatives (order 1)
-	n_inequality1 = p.n_inequality1;
-	//char* constraints1;   no need to be copied
-	data_inequality1= new Val*[n_inequality1];
-	if (data_inequality1==NULL)  {
-		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_inequality1 failed!! Input data can't be imported" << endl;
-		exit(-1);
-	}
-	for (int i=0; i<n_inequality1; i++) {
-		data_inequality1[i] = new Val[n_var+1];
-		if (data_inequality1[i]==NULL)  {
-			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_inequality1[" << i << "]  failed!! Input data can't be imported" << endl;
-			exit(-1);
-		}
-	}
-	for (int i=0; i<n_inequality1; i++)
-			for (int j=0; j<n_var+1; j++)
-				data_inequality1[i][j]= p.data_inequality1[i][j];
-
-	// symbol
-	int len = (p.symbol).length();
-	char* expr = new char [len+1];
-	strcpy(expr,p.symbol.c_str());      //letter used for the variables
-	symbol.assign(expr);
-	delete [] expr;
-// so far so good...
-
-
-	v_list = new Variable *[n_var]; //array of pointers to Variable
-	if (v_list == NULL) {
-		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of v_list failed. Exit." << endl;
-		exit(-1);
-	}
-
-	for (int k=0; k<n_var; k++)
-		v_list[k] = NULL;    //list of variables addresses
-
-
-
-	//Andrey's idea to avoid dynamic allocation of functions list
-	// in the future use a vector
-	for (int k=0; k<15; k++)
-			dummy_uni[k] = p.dummy_uni[k];
-	num_u_funcs = p.num_u_funcs;
-	for (int k=0; k<num_u_funcs; k++)
-		u_func_list[k] = (p.u_func_list)[k];
-
-	//Andrey's idea to avoid dynamic allocation of functions list
-	// in the future use a vector
-	for (int k=0; k<7; k++)
-		dummy_bin[k] = p.dummy_bin[k];
-	num_b_funcs = p.num_b_funcs;
-	for (int k=0; k<num_b_funcs; k++)
-			b_func_list[k] = (p.b_func_list)[k];
-
-	division = p.division;
-
-
-	variables_initialised = p.variables_initialised;
-
-	if (COMMENT) cout << "\nProblemDefinition copy constructor exit";
-	}
-}
+//// ProblemDefinition copy constructor (used for parallelisation - see firstprivate)
+//ProblemDefinition::ProblemDefinition(const ProblemDefinition& p)
+//{
+//	int COMMENT = 0;
+//
+//# pragma omp critical
+//	{
+//	// here the instructions to make a deep copy
+//	if (COMMENT) cout << "\n\ncopy constructor entered" << endl;
+//
+//	// COPY PRIVATE MEMBERS
+//	// copy n_data, n_var, n_cols, data
+//	n_data = p.n_data;			//total number of rows in data
+//	n_var = p.n_var;			// number of variables
+//	n_cols = p.n_cols;			//number of columns in data (n_var+1)
+//	data = new Val*[n_data];
+//	if (data==NULL)  {
+//		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data failed!! Input data can't be imported" << endl;
+//		exit(-1);
+//	}
+//	for (int i=0; i<n_data; i++) {
+//		data[i] = new Val[n_var+1];
+//		if (data[i]==NULL)  {
+//			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data[" << i << "]  failed!! Input data can't be imported" << endl;
+//			exit(-1);
+//		}
+//	}
+//	for (int i=0; i<n_data; i++)
+//		for (int j=0; j<n_var+1; j++)
+//			data[i][j]= p.data[i][j];
+//
+//	// copy n_folds, validation_fold, folds_table (matrix n_datax2), points_per_fold (n_foldsx1)
+//	n_folds = p.n_folds;
+//	validation_fold = p.validation_fold;
+//	folds_table = new int*[n_data];
+//	if (folds_table==NULL)  {
+//		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of folds_table failed!!" << endl;
+//		exit(-1);
+//	}
+//	for (int i=0; i<n_data; i++) {
+//		folds_table[i] = new int[2];
+//		if (folds_table[i]==NULL)  {
+//			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of folds_table[" << i << "]  failed!!" << endl;
+//			exit(-1);
+//		}
+//	}
+//	for (int i=0; i<n_data; i++)
+//		for (int j=0; j<2; j++)
+//			folds_table[i][j]= p.folds_table[i][j];
+//
+//	points_per_fold = new int[n_folds];
+//	if (points_per_fold==NULL)  {
+//		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of points_per_fold failed!!" << endl;
+//		exit(-1);
+//	}
+//	for (int i=0; i<n_folds; i++)
+//		points_per_fold[i]= p.points_per_fold[i];
+//
+//
+//
+//
+//	// COPY PUBLIC MEMBERS
+//
+//	// data_tuning, validation and test
+//	// data tuning
+//	n_tuning = p.n_tuning;
+//	data_tuning = new Val*[n_tuning];
+//	if (data_tuning==NULL)  {
+//		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_tuning failed!! Input data can't be imported" << endl;
+//		exit(-1);
+//	}
+//	for (int i=0; i<n_tuning; i++) {
+//		data_tuning[i] = new Val[n_var+1];
+//		if (data_tuning[i]==NULL)  {
+//			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_tuning[" << i << "]  failed!! Input data can't be imported" << endl;
+//			exit(-1);
+//		}
+//	}
+//	for (int i=0; i<n_tuning; i++)
+//		for (int j=0; j<n_var+1; j++)
+//			data_tuning[i][j]= p.data_tuning[i][j];
+//
+//	// a little statistics on tuning data corresponding output
+//	sum_output = p.sum_output;
+//	y_ave = p.y_ave;
+//	Sy = p.Sy;
+//	y_var = p.y_var;
+//
+//	// data validation
+//	n_validation = p.n_validation;
+//	data_validation = new Val*[n_validation];
+//	if (data_validation==NULL)  {
+//		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_validation failed!! Input data can't be imported" << endl;
+//		exit(-1);
+//	}
+//	for (int i=0; i<n_validation; i++) {
+//		data_validation[i] = new Val[n_var+1];
+//		if (data_validation[i]==NULL)  {
+//			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_validation[" << i << "]  failed!! Input data can't be imported" << endl;
+//			exit(-1);
+//		}
+//	}
+//	for (int i=0; i<n_validation; i++)
+//			for (int j=0; j<n_var+1; j++)
+//				data_validation[i][j]= p.data_validation[i][j];
+//
+//	// data test
+//	n_test = p.n_test;
+//	data_test = new Val* [n_test];
+//	if (data_test==NULL)  {
+//		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_test failed!! Test data can't be imported" << endl;
+//		exit(-1);
+//	}
+//	for (int i=0; i<n_test; i++) {
+//		data_test[i] = new Val[n_var+1];
+//		if (data_test[i]==NULL)  {
+//			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_test[" << i << "]  failed!! Input data can't be imported" << endl;
+//			exit(-1);
+//		}
+//	}
+//	for (int i=0; i<n_test; i++)
+//			for (int j=0; j<n_var+1; j++)
+//				data_test[i][j]= p.data_test[i][j];
+//
+//	// a little statistics on testing data corresponding output
+//	sum_output_test = p.sum_output_test;
+//	y_ave_test = p.y_ave_test;
+//	Sy_test = p.Sy_test;
+//
+//
+//	// inequality constraints on values (order 0)
+//	n_inequality0 = p.n_inequality0;
+//	//char* constraints0;   no need to be copied
+//	data_inequality0= new Val*[n_inequality0];
+//	if (data_inequality0==NULL)  {
+//		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_inequality0 failed!! Input data can't be imported" << endl;
+//		exit(-1);
+//	}
+//	for (int i=0; i<n_inequality0; i++) {
+//		data_inequality0[i] = new Val[n_var+1];
+//		if (data_inequality0[i]==NULL)  {
+//			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_inequality0[" << i << "]  failed!! Input data can't be imported" << endl;
+//			exit(-1);
+//		}
+//	}
+//	for (int i=0; i<n_inequality0; i++)
+//		for (int j=0; j<n_var+1; j++)
+//			data_inequality0[i][j]= p.data_inequality0[i][j];
+//
+//	// inequality constraints on first derivatives (order 1)
+//	n_inequality1 = p.n_inequality1;
+//	//char* constraints1;   no need to be copied
+//	data_inequality1= new Val*[n_inequality1];
+//	if (data_inequality1==NULL)  {
+//		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_inequality1 failed!! Input data can't be imported" << endl;
+//		exit(-1);
+//	}
+//	for (int i=0; i<n_inequality1; i++) {
+//		data_inequality1[i] = new Val[n_var+1];
+//		if (data_inequality1[i]==NULL)  {
+//			cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of data_inequality1[" << i << "]  failed!! Input data can't be imported" << endl;
+//			exit(-1);
+//		}
+//	}
+//	for (int i=0; i<n_inequality1; i++)
+//			for (int j=0; j<n_var+1; j++)
+//				data_inequality1[i][j]= p.data_inequality1[i][j];
+//
+//	// symbol
+//	int len = (p.symbol).length();
+//	char* expr = new char [len+1];
+//	strcpy(expr,p.symbol.c_str());      //letter used for the variables
+//	symbol.assign(expr);
+//	delete [] expr;
+//// so far so good...
+//
+//
+//	v_list = new Variable *[n_var]; //array of pointers to Variable
+//	if (v_list == NULL) {
+//		cerr << "\nERROR: ProblemDefinition copy constructor : dynamic allocation of v_list failed. Exit." << endl;
+//		exit(-1);
+//	}
+//
+//	for (int k=0; k<n_var; k++)
+//		v_list[k] = NULL;    //list of variables addresses
+//
+//
+//
+//	//Andrey's idea to avoid dynamic allocation of functions list
+//	// in the future use a vector
+//	for (int k=0; k<15; k++)
+//			dummy_uni[k] = p.dummy_uni[k];
+//	num_u_funcs = p.num_u_funcs;
+//	for (int k=0; k<num_u_funcs; k++)
+//		u_func_list[k] = (p.u_func_list)[k];
+//
+//	//Andrey's idea to avoid dynamic allocation of functions list
+//	// in the future use a vector
+//	for (int k=0; k<7; k++)
+//		dummy_bin[k] = p.dummy_bin[k];
+//	num_b_funcs = p.num_b_funcs;
+//	for (int k=0; k<num_b_funcs; k++)
+//			b_func_list[k] = (p.b_func_list)[k];
+//
+//	division = p.division;
+//
+//
+//	variables_initialised = p.variables_initialised;
+//
+//	if (COMMENT) cout << "\nProblemDefinition copy constructor exit";
+//	}
+//}
 
 
 // ProblemDefinition destructor
@@ -777,7 +778,7 @@ int ProblemDefinition::get_fold_from_row(int i)
 
 	if (i>n_data-1) {
 		cerr << "ProblemDefinition::get_fold_from_row(int) error : i>(n_data-1)";
-		exit;
+		exit(EXIT_FAILURE);
 	}
 
 	// return the no. of the fold the data row i belongs to
@@ -790,7 +791,7 @@ int ProblemDefinition::get_points_per_fold(int i)
 {
 	if (i>(n_folds-1)) {
 		cerr << "ProblemDefinition::get_points_per_fold(int) error : i>(n_folds-1)";
-		exit;
+		exit(EXIT_FAILURE);
 	}
 
 	return points_per_fold[i];

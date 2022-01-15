@@ -277,6 +277,8 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	}
 
 	twin = 0;
+
+	first_acf_root_tree_test=0.0;
 }
 
 

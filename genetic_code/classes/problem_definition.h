@@ -52,8 +52,8 @@ class ProblemDefinition
 
 		// constructor
 		ProblemDefinition(void);
-		// copy constructor
-		ProblemDefinition(const ProblemDefinition&);
+		// copy constructor (only for OpenMP)
+		//ProblemDefinition(const ProblemDefinition&);
 		// destructor
 		~ProblemDefinition(void);
 
