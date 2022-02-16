@@ -39,11 +39,6 @@ Population* Pop;
 
 int main ()
 {
-	/*
-	 * test Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *current_tree, Val *result_tree, bool normalised)
-	 */
-
-	cout << "\n\nTEST : Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *current_tree, Val *result_tree, bool normalised)";
 
 	int errors_no=0;
 	vector <int> failed_tests;
@@ -112,7 +107,7 @@ int main ()
 	pr.mut_rate = .4;
 	pr.comp_rate = 0;
 	pr.new_rate = 0;
-	pr.M = 4;
+	pr.M = 4;    //size
 	pr.G = 2;
 	pr.normalised=0;
 	pr.minmax=0;
@@ -132,8 +127,14 @@ int main ()
 	pr.w_pen_ord1 = 0;
 
 
+	// initialise seed
+	srand(pr.seed);
+	cout << "\n\nused seed = " << pr.seed << endl;
 	// define Population
 	Population P(&pr, &pb);
+	// show randomly generated individuals
+	P.print_population_without_parameters(0);
+
 
 	//----------------------------------------------------------------------------------------
 	// POPULATION::FITNESS_FUNC : TEST N. 1 (2D)
@@ -532,7 +533,7 @@ int main ()
 	P.fitness_func(0.0, pb.data_validation, pb.n_validation, (Node *)&T7_tree, result, 0,0);
 	cout << "\nAutocorrelation function values (n. lags = 10)" << endl;
 	for (int k=0; k<pb.delay_max; k++) {
-		cout << "delay=" << k << " " << T7_tree.r_k[k] << endl;
+		cout << "lag=" << k << " " << T7_tree.r_k[k] << endl;
 	}
 	// correct values of acf
 //	1.000000
@@ -644,24 +645,56 @@ int main ()
 	}
 
 
+	//----------------------------------------------------------------------------------------
+	// Binary_Node::find_parameters(void) : TEST N. 9 (2D)
+	//----------------------------------------------------------------------------------------
+	cout << "\nBinary_Node::find_parameters(void) : TEST N. 9 -----------------------------------";
+	cout << "\n Population size = " << P.get_size();
+	P.print_population_with_parameters(0);
+	//for (int i=0; i<P.get_size(); i++) {
+		//P.complete_trees[i] = (Binary_Node *)tree_copy(P.trees[i],NULL);
+		//P.parameters_allocation(P.complete_trees[i],&(P.complete_trees[i]));
+	//}
+	P.evaluate(1,1);
+	P.print_population_with_parameters(0);
+	// print parameters' values
+	int a=0;
+	for (int i=0; i<P.get_size(); i++) {
+		a=P.complete_trees[i]->find_parameters();
+		cout << "\n No of parameters = " << a << "   ";
+		for (int j=0; j<a; j++) {
+			cout << ((Terminal_Const *)P.complete_trees[i]->p_par[j])->value(NULL) << " ";
+		}
+	}
+	// parameters are retrieved correctly. It seems that ::evaluate() does not store n_tuning_parameters
+	cout << endl;
+
+
+
+
+
+
 
 	//----------------------------------------------------------------------------------------
-	// POPULATION::SORT : TEST N. 9 (2D)
+	// POPULATION::SORT : TEST N. 10 (2D)
 	//----------------------------------------------------------------------------------------
-	cout << "\nPOPULATION::SORT : TEST N. 9 STILL TO BE CHECKED -----------------------------------";
+	cout << "\nPOPULATION::SORT : TEST N. 10 -----------------------------------";
 	// use tree defined previously:
-	//T3 test n.3 : 2*(Z1/Z2), T7 test 7 sin(Z1)+cos(2*Z1), T4 test n.4 2*(Z1^2-Z2^3), T1 test n.1 Z1+Z2
+	// T1 test n.1 Z1+Z2, T2 test n.2 : 2*(Z1/Z2), T4 test n.4 2*(Z1^2-Z2^3), T7 test 7 sin(Z1)+cos(2*Z1)
+	// void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val average_err, Binary_Node *complete_tree, int gen, int G)
 
 	P.print_population_with_parameters(0);
 
-	Binary_Node* complete_trees[3];
-	//complete_trees[0]=&T1_tree;
-	complete_trees[0]=&T2_tree;
-	complete_trees[1]=&T4_tree;
-	complete_trees[2]=&T7_tree;
+	Binary_Node* complete_trees[4];
+	P.complete_trees[0]=&T1_tree;		//T1 test n.1 Z1+Z2
+	P.complete_trees[1]=&T2_tree;		//T2 test n.2 : 2*(Z1/Z2)
+	P.complete_trees[2]=&T4_tree;		//T4 test n.4 2*(Z1^2-Z2^3)
+	P.complete_trees[3]=&T7_tree;		//T7 test n.7 sin(Z1)+cos(2*Z1)
 
 	cout << "\nTrees : ";
 	P.print_individual((Node *)&T2_tree);
+	P.print_individual((Node *)&T4_tree);
+	P.print_individual((Node *)&T7_tree);
 
 	pb.n_validation=1;
 	data_valid = new Val*[pb.n_validation];
@@ -672,6 +705,7 @@ int main ()
 	pb.data_validation=data_valid;
 	pb.show_data_validation();
 
+	// aggregate fitness function weights
 	pr.w_complexity = 0.02;
 	pr.w_n_corrections = .1;
 	pr.w_size = 0.001;
@@ -679,39 +713,82 @@ int main ()
 	pr.w_pen_ord0 = 0;
 	//pr.n_inequality1 = 0;
 	pr.w_pen_ord1 = 0;
-
-	T2_tree.fitness=10.0;   // RMSE or PRESS
-	average_err = 15.0;
-	T2_tree.n_tuning_parameters=T2_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?
-	T2_tree.n_corrections=1;
-	size = T2_tree.count();
-
-	P.aggregate_F(&pb, &pr, average_err, &T2_tree, 6, 30);
-
-	T2_tree.show_state();
 	a1=1.0-pr.w_complexity-pr.w_n_corrections-pr.w_size-pr.w_pen_ord0-pr.w_pen_ord1;
 
-	if (T2_tree.T[1]==a1*T2_tree.fitness/average_err && T2_tree.T[2]==pr.w_complexity*T2_tree.n_tuning_parameters && T2_tree.T[3]==pr.w_n_corrections*T2_tree.n_corrections*1.0E6 && pr.w_size*T2_tree.count()==T2_tree.T[4]) {
-		cout << "\nPOPULATION::FITNESS_FUNC : Test n.9 : OK ------------------------------------------" << endl;
-		passed_tests.push_back(9);
+
+	// individual T1
+	T1_tree.fitness=5.0;   // randomly chosen RMSE
+	average_err = 2.0;
+	T1_tree.n_tuning_parameters=T1_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?
+	T1_tree.n_corrections=0;
+	size = T1_tree.count();
+	P.aggregate_F(&pb, &pr, average_err, &T1_tree, 6, 30);  // last two integers are current generation gen and total generations G
+	T1_tree.show_state();
+
+	// individual T2
+	T2_tree.fitness=1.0;   // randomly chosen RMSE
+	average_err = 1.0;
+	T2_tree.n_tuning_parameters=T2_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?
+	T2_tree.n_corrections=0;
+	size = T2_tree.count();
+	P.aggregate_F(&pb, &pr, average_err, &T2_tree, 6, 30);  // last two integers are current generation gen and total generations G
+	T2_tree.show_state();
+
+	// individual T4
+	T4_tree.fitness=100.0;   // randomly chosen RMSE
+	average_err = 150.0;
+	T4_tree.n_tuning_parameters=T4_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?
+	T4_tree.n_corrections=0;
+	size = T4_tree.count();
+	P.aggregate_F(&pb, &pr, average_err, &T4_tree, 6, 30); // last two integers are current generation gen and total generations G
+	T4_tree.show_state();
+
+	// individual T7
+	T7_tree.fitness=10.0;   // randomly chosen RMSE
+	average_err = 15.0;
+	T7_tree.n_tuning_parameters=T7_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?7
+	T7_tree.n_corrections=0;
+	size = T7_tree.count();
+	P.aggregate_F(&pb, &pr, average_err, &T7_tree, 6, 30); // last two integers are current generation gen and total generations G
+	T7_tree.show_state();
+
+
+	// sort according to F (aggregate fitness F, not RMSE!) : VITAL! Both populations must be sorted, trees[] and complete_trees[]
+	cout << "\nSorting population using Population::sort ...";
+	P.sort(0,tree_comp_F);  // 0 is the generation, just dummy value
+
+	// check if sorting is ok
+	cout << "\nP.complete_trees[0]->F=" << P.complete_trees[0]->F;
+	cout << "\nP.complete_trees[1]->F=" << P.complete_trees[1]->F;
+	cout << "\nP.complete_trees[2]->F=" << P.complete_trees[2]->F;
+	cout << "\nP.complete_trees[3]->F=" << P.complete_trees[3]->F;
+
+	// check sorted order
+	if ((P.complete_trees[0]->F<=P.complete_trees[1]->F) && (P.complete_trees[1]->F<=P.complete_trees[2]->F) && (P.complete_trees[2]->F<=P.complete_trees[3]->F)) {
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.10 : OK ------------------------------------------" << endl;
+		passed_tests.push_back(10);
 	} else {
-		cout << "\nPOPULATION::FITNESS_FUNC : Test n.9 : ERROR !!!! -----------------------------------" << endl;
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.10 : ERROR !!!! -----------------------------------" << endl;
 		errors_no++;
-		failed_tests.push_back(9);
+		failed_tests.push_back(10);
 	}
 
 
 
 
- ////////////////////////////////////////////////////////////////////////////////////////////
+ ///////  TEST RESULTS //////////////////////////////////////////////////////////////////////////
 
 	cout << "\nPassed tests:" << endl;
 	for (int i=0; i<passed_tests.size(); i++) cout << passed_tests[i] << " ";
 	cout << endl;
 	cout << "\n\nTotal number of errors : " << errors_no << endl;
 	cout << "Failed tests:" << endl;
-	for (int i=0; i<failed_tests.size(); i++) cout << failed_tests[i] << " ";
-	cout << endl;
+	if (failed_tests.empty())
+		cout << "All tests passed.\n" << endl;
+	else {
+		for (int i=0; i<failed_tests.size(); i++) cout << failed_tests[i] << " ";
+		cout << endl;
+	}
 }
 
 #include "../genetic_code/tree_functions/vector_derivative_functions.cpp"

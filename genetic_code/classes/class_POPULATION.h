@@ -85,7 +85,7 @@ class Population {
 	// function to evaluate the depth of a node in a tree
 	int evaluate_root_distance(Node *p_node);
 
-	//function to allocate parameters (constants) to single individual
+	//function to insert parameters (constants) into a single individual
 	void parameters_allocation(Binary_Node*,  Binary_Node**);
 	
 	// functions that implement selection methods

@@ -543,7 +543,7 @@ int Binary_Node::find_parameters(void)
 		}
 	}
 
-
+	n_tuning_parameters=n_const;
 	return n_const;    //returns the number of constant in p_par
 }
 

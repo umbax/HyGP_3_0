@@ -18,8 +18,8 @@
 #define NODES_TYPES_H_
 
 // for the numbering, see Node *Population::new_node (Node *n)
-#define NODE_UNARY 1
 #define NODE_BINARY 0
+#define NODE_UNARY 1
 #define NODE_VAR 2
 #define NODE_CONST 3
 
