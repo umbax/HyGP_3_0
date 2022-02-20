@@ -1228,7 +1228,7 @@ void Population::print_population_without_parameters(int gen)
 void Population::print_population_with_parameters(int gen)
 {
 	// if COMMENT=1 prints all trees, if COMMENT=0 prints only the best tree (lowest F)
-	int COMMENT =1;
+	int COMMENT =0;
 
 	cout << "\nPopulation::print_population_with_parameters()" << endl;
 
@@ -2424,8 +2424,9 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	if (COMMENT) cout << "Max value on building data set  = " << result_tree[7] << endl;
 	//--------------------------------------------------------------------------------------------------
 
-	// AUTOCORRELATION r_k (only for 1D case) - 10/1/21 UNDER DEVELOPMENT: Is there a way to make it more efficient? So far 3 n_cases cycles are needed to complete the calculations...
-	if (parameters->nvar==1) {
+	// AUTOCORRELATION r_k : only for 1D case and autocorrelation objective activated
+	// 18/2/22 UNDER DEVELOPMENT: make it more efficient? So far 2x n_cases cycles are needed to complete the calculations...
+	if ((parameters->nvar==1) && (parameters->w_ACF>0.0)) {
 		// first compute SStot_tree = sum((y_tree- average(y_tree))^2) (https://en.wikipedia.org/wiki/Coefficient_of_determination)
 		// good! Direct formula for SStot:
 		SStot_tree = sum_square_values-sum_values*sum_values/(Val)n_cases;
@@ -2454,8 +2455,8 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 			}
 
 		} // end delay cycle
-	} // end if parameters->nvar==1
-	//*
+	} // end AUTOCORRELATION CALCULATION
+
 
 	// just to check autocorrelation function values
 //	cout << "\nPopulation::fitness_func : Computed autocorrelation function:" << endl;
