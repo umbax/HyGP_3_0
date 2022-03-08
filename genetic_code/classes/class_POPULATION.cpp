@@ -1241,31 +1241,17 @@ void Population::print_population_with_parameters(int gen)
 		k++;
 	}
 
-
-
-	char *expr;	
 	cout <<"\n\n --------------------  GENERATION " << gen << " with parameters -------------------" << endl; 
 	cout << " n F RMSE R2 n_nodes depth expr" << endl;
 	//for (int j=0;j<(int)(floor(parameters->repr_rate*parameters->M));j++) {  // to print the first repr_rate*size trees
 
 	for (int j=0;j<size; j++) {  // to print all the trees in the population
 
-		// for test purposes
-		expr = print(j,complete_trees);
-		cout << j << "  " << scientific << complete_trees[j]->F;
-		cout << " " << complete_trees[j]->fitness;
-		cout << "  " << complete_trees[j]->R2;
-		cout << "  " << complete_trees[j]->count();
-		cout << "  " << complete_trees[j]->calc_depth() << "  " << expr << endl; // to show just the expression
-		//for (int k=1;k<12;k++) cout << complete_trees[j]->Fc[k] << " ";
-		cout << endl;
-
 		// usual approach to print trees' features
-		cout << "\n\nComplete tree n. " << j;
+		cout << "\nComplete tree n. " << j;
 		complete_trees[j]->show_state(); // to show all the data referring to the trees
 
-		// free memory used for single expression
-		delete [] expr;
+		cout << endl;
 
 		//prints only the best complete individual if COMMENT=0
 		if (!COMMENT) break; 
@@ -2876,7 +2862,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		// fitness value (RMSE)
 		F[1] = exp(10.0*complete_tree->fitness/fabs(ppd->y_max-ppd->y_min)); //20/2/21 try exp(complete_tree->fitness/average_err);
 		// number of tuning parameters squared
-		F[2] = 0.0001*(complete_tree->n_tuning_parameters);
+		F[2] = (complete_tree->n_tuning_parameters);  //0.0001*
 		// F[2] = pow((double)(complete_tree->n_tuning_parameters), 2.0); // 12/12/21 currently in use, but very large
 		// No of corrections performed by protected operations
 		F[3] = (double)(complete_tree->n_corrections)*1.0E6;
@@ -2889,7 +2875,9 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F[6] = 0.0;     //(complete_tree->pen_ord1)/(pen_ord1_ave+.001);
 		F[7] = 0.0;
 		// statistical properties of the tree (mean and variance)
-		F[8] = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1.0)) + fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max); //+pow(fabs(ppd->y_ave-complete_tree->tree_mean)/fabs(ppd->y_max-ppd->y_min),3)
+		//F[8] = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1.0)) + exp(10.0*fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max));
+		F[8] = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1.0)) + exp(10.0*fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max))+ exp(10.0*fabs(ppd->y_min-complete_tree->tree_min)/fabs(ppd->y_min));
+
 		// presence of high level polynomials that cause divergent behaviour
 		F[9] = 0.0;
 		// difference in point at which ACF halves
@@ -2902,7 +2890,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	// STRATEGY 14 - RMSE is not used as objective
 	if ((pr->strat_statp)==14) {
 		// fitness value (RMSE)
-		F[1] = 0.0;  // the aim of stratehy 14 is to evolve a model with the same statistical properties of the original signal, not local accuracy is not a priority
+		F[1] = 0.0;  // the aim of strategy 14 is to evolve a model with the same statistical properties of the original signal, not local accuracy is not a priority
 		// number of tuning parameters
 		F[2] = pow((double)(complete_tree->n_tuning_parameters), 2.0);
 		//No of corrections performed by protected operations
@@ -2915,8 +2903,10 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F[6] = (complete_tree->pen_ord1)/(pen_ord1_ave+.001);
 		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
 		F[7] = 0.0;
-		// statistical properties of the tree (mean and variance)
-		F[8] = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1)) + fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max); //+pow(fabs(ppd->y_ave-complete_tree->tree_mean)/fabs(ppd->y_max-ppd->y_min),3)
+		// statistical properties of the tree (mean and variance). 20/2/22 added exp(10.0* to "max" objective
+		F[8] = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1)) + exp(10.0*fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max)); //+pow(fabs(ppd->y_ave-complete_tree->tree_mean)/fabs(ppd->y_max-ppd->y_min),3)
+		//F[8] = fabs(ppd->y_max-complete_tree->tree_max)/fabs(ppd->y_max); //+pow(fabs(ppd->y_ave-complete_tree->tree_mean)/fabs(ppd->y_max-ppd->y_min),3)
+
 		// presence of high level polynomials that cause divergent behaviour
 		F[9] = 0.0;
 		// difference in point at which ACF halves

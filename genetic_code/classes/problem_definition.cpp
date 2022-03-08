@@ -51,7 +51,9 @@ ProblemDefinition::ProblemDefinition(void)
 	Sy = 0.0;			// SStot total sum of squares of (observed data - average observed data) // defined in read_input_file function (read_file_new.cpp)
 	y_var = 0.0;		// variance of target data
 	y_max = 0.0;			// max value of target
+	index_max=-1;
 	y_min = 0.0;			// min value of target
+	index_min=-1;
 	first_acf_root_input = 0.0; // closest root to 0 of autocorrelation function of input data - only for n_var=1
 	tot_variation_input = 0.0; // total variation
 
@@ -466,7 +468,9 @@ void ProblemDefinition::compute_inputdata_stats(void)
 	Val y_ave_temp = .0;
 	Val a=data[0][n_var];
 	Val a_max=data[0][n_var];
+	int k_max=0;
 	Val a_min=data[0][n_var];
+	int k_min=0;
 	sum_output=.0;
 	for (int k=0; k < n_data; k++) {
 		a=data[k][n_var];
@@ -475,8 +479,14 @@ void ProblemDefinition::compute_inputdata_stats(void)
 		// sum of the target values
 		y_ave_temp = y_ave_temp + a;
 		// min and max
-		if (a>=a_max) a_max=a;
-		if (a<=a_min) a_min=a;
+		if (a>=a_max) {
+			a_max=a;
+			k_max=k;
+		}
+		if (a<=a_min) {
+			a_min=a;
+			k_min=k;
+		}
 		// total variation
 		if (n_var==1) {
 			if (k>0) tot_variation_input=tot_variation_input+fabs(data[k][n_var]-data[k-1][n_var]);
@@ -486,8 +496,10 @@ void ProblemDefinition::compute_inputdata_stats(void)
 	y_ave = y_ave_temp/(double)(n_data);
 	// min target value
 	y_min=a_min;
+	index_max=k_max;
 	// max target value
 	y_max=a_max;
+	index_min=k_min;
 
 	// Sy=sum((output- average_output)^2)=(n-1)*output variance on the whole dataset
 	// variance y_var
@@ -504,8 +516,10 @@ void ProblemDefinition::compute_inputdata_stats(void)
 		}
 		cout << "delay_max = " << delay_max << endl;
 		cout << "k	r_k" << endl;
+
 		int first_acf_root_input_found=0;
 		for (int delay=0; delay<delay_max; delay++) {
+			//cout << "\ndelay=" << delay;
 			for (int k=0; k < n_data-delay; k++) {
 				r_k[delay] = r_k[delay] + (data[k][n_var]-y_ave)*(data[k+delay][n_var]-y_ave);
 				//cout << k << "  c_k[" << delay << "] = " << c_k[delay] << endl;
@@ -520,9 +534,11 @@ void ProblemDefinition::compute_inputdata_stats(void)
 					first_acf_root_input=data[delay][0];  //mind! Only for n_var=1!
 					first_acf_root_input_found=1;
 				} else {
-					if ( (r_k[delay-1]-0.5>0) && (r_k[delay]-0.5<0) ) {
-						first_acf_root_input=(data[delay-1][0]+data[delay][0])/2.0; //mind! Only for n_var=1!
-						first_acf_root_input_found=1;
+					if (delay>0) {
+						if ( (r_k[delay-1]-0.5>0) && (r_k[delay]-0.5<0) ) {
+							first_acf_root_input=(data[delay-1][0]+data[delay][0])/2.0; //mind! Only for n_var=1 and delay>0!
+							first_acf_root_input_found=1;
+						}
 					}
 				}
 			}

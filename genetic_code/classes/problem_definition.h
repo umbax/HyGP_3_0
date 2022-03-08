@@ -64,7 +64,9 @@ class ProblemDefinition
 		Val Sy;  		// SStot total sum of squares of (observed data - average observed data) // defined in read_input_file function (read_file_new.cpp)
 		Val y_var; 		// variance of input data
 		Val y_max;		// max value of target
+		int index_max;	// index of data row which stores the maximum value of target
 		Val y_min;		// min value of target
+		int index_min;	// index of data row which stores the minimum value of target
 		int delay_max;	// max delay for calculation of autocorrelation values (initialised in compute_inputdata_stats()) - only for n_var=1
 		Val* r_k; 	//array storing autocorrelation values (initialised in compute_inputdata_stats()) - only for n_var=1
 		Val first_acf_root_input;  // closest root to 0 of autocorrelation function of input data - only for n_var=1
