@@ -250,8 +250,10 @@ Binary_Node::Binary_Node(Node *parent_node, Binary_Func *func)
 	tree_variance = 0.0;
 	tree_variance_test = 0.0;
 	tree_min=0.0;
+	tree_at_trgt_min=0.0;
 	tree_min_test=0.0;
 	tree_max=0.0;
+	tree_at_trgt_max=0.0;
 	tree_max_test=0.0;
 	r_k = NULL;		// autocorrelation array
 	r_k_size =0;
@@ -638,6 +640,8 @@ void Binary_Node::show_state(void)
 	cout << setw(27) <<  "11 : Tree total variation : " << scientific << tot_variation_tree;
 	cout << setw(6) << "  T11 = " << scientific << setw(12) << T[11];
 	cout << " % = " << fixed << setw(12) << 100.0*T[11]/F << endl;
+
+	delete [] expr;
 
 }
 

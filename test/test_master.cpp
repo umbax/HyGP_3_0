@@ -776,6 +776,108 @@ int main ()
 
 
 
+	//----------------------------------------------------------------------------------------
+	// POPULATION::SORT : TEST N. 11 (2D)
+	//----------------------------------------------------------------------------------------
+	cout << "\nProblemDefinition::compute_inputdata_stats() : TEST N. 11 -----------------------------------";
+
+	rows=5;
+	cols=2;
+	pb.set_n_data(rows);
+	pb.set_n_var(cols-1);
+	pb.set_n_cols(cols);
+	Val** D = new Val*[pb.get_n_data()];
+	for (int k=0; k<pb.get_n_data(); k++) D[k]=new Val[pb.get_n_var()+1];
+	D[0][0] = 0.0;
+	D[0][1] = 10.0;
+	D[1][0] = 1.0;
+	D[1][1] = 30.0;
+	D[2][0] = 2.0;
+	D[2][1] = 700.0;
+	D[3][0] = 3.0;
+	D[3][1] = 50.0;
+	D[4][0] = 4.0;
+	D[4][1] = 20.0;
+	pb.set_data(D);
+
+	pb.data_test=D;
+	pb.n_test=rows;
+	pb.compute_inputdata_stats();
+	pb.show_data();
+
+	// min target value
+	cout << "\n y_min= " << pb.y_min << " index_min= " << pb.index_min;
+	// max target value
+	cout << "\n y_max= " << pb.y_max << " index_max= " << pb.index_max;
+
+	if ((pb.y_min==10) && (pb.index_min==0) && (pb.y_max==700) && (pb.index_max==2)) {
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.11 : OK ------------------------------------------" << endl;
+		passed_tests.push_back(11);
+	} else {
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.11 : ERROR !!!! -----------------------------------" << endl;
+		errors_no++;
+		failed_tests.push_back(11);
+	}
+
+
+	//----------------------------------------------------------------------------------------
+	// POPULATION::FITNESS_FUNC : TEST N. 12
+	//----------------------------------------------------------------------------------------
+	cout << "\nPOPULATION::FITNESS_FUNC : TEST N. 12 -----------------------------------";
+	// use tree defined previously:
+	// T1 test n.1 Z1+Z2, T2 test n.2 : 2*(Z1/Z2), T4 test n.4 2*(Z1^2-Z2^3), T7 test 7 sin(Z1)+cos(2*Z1)
+	// void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val average_err, Binary_Node *complete_tree, int gen, int G)
+
+
+	P.complete_trees[3]=&T7_tree;		//T7 test n.7 sin(Z1)+cos(2*Z1)
+	cout << "\nTree : ";
+	P.print_individual((Node *)&T7_tree);
+
+	rows=5;
+	cols=2;
+	pb.set_n_data(rows);
+	pb.set_n_var(cols-1);
+	pb.set_n_cols(cols);
+	//Val** D = new Val*[pb.get_n_data()];
+	//for (int k=0; k<pb.get_n_data(); k++) D[k]=new Val[pb.get_n_var()+1];
+	D[0][0] = 0.0;
+	D[0][1] = 10.0;
+	D[1][0] = 1.0;
+	D[1][1] = 30.0;
+	D[2][0] = 2.0;
+	D[2][1] = 700.0;
+	D[3][0] = 3.0;
+	D[3][1] = 50.0;
+	D[4][0] = 4.0;
+	D[4][1] = 20.0;
+	pb.set_data(D);
+
+	pb.data_test=D;
+	pb.n_test=rows;
+	pb.compute_inputdata_stats();
+	pb.show_data();
+
+	P.fitness_func(0.0, D, 5, (Node *)&T7_tree, result, 0,0);
+
+	// check min and max of tree
+	cout << "\n T7_tree.tree_min= " << T7_tree.tree_min;
+	cout << "\n T7_tree.index_min= " << T7_tree.index_min;
+	cout << "\n T7_tree.tree_max= " << T7_tree.tree_max;
+	cout << "\n T7_tree.index_max= " << T7_tree.index_max;
+	// tree value at target min and max
+	cout << "\n T7_tree.tree_at_trgt_min= " << T7_tree.tree_at_trgt_min;
+	cout << "\n T7_tree.tree_at_trgt_max= " << T7_tree.tree_at_trgt_max;
+
+
+	if ((fabs(T7_tree.tree_min+0.902303)<10E-7) && (T7_tree.index_min==4) && (fabs(T7_tree.tree_max-1.101290)<10E-7) && (T7_tree.index_max==3) && (fabs(T7_tree.tree_at_trgt_min-1.0)<10E-7) && (fabs(T7_tree.tree_at_trgt_max-0.255654)<10E-7)) {
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.12 : OK ------------------------------------------" << endl;
+		passed_tests.push_back(12);
+	} else {
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.12 : ERROR !!!! -----------------------------------" << endl;
+		errors_no++;
+		failed_tests.push_back(12);
+	}
+
  ///////  TEST RESULTS //////////////////////////////////////////////////////////////////////////
 
 	cout << "\nPassed tests:" << endl;

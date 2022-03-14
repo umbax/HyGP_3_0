@@ -130,8 +130,12 @@ class Binary_Node : public Node {
 	double tree_variance;	// variance of the values returned by the complete tree on the building data set
 	double tree_variance_test;	// variance of the values returned by the complete tree on the test data set
 	double tree_min;		// minimum value returned by tree on building data set
+	double index_min;		// index of the building data set at which minimum value of the tree occurs ([0, ncases-1])
+	double tree_at_trgt_min; 	// tree value at the index at which target function is min
+	double tree_at_trgt_max; 	// tree value at the index at which target function is max
 	double tree_min_test;		// minimum value returned by tree on test data set
 	double tree_max;		// maximum value returned by tree on building data set
+	double index_max;		// index of the building data set at which minimum value of the tree occurs ([0, ncases-1])
 	double tree_max_test;		// maximum value returned by tree on test data set
 	Val* r_k; 			//array storing autocorrelation values on building data set (only if nvar=1)
 	int r_k_size; 		// size of r_k array (number of lags + initial value (1))
