@@ -17,7 +17,7 @@ size_title = 12;
 size_labels = 12;
 LIM_VAL = 1000000000; %100.0; for test cases in ASMO-UK paper  %RMSE threshold between good and bad individual
 
-% analysis on train data or test data?
+% define "file_data" : train data or test data?
 % train data
 if strcmp(dataset,'train')
     file_data = 'archives_best.txt';
@@ -41,6 +41,7 @@ max_n_runs = max(N_runs)
 % initialise the matrix that will contain the best individual's fitness 
 % per each run (n columns = n experiments, each column is an experiment)
 RMSE = zeros(max_n_runs, n_experiments);
+VAR = zeros(max_n_runs, n_experiments); %2ND OBJECTIVE
 
 experiment_list
 % renaming of experiments: do not use it in normal conditions ------------
@@ -60,26 +61,30 @@ first_path = 'D:\relocated_users\relocated_umba\Documents\OneDrive - University 
 [file,path] = uigetfile('.txt',['Select the file with the ' mark ' set'], first_path);
 
 % read training data set (input file)
-[PAR_value, R, CONSTR0, CONSTR1]=read_INPUT_FILE(path); 
-NVAR = int16(PAR_value(2));
-NCASES = int16(PAR_value(7));
+if strcmp(dataset,'train')
+    [NVAR, NCASES, PAR_value, R, CONSTR0, CONSTR1]=read_INPUT_FILE(path); 
+end 
+% read test data set
+if strcmp(dataset,'test')
+    [NVAR, NCASES, R, found_test]=read_TEST_FILE(path); %, NVAR); NVAR is the additional input to check that dimensionality is the same. In the future load both train and test data sets!
+end
 
-% read test data set (not active yet)
-
-N = cast(NCASES,'double');  % used?
 % compute Sy
 disp('Data matrix first line: ') 
 R(1, :)
-ave = ones(NCASES,1)*mean(R(:,NVAR+1));
-Sy = sum((R(:,NVAR+1)-ave(:)).^2)
+size(R)
+ave = ones(NCASES,1)*mean(R(:,NVAR+1));  %column vector of NCASES entries all equal to mean target value
+Sy = sum((R(:,NVAR+1)-ave(:)).^2); % sum of squared deviations from mean value
 %--------------------------------------------------------------------------
 
 
 
 % --------------------------
-% RMSE boxplots
+% load data
 % --------------------------
 size(RMSE)
+R2 = zeros(max_n_runs, n_experiments);
+% read "archives_best ..." for all the experiments
 for k=1:n_experiments
     % define the file 
     file = [directory_list{k} sep file_data]; 
@@ -92,14 +97,26 @@ for k=1:n_experiments
     end
     % load the data (rows = generations, columns = runs)
     file
-    %fid = fopen(file,'r'); 
-    RMSEsingle = textread(file,'%*d %*s %f %*f %*d %*[^\n]',-1,'bufsize', 50000, 'commentstyle','shell','endofline','\n')
-    %C = textscan(fid,'%d %d %*[^\n]',1,'commentstyle','#');
-    %fclose(fid);
+    % read RMSE values (3rd entry) of the best individuals of the ecperiment (one per run, collected in "archives_best ...")
+    % Structure of training data set: # 1-Gen 2-F 3-Fitness(RMSE) 4-Corrections 5-R2 6-Mean 7-Var 8-Min 9-Max 10-First_ACF_root 11-Tot_variation Expression
+    % Structure of the test data set: ?
+    [RMSEsingle, r2single, VARsingle]=textread(file,'%*d %*f %f %*d %f %*f %f %*[^\n]',-1,'bufsize', 50000, 'commentstyle','shell','endofline','\n')
     % initialize the RMSE matrix only the first time
     RMSEsingle
+    Dsize=max_n_runs-size(RMSEsingle,1)
+    % if missing entries, pad with clearly not consistent values
+    if (Dsize)
+        RMSEsingle=[RMSEsingle; -1.0*ones(Dsize,1)];
+        VARsingle=[VARsingle; -1.0*ones(Dsize,1)];
+        r2single=[r2single; -1.0*ones(Dsize,1)];
+    end
     RMSE(1:N_runs(k),k) = RMSEsingle;
+    VAR(1:N_runs(k),k) = VARsingle;
+    R2(1:N_runs(k),k) = r2single;
     RMSE(N_runs(k)+1:max_n_runs,k) = nan; 
+    VAR(N_runs(k)+1:max_n_runs,k) = nan; 
+    R2(N_runs(k)+1:max_n_runs,k) = nan; 
+
 end
 
 if (found==0)
@@ -108,6 +125,9 @@ if (found==0)
 end
 
 
+% --------------------------
+% RMSE boxplots
+% --------------------------
 RMSEgood=substitute_larger(RMSE,LIM_VAL)
 % plot the distribution of the individuals of the archive of each run
 % IMPORTANT! Boxplot does not consider NaN values. It neglects them. 
@@ -128,17 +148,7 @@ fig_handles = [fig_handles h];
 % ---------------------
 % R2 boxplots
 % ---------------------
-R2 = zeros(max_n_runs, n_experiments);
-for k=1:n_experiments
-    % define the file 
-    file = [directory_list{k} '/' file_data]; 
-    % read R2
-    [r2single] = textread(file,'%*d %*s %*f %f %*d %*[^\n]',-1,'bufsize', 50000,'commentstyle','shell','endofline','\n');
-    % load read R2 in DATA(row = run, column = experiment)
-    R2(1:N_runs(k),k) = r2single;
-    R2(N_runs(k)+1:max_n_runs,k) = nan; 
-end
-MIN_R2= 1-(N*LIM_VAL^2)/Sy
+MIN_R2= 1-(cast(NCASES,'double')*LIM_VAL^2)/Sy;  % useful only for correctly sizing boxplots
 R2good=substitute_smaller(R2,MIN_R2)
 % plot the distribution of the individuals of the archive of each run
 % IMPORTANT! Boxplot does not consider NaN values. It neglects them. 
@@ -171,6 +181,30 @@ best
 %experiment_list(best_exp)
 %------------------------------------------------------------
 
+%----------------------------------------------------
+% plot PARETO fronts with 2 objectives: RMSE and VAR
+%------------------------------------------------------
+markers={'o', 's', 'd', '^', 'v', '>', '<', 'p'};
+marker_used=0;
+figure;
+set(gca, 'FontSize', size_labels) % to change size of the labels' font
+hold on
+legend_entries=[""];
+for k=1:n_experiments
+    marker_used=marker_used+1;
+    for j=1:max_n_runs
+        plot(RMSE(j,k),VAR(j,k), 'Marker', markers(marker_used))
+        str=strcat(' R', num2str(j));     % both experiment and run: strcat(experiment_list(k), ' R', num2str(j));
+        text(RMSE(j,k),VAR(j,k),str, 'Interpreter', 'none')
+        legend_entries=[legend_entries string(experiment_list(k))]
+    end
+end
+
+hold off
+xlabel('RMSE');
+ylabel('Var');
+legend(legend_entries,'Interpreter', 'none');
+title({['Pareto front for RMSE vs Variance on ' mark];'Distribution of best individuals (one per run)'}, 'FontSize',size_title);
 
 
 
