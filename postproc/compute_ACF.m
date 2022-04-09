@@ -9,6 +9,7 @@ function [ta, first_acf_root]=compute_ACF(y,p)
     % ta - px1 vector containing autocorrelations
     % first_acf_root - lag at which ACF reaches 0.5
     
+    disp('start compute_ACF:')
     % value series
     [n1, n2] = size(y);
     if (n2~=1)
@@ -33,7 +34,7 @@ function [ta, first_acf_root]=compute_ACF(y,p)
     % 19/11/21 search for first point at which ACF halves -------------- no longer first root of autocorrelation function (the one closest to 0)
 	% if r_k[delay-1] r_k[delay]>0 are both positive or negative do nothing: r_k[delay-1]*r_k[delay]>0
 	ACF_first_root_found=0;
-    first_acf_root=double(-1.0);  % must be double!
+    first_acf_root=double(-1);  % must be double!
     %data_used   % data_used(...,0) is the independent variable
     max_lag=p;
     for lag = 1:max_lag
@@ -56,7 +57,7 @@ function [ta, first_acf_root]=compute_ACF(y,p)
     % returned first_acf_root is the first point at which ACF reaches 0.5
     % mind that is still expressed as lag, so not a point of the 
     % original independent space
-
+    disp('end compute_ACF:')
 end
 
 

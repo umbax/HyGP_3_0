@@ -18,6 +18,8 @@
 %%% it also plots the actual vs estimated response on the given data set
 
 function [tree_output, objectives]=plot_act_vs_est(NFITCASES, NVAR, R, tree_string, experiment, run, cur_gen, dataset_type)
+    
+    disp('start plot_act_vs_est:')
     %-----------------------------------------------
     % data analysis on given data set R (may be building or test data set)
     %-----------------------------------------------
@@ -151,7 +153,7 @@ function [tree_output, objectives]=plot_act_vs_est(NFITCASES, NVAR, R, tree_stri
     end
     
    
-
+disp('end plot_act_vs_est:')
 return
 end
 
