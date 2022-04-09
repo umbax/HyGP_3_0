@@ -59,7 +59,7 @@ Binary_Func Mult = {mult, mult_sign};
 Val sdiv(Val a, Val b, int* n_corrections)
 {
     // if b is zero or abs(b)<MIN_VAL, add a correction (update counter) - protected approach
-    if ((b==(Val)0.) || (fabs(b)<MIN_VAL)) {
+    if (fabs(b)<MIN_VAL) {   // see Val_type.h for the value of MIN_VAL - 6/1/22 originally there was also (b==(Val)0.) ||
 		// check that n_corrections is a valid address...
 		if (n_corrections)
 			*n_corrections = *n_corrections+1;
@@ -213,7 +213,7 @@ Unary_Func Cos = {cosine, cos_sign_pre, cos_sign_post, &cos_pos};
 Val inverse(Val a, int* n_corrections)
 {
 	 // if abs(a)< MIN_VAL = 1.8e-19, add a correction (update counter)
-    if ((a==(Val)0.) || (abs(a)<MIN_VAL)) {
+    if ((abs(a)<MIN_VAL)) {  // originally there was also a==(Val)0.) ||
 		// check that n_corrections is a valid address...
 		if (n_corrections)
 			*n_corrections = *n_corrections+1;

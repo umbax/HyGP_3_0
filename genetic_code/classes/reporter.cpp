@@ -247,17 +247,17 @@ void Reporter::update_best2file_build(Population *P, string DIR_OUTPUT, int gi, 
 	if (gi==0) {	
 		// open file for writing, truncating
 		fout.open(expr1, ios_base::out | ios_base::trunc);
-		fout << "# Gen" <<" F" << " Fitness(RMSE)" << " Corrections" << " R2(adim.)" << " Mean" << " Var" << " Min" << " Max" << " First_ACF" << " Tot_variation";
+		fout << "# Gen" <<" F" << " Fitness(RMSE)" << " Corrections" << " R2(adim.)" << " Mean" << " Var" << " Min" << " Max" << " First_ACF" << " Tot_variation" << " Maxabserror";
 		fout <<  " Expression"  << endl;
 	} else {
 		// open file for writing, appending
 		fout.open(expr1, ios_base::out | ios_base::app);
 	}
 
-	// fetch the expression of the best individual
+	// fetch the expression of the best individual (minimum F)
 	expr = P->print(0, P->complete_trees);  //0 is the position in the array "complete_trees" of the individual with minimum F, not RMSE or R2!
 	
-	// print state variables and expression of the best individual
+	// print state variables and expression of the best individual (all these features refer to tree evaluated on building data set)
 	fout << gi << " ";  // generation
 	fout << scientific << P->complete_trees[0]->F;  // aggregate fitness F
 	fout << " " << scientific << P->complete_trees[0]->fitness; // RMSE
@@ -269,6 +269,7 @@ void Reporter::update_best2file_build(Population *P, string DIR_OUTPUT, int gi, 
 	fout << " " << scientific << P->complete_trees[0]->tree_max; // max
 	fout << " " << scientific << P->complete_trees[0]->first_acf_root_tree; // first ACF root
 	fout << " " << scientific << P->complete_trees[0]->tot_variation_tree; // total variation
+	fout << " " << scientific << P->complete_trees[0]->maxabserror; // max absolute error on building data set
 	fout << "  \"" << expr << "\"" << endl;  
 
 	// free memory
@@ -292,45 +293,46 @@ void Reporter::best2file_test(Population *P, string DIR_OUTPUT, int gi)
 	s =  DIR_OUTPUT+r+file;
 	expr1 = s.c_str();
 
-	// find the best individual on the test data set
-	double f_max = 999999.0e+10; // too low? See MAX_VAL
+	// find the best individual as per RMSE on the test data set (it might not be the one in position 0...//expr = P->print(0, P->complete_trees);  //0 is the position in the array "complete_trees" of the individual with minimum F, not fitness!
+	double fitness_test_max = 999999.0e+10; // too low? See MAX_VAL
 	int i_best_test = -1;
 	int i;
 	// there must be at least one individual in the archive
-	f_max=P->complete_trees[0]->fitness_test;   // ATTENTION: with fitness is meant "error" (RMSE or PRESS), different from F
+	fitness_test_max=P->complete_trees[0]->fitness_test;   // ATTENTION: fitness is RMSE error (or PRESS), different from F
 	i_best_test=0;
 	// check if there is another individual in the archive that is better than the first one
-	for (i=0; i<repr_tot-1; i++) {
-		if (P->complete_trees[i]->fitness_test <= f_max) { // && (P->complete_trees[i]->n_corrections_test==0)) {
+	for (i=1; i<repr_tot; i++) {
+		if (P->complete_trees[i]->fitness_test < fitness_test_max) { // && (P->complete_trees[i]->n_corrections_test==0)) {
 			i_best_test = i;
-			f_max = P->complete_trees[i]->fitness_test;
+			fitness_test_max = P->complete_trees[i]->fitness_test;
 		}
 	}
-	// safety check on value of i_best_test not to leave best_gp_TEST empty?
-
-
-	ofstream fout;
 
 	// open file for writing, truncating
+	ofstream fout;
 	fout.open(expr1, ios_base::out | ios_base::trunc);
 	// follow the same data pattern used to report results on the tuning/building data set
-	// # gen  F    RMSE   R2(adim)  Hits  Expr
-	fout << "# " <<  "Final gen " << "F " << "RMSE " << "R2(adim.) " << "Hits " << "Expression " << endl;
-
-
-	// fetch the expression of the best individual
-	//expr = P->print(0, P->complete_trees);  //0 is the position in the array "complete_trees" of the individual with minimum F, not fitness!
+	fout << "#" << "Tree with lowest RMSE on test data set: i = " << i_best_test << endl;  //size of the "archive"
+	fout << "# Gen" <<" F" << " Fitness(RMSE)" << " Corrections" << " R2(adim.)" << " Mean" << " Var" << " Min" << " Max" << " First_ACF" << " Tot_variation" << " Maxabserror";
+	fout <<  " Expression"  << endl;
 
 	// print state variables and expression of the best individual
-	if (i_best_test>=0) {
+	if (i_best_test>=0) { // safety check on value of i_best_test not to leave best_gp_TEST empty
 		expr = P->print(i_best_test, P->complete_trees);
-		fout << gi;  // Generation
-		fout << " " << scientific << "not_implemented_yet_Reporter::best2file_test";// P->complete_trees[i_best_test]->F_test;   // F... SHOULD BE F_TEST!!!! Not implemented yet
-		fout << " " << scientific << P->complete_trees[i_best_test]->fitness_test;  // ATTENTION: with fitness is meant "error" (RMSE or PRESS), different from F
-		fout << " " << scientific << P->complete_trees[i_best_test]->R2_test; // R2
-		fout << " "  << P->complete_trees[i_best_test]->hits_test; // Hits
-
-		fout << "  \"" << expr << "\"" << endl;  // Expression
+		// print state variables and expression of the best individual (all these features refer to tree evaluated on building data set)
+		fout << gi << " ";  // generation
+		fout << scientific << "N/A";  // aggregate fitness F on test data set not computed yet.. is it useful?
+		fout << " " << scientific << P->complete_trees[i_best_test]->fitness_test; // RMSE
+		fout << " " << P->complete_trees[i_best_test]->n_corrections_test; // corrections
+		fout << " " << scientific << P->complete_trees[i_best_test]->R2_test;  // R2
+		fout << " " << scientific << P->complete_trees[i_best_test]->tree_mean_test;  // mean
+		fout << " " << scientific << P->complete_trees[i_best_test]->tree_variance_test;  // variance
+		fout << " " << scientific << P->complete_trees[i_best_test]->tree_min_test; // min
+		fout << " " << scientific << P->complete_trees[i_best_test]->tree_max_test; // max
+		fout << " " << scientific << P->complete_trees[i_best_test]->first_acf_root_tree_test; // first ACF root
+		fout << " " << scientific << P->complete_trees[i_best_test]->tot_variation_tree_test; // total variation
+		fout << " " << scientific << P->complete_trees[i_best_test]->maxabserror_test; // max absolute error on building data set
+		fout << "  \"" << expr << "\"" << endl;
 	}
 	else {
 		fout << "Reporter::best2file_test not able to select the best individual evaluated on the test data set : repr_tot=" << repr_tot << endl;
@@ -342,7 +344,6 @@ void Reporter::best2file_test(Population *P, string DIR_OUTPUT, int gi)
 	// close stream (at each call is open and then closed)
 	fout.close();
 }
-//
 
 
 
@@ -422,14 +423,25 @@ void Reporter::archive2file_test(Population *P, string DIR_OUTPUT, int gi)
 
 	// print header (references to the objectives that have to be compared globally)
 	fout << "#" << "Size of the archive : repr_tot = " << repr_tot << endl;  //size of the "archive"
-	fout << "# " <<  "Final generation " << " Fitness(RMSE) " << " R2(adim.)" << "Hits" << " Expression " << endl;
+	fout << "# Gen" <<" F" << " Fitness(RMSE)" << " Corrections" << " R2(adim.)" << " Mean" << " Var" << " Min" << " Max" << " First_ACF" << " Tot_variation" << " Maxabserror";
+	fout <<  " Expression"  << endl;
 
-	// print to file all the repr_tot individuals in the archive, evaluated on the training/building data set
+	// print to file all the repr_tot individuals in the archive, evaluated on the test data set
 	for (int i=0; i<repr_tot; i++) {
 		expr = P->print(i, P->complete_trees);
-		fout << gi << " " << scientific << P->complete_trees[i]->fitness_test;
-		fout << " " << scientific << P->complete_trees[i]->R2_test;
-		fout << " "  << P->complete_trees[i]->hits_test;
+		// print state variables and expression of the best individual (all these features refer to tree evaluated on building data set)
+		fout << gi << " ";  // generation
+		fout << scientific << "N/A";  // aggregate fitness F on test data set not computed yet.. is it useful?
+		fout << " " << scientific << P->complete_trees[i]->fitness_test; // RMSE
+		fout << " " << P->complete_trees[i]->n_corrections_test; // corrections
+		fout << " " << scientific << P->complete_trees[i]->R2_test;  // R2
+		fout << " " << scientific << P->complete_trees[i]->tree_mean_test;  // mean
+		fout << " " << scientific << P->complete_trees[i]->tree_variance_test;  // variance
+		fout << " " << scientific << P->complete_trees[i]->tree_min_test; // min
+		fout << " " << scientific << P->complete_trees[i]->tree_max_test; // max
+		fout << " " << scientific << P->complete_trees[i]->first_acf_root_tree_test; // first ACF root
+		fout << " " << scientific << P->complete_trees[i]->tot_variation_tree_test; // total variation
+		fout << " " << scientific << P->complete_trees[i]->maxabserror_test; // max absolute error on building data set
 		fout << "  \"" << expr << "\"" << endl;
 
 		// free memory
@@ -506,7 +518,7 @@ void Reporter::n_tree_eval2file(Population *P, string DIR_OUTPUT, int gi, int ch
 }
 
 
-// function that writes to file all data related to adaptive approach
+// function that writes to file all data related to adaptive approach for genetic operators
 // (eps_neutral, learning_window, the constructive, destructive and
 // neutral genetic operations rates, so that they can be plotted (write script in matlab).
 void Reporter::adaptive_gen_ops_data2file(Population *P, string DIR_OUTPUT, int gi, int check_end)
@@ -592,19 +604,19 @@ void Reporter::F_coefficients2file(Population *P, string DIR_OUTPUT, int gi, int
 		// open file for writing, truncating
 		fout.open(expr1, ios_base::out | ios_base::trunc);
 		fout << "# Values of F weight coefficients throughout the evolution"  << endl;
-		fout << "# Fweight[0] sum of all weights" << endl;
-		fout << "# Fweight[1]  //used to store the main objective, RMSE or PRESS value" << endl;
-		fout << "# Fweight[2]  // second objective, related to complexity (no of tuning parameters) - W_COMPLEXITY" << endl;
-		fout << "# Fweight[3] 	// third objective (no of corrections) - W_N_CORRECTIONS" << endl;
-		fout << "# Fweight[4] 	// fourth objective (no of nodes - tree size) - W_SIZE" << endl;
-		fout << "# Fweight[5]	//penalisation from inequality constraints order 0" << endl;
-		fout << "# Fweight[6] 	//penalisation from inequality constraints order 1" << endl;
-		fout << "# Fweight[7] 	// penalisation to increase factorisation (depth of first division)" << endl;
-		fout << "# Fweight[8] 	// ADDED 11/8/20: penalisation on statistical properties of the tree (average and variance)" << endl;
-		fout << "# Fweight[9] 	// ADDED 22/11/20: penalisation of diverging trees (high level polynomials - that is not argument of any function - are present)" << endl;
-		fout << "# Fweight[10] // ADDED 23/1/21: penalisation linked to autocorrelation function (point at which ACF halves) - see ::fitness_func()" << endl;
-		fout << "# Fweight[11] // ADDED 6/2/21: penalisation linked to total variation" << endl;
-		fout << "# Gen Fweight[1] Fweight[2] Fweight[3] Fweight[4] Fweight[5] Fweight[6] Fweight[7] Fweight[8] Fweight[9] Fweight[10] Fweight[11]   SUM Fweight[0] "  << endl;
+		fout << "# Fweight[0]	sum of all weights (must be 1)" << endl;
+		fout << "# Fweight[1]  	RMSE or PRESS value" << endl;
+		fout << "# Fweight[2]  	complexity - no of tuning parameters - W_COMPLEXITY" << endl;
+		fout << "# Fweight[3] 	no of corrections - W_N_CORRECTIONS" << endl;
+		fout << "# Fweight[4] 	no of nodes - tree size - W_SIZE" << endl;
+		fout << "# Fweight[5]	penalisation from inequality constraints order 0 - W_PEN_ORD0" << endl;
+		fout << "# Fweight[6] 	penalisation from inequality constraints order 1 - W_PEN_ORD1" << endl;
+		fout << "# Fweight[7] 	penalisation to increase factorisation (depth of first division) - W_FACTORISATION" << endl;
+		fout << "# Fweight[8] 	penalisation on statistical properties of the tree - W_STRAT_STATP " << endl;
+		fout << "# Fweight[9] 	penalisation of diverging trees (high level polynomials are present)" << endl;
+		fout << "# Fweight[10]  penalisation linked to autocorrelation function (point at which ACF halves) - W_ACF" << endl;
+		fout << "# Fweight[11]  penalisation linked to total variation - W_TVARIATION" << endl;
+		fout << "# Gen Fweight[i] Fc_perc_ave[i] for i=1,...,11 Fweight[0]"  << endl;
 
 	} else {
 		// open file for writing, appending
@@ -613,8 +625,12 @@ void Reporter::F_coefficients2file(Population *P, string DIR_OUTPUT, int gi, int
 
 	// print to file generation no. and population size
 	fout << gi << "  " << fixed;
-	for (int i=1; i<12; i++) fout << P->Fweight[i] << " " << P->Fc_perc_ave[i] << "  ";
-	fout << "  " << P->Fweight[0] << endl;  //sum of all weights, it has to equal 1
+	for (int i=1; i<12; i++) {
+		// save F weight value and average objective error in the archive
+		fout << P->Fweight[i] << " " << P->Fc_perc_ave[i] << "  ";
+	}
+
+	fout << "  " << P->Fweight[0] << endl;  //sum of all weights, it must be 1
 
 	// close the stream to file if termination criterion met or at the last generation
 	//if  ((gi== pr.G) || (check_end))

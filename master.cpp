@@ -34,6 +34,7 @@ using namespace std;
 #include "./genetic_code/input_checks/input_check.h"
 #include "./genetic_code/classes/reporter.h"
 #include "./genetic_code/classes/class_POPULATION.h"
+//#include "../genetic_code/tree_functions/tree_operations.h"
 
 
 
@@ -159,21 +160,16 @@ int main (int argc, char *argv[])
     //for (int k=0; k<Mprobl.get_n_var(); k++)
     //	cout << "\n v_list" << k << " = " << Mprobl.v_list[k];
 
-	// do you really need new? Maybe yes, for scope issues
-	Population *P = new Population(&Mparam, &Mprobl);
-	if (!P) {
-		cerr << "\nmain : Error creating population!!!\n";
-		exit(-1); 
-	}
+	Population P(&Mparam, &Mprobl);
 	
 	// pause execution
 	//cin.get(); // problem with int_rand in Population constructor
 
 	//as it's hard to pass Pop as a parameter to fdf_c__ through fortran functions, treat it as a global variable
-	Pop = P;
+	Pop = &P;
 
 
-	int n =Pop->parameters->nvar;
+	int n =Mparam.nvar;
 	cout << "\nn= " << n;
 
 	// split the whole input dataset in k folds for cross validation
@@ -184,8 +180,8 @@ int main (int argc, char *argv[])
 	///// INITIAL GENERATION (0) ///////////////////////////////////////
 	
 	// trees before parameters insertion		
-	printf ("\nInitialization of the population (generation 0)\n");
-	P->print_population_without_parameters(0);
+	cout << "\nInitialization of the population (generation 0)\n";
+	P.print_population_without_parameters(0);
 	
 
 	/// split the data set in tuning set (data_tuning) and validation set (data_validation).
@@ -206,7 +202,7 @@ int main (int argc, char *argv[])
 			//P->split_data(i,G,split); // not used...
 
 			// GENETIC OPERATORS: sorting, reproduction, crossover, mutation, pruning
-			P->new_spawn(Mparam, Mparam.nfitcases,i);
+			P.new_spawn(Mparam, Mparam.nfitcases,i);
 
 		}
 
@@ -214,52 +210,52 @@ int main (int argc, char *argv[])
 		//if (i%2==0) P->adjust_Fweight(i);
 
 		// evaluate fitness function (in hybrid/memetic GP parameters are added and tuned first, then the evaluation is performed)
-		P->evaluate(i,Mparam.G);
+		P.evaluate(i,Mparam.G);
 
 		// sort according to F (aggregate fitness F, not RMSE!) : VITAL! Both populations must be sorted, trees[] and complete_trees[]
-		P->sort(i,tree_comp_F);
+		P.sort(i,tree_comp_F);
 
 		// update the external archive made of the best individual - structure and complete tree (for PARAMETER INHERITANCE)
-		P->update_ext_archive();
+		P.update_ext_archive();
 
 		// compute elapsed time
-		elapsed_time = (int)(P->compute_time(start, finish, &delta_t));
+		elapsed_time = (int)(P.compute_time(start, finish, &delta_t));
 
 		if (VERBOSE) {
 			// print elapsed time
 			cout << "\nElapsed time: " << elapsed_time << " sec";  //total seconds
 			// print out the best member - population WITHOUT parameters
-			P->print_population_without_parameters(i);
+			P.print_population_without_parameters(i);
 			// print out the best member - population WITH parameters
-			P->print_population_with_parameters(i);
+			P.print_population_with_parameters(i);
 		}
 
 		// compute statistical data relating to population (vital if data is shared through populations)
 		// IT's REALLY IMPORTANT that this function is executed after evaluate and sort, 
 		// as evaluate uses statistical data referring to the previous generation
-		P->compute_statistics();
+		P.compute_statistics();
 
 		// evaluate termination condition
-		check_end=P->terminate(Mparam.threshold);
+		check_end=P.terminate(Mparam.threshold);
 		last_gen = i;   
 
 
 		// PRINT TO FILE OPERATIONS (in case of crash, data is saved)  -------------------------
 		cout << "\nPrint generation results to file...";
 		// write evolution statistical data to file "data_gp.txt"
-		pop_reporter.stats2file(&Mparam, P, DIR_OUTPUT, i, check_end);
+		pop_reporter.stats2file(&Mparam, &P, DIR_OUTPUT, i, check_end);
 		// write target points (training set), best individual corresponding values and residuals to file "points_gp.txt"
-		pop_reporter.points2file(&Mparam, &Mprobl, P, DIR_OUTPUT, i, check_end, start, finish, delta_t, Mparam.seed);
+		pop_reporter.points2file(&Mparam, &Mprobl, &P, DIR_OUTPUT, i, check_end, start, finish, delta_t, Mparam.seed);
 		// write best individual's expression as per aggregate value F (!!!) on training data set to "best_gp.txt"
-		pop_reporter.update_best2file_build(P, DIR_OUTPUT, i, check_end);
+		pop_reporter.update_best2file_build(&P, DIR_OUTPUT, i, check_end);
 		// write best-so-far individuals (elite or archive - first repr_tot individuals) on training data set to "latest_archive.txt"
-		pop_reporter.archive2file_build(P, DIR_OUTPUT, i, check_end);
+		pop_reporter.archive2file_build(&P, DIR_OUTPUT, i, check_end);
 		// write no of tree evaluations at each generation to "n_tree_evaluations.txt"
-		pop_reporter.n_tree_eval2file(P, DIR_OUTPUT, i, check_end);
+		pop_reporter.n_tree_eval2file(&P, DIR_OUTPUT, i, check_end);
 		// write related to adaptive approach (eps_neutral, the constructive, destructive and neutral genetic operations rates, etc) to "adaptation_data.txt"
-		pop_reporter.adaptive_gen_ops_data2file(P, DIR_OUTPUT, i, check_end);
+		pop_reporter.adaptive_gen_ops_data2file(&P, DIR_OUTPUT, i, check_end);
 		// write values of F (aggregate fitness) to file
-		pop_reporter.F_coefficients2file(P, DIR_OUTPUT, i, check_end);
+		pop_reporter.F_coefficients2file(&P, DIR_OUTPUT, i, check_end);
 		cout << "OK";
 		// -------------------------------------------------------------------------------------
 
@@ -268,7 +264,7 @@ int main (int argc, char *argv[])
 			break;
 	
 		// update genetic operators rates (adaptive approach - can be turned on and off inside the function)
-		if (i) P->adapt_genetic_operators_rates();
+		if (i) P.adapt_genetic_operators_rates();
   
 	}
 	// end evolution
@@ -278,16 +274,14 @@ int main (int argc, char *argv[])
 	if (check_end) {
 		cout << "Termination criterion satisfied (RMSE < " << Mparam.threshold << ")." << endl;
 		cout << "Possible solution: " << endl; 
-		P->print_population_with_parameters(last_gen);
+		P.print_population_with_parameters(last_gen);
 		cout << "Check latest_archive.txt for solutions\n" << endl;
 
 	}
 	else {
-		P->print_population_with_parameters(last_gen);
+		P.print_population_with_parameters(last_gen);
 	}
 
-	// just for test
-	//P->get_tree_derivative_given_norm_vector(Mprobl, P->complete_trees[0]);
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -295,7 +289,7 @@ int main (int argc, char *argv[])
 	// END OPERATIONS
 	//---------------------------------------------------------------------
 	// write node statistics to file
-	pop_reporter.node_stats2file(&Mparam, P, DIR_OUTPUT);
+	pop_reporter.node_stats2file(&Mparam, &P, DIR_OUTPUT);
 	
 	// evaluate fitness (RMSE and R2) on test data set (only if test data has been provided)
 	if (argc==4) {
@@ -304,24 +298,23 @@ int main (int argc, char *argv[])
 		//P->problem->show_data_test();
 
 		// evaluate first repr_tot complete individuals on test data set provided by the user
-		P->evaluate_complete_trees_on_test_dataset(); // SET CORRECTLY Mprobl.data_test, n_test, Sy_test after implementing function to read test data set
+		P.evaluate_complete_trees_on_test_dataset();
 		// sort according to error (RMSE) - better not to use it to keep order and to recognise performance on building and test data sets...
 		//P->sort(last_gen,tree_comp_fitness); // non va: ordina in ordine decrescente e alcune volte pone a 0 RMSE e R2. Perché?
-
-		// find and print best individual on test data set as per RMSE (!!!!) to file "best_gp_TEST.txt"
-		pop_reporter.best2file_test(P, DIR_OUTPUT, last_gen);
-		// print archive evaluated on the test data set to file
-		pop_reporter.archive2file_test(P, DIR_OUTPUT, last_gen);  // insert a function to order in rmse decreasing order, leaving however the name of the run
+		// find and print best individual on test data set as per RMSE (!!) to file "best_gp_TEST.txt"
+		pop_reporter.best2file_test(&P, DIR_OUTPUT, last_gen);
+		// print archive evaluated on the test data set to file - to be improved with evaluation of F on the test data set
+		pop_reporter.archive2file_test(&P, DIR_OUTPUT, last_gen);  // insert a function to order in rmse decreasing order, leaving however the name of the run
 	}
 
-	// free memory allocated to Population, as not used anymore (in the future declare statically P, as you will always need one population...)
-	delete P;  // 4/10/21 stack smashing detected after calling ProblemDefinition destructor...
 
 	// PARALLELISATION ... TO HERE.
 
 	cout << "\n\n END" << endl;
 
-	return 0;
+	// 4/10/21 stack smashing detected after calling ProblemDefinition destructor... but ProblemDefinition destructor is never called!
+
+	return 1;
 }
 
 

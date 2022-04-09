@@ -39,11 +39,6 @@ Population* Pop;
 
 int main ()
 {
-	/*
-	 * test Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *current_tree, Val *result_tree, bool normalised)
-	 */
-
-	cout << "\n\nTEST : Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *current_tree, Val *result_tree, bool normalised)";
 
 	int errors_no=0;
 	vector <int> failed_tests;
@@ -51,13 +46,17 @@ int main ()
 
 	// define other variables
 	char* expr;
-	Val result[6];
-	result[0] = (Val)0.0;  //storing fitness value (error - RMSE)
+	Val result[10];
+	result[0] = (Val)0.0;  // fitness value (error - RMSE)
 	result[1] = (Val)0.0;	// storing n of hits
 	result[2] = (Val)0.0;	// storing n of corrections done by protected operations
-	result[3] = (Val)0.0; // storing value of R squared (R2)
+	result[3] = (Val)0.0; 	// storing value of R squared (R2)
 	result[4] = (Val)0.0;	// storing mean tree value on building data set
 	result[5] = (Val)0.0;	// storing variance of tree values on building data set
+	result[6] = (Val)0.0;	// storing min tree value on building data set
+	result[7] = (Val)0.0;	// storing max tree value on building data set
+	result[8] = (Val)0.0;	// storing value first zero of tree autocorrelation function
+	result[9] = (Val)0.0;	// storing total variation
 
 	// define data
 	int rows=1;
@@ -108,7 +107,7 @@ int main ()
 	pr.mut_rate = .4;
 	pr.comp_rate = 0;
 	pr.new_rate = 0;
-	pr.M = 4;
+	pr.M = 4;    //size
 	pr.G = 2;
 	pr.normalised=0;
 	pr.minmax=0;
@@ -128,8 +127,14 @@ int main ()
 	pr.w_pen_ord1 = 0;
 
 
+	// initialise seed
+	srand(pr.seed);
+	cout << "\n\nused seed = " << pr.seed << endl;
 	// define Population
 	Population P(&pr, &pb);
+	// show randomly generated individuals
+	P.print_population_without_parameters(0);
+
 
 	//----------------------------------------------------------------------------------------
 	// POPULATION::FITNESS_FUNC : TEST N. 1 (2D)
@@ -144,6 +149,7 @@ int main ()
 
 	cout << "\nTree : ";
 	P.print_individual((Node *)&T1_tree);
+	cout << "Node * &T1_tree= " << &T1_tree << endl;
 
 	cols=3;
 	pb.n_validation=2;
@@ -166,14 +172,19 @@ int main ()
 	pb.y_min = 17.5;		// min value of target
 	pb.data_validation=data_valid;
 	pb.show_data_validation();
-	P.fitness_func(pb.Sy, pb.data_validation, 2, (Node *)&T1_tree, result, P.parameters->normalised,0);
+
+	// segmentation fault here?
+	cout << "Calling fitness_func..." << endl;
+	cout << "T1_tree.n_corrections= " << T1_tree.n_corrections << endl;
+	P.fitness_func(pb.Sy, pb.data_validation, 2, (Node *)&T1_tree, result, pr.normalised,0);
+	// segmentation fault here?
 
 	cout << "\n\nOutput : RMSE - result[0] = " << result[0] << "  EXPECTED 0.0" << endl;
-	cout << "Output : N. of hits (threshold=0.0001)- result[1] = " << result[1] << "  EXPECTED 2.0" <<  endl;
+	cout << "Output : Max abs error- result[1] = " << result[1] << "  EXPECTED 0.0" <<  endl;
 	cout << "Output : N. of corrections - result[2] = " << result[2] << "  EXPECTED 0.0"  << endl;
 	cout << "Output : R2 - result[3] = " << result[3] << "  EXPECTED 1.0" << endl;
 
-	if (fabs(result[0])<1.0E-12 && result[1]==2 && result[2]==0 && fabs(result[3]-1.0)<1.0E-12 ) {
+	if (fabs(result[0])<1.0E-12 && fabs(result[1])<1.0E-12 && result[2]==0 && fabs(result[3]-1.0)<1.0E-12 ) {
 		cout << "\nPOPULATION::FITNESS_FUNC : Test n.1 : OK ------------------------------------------" << endl;
 		passed_tests.push_back(1);
 	} else {
@@ -231,11 +242,11 @@ int main ()
 	P.fitness_func(pb.Sy, pb.data_validation, 2, (Node *)&T2_tree, result, P.parameters->normalised,0);
 
 	cout << "\n\nOutput : RMSE - result[0] = " << result[0] << "  EXPECTED 0.0" << endl;
-	cout << "Output : N. of hits (threshold=0.0001)- result[1] = " << result[1] << "  EXPECTED 2.0" <<  endl;
+	cout << "Output : Max abs error- result[1] = " << result[1] << "  EXPECTED 0.0" <<  endl;
 	cout << "Output : N. of corrections - result[2] = " << result[2] << "  EXPECTED 0.0" << endl;
 	cout << "Output : R2 - result[3] = " << result[3] << "  EXPECTED 1.0" << endl;
 
-	if (fabs(result[0])<1.0E-12 && result[1]==2 && result[2]==0 && fabs(result[3]-1.0)<1.0E-12 ) {
+	if (fabs(result[0])<1.0E-12 && fabs(result[1])<1.0E-12 && result[2]==0 && fabs(result[3]-1.0)<1.0E-12 ) {
 		cout << "\nPOPULATION::FITNESS_FUNC : Test n.2 : OK ------------------------------------------" << endl;
 		passed_tests.push_back(2);
 	} else {
@@ -250,23 +261,11 @@ int main ()
 	// POPULATION::FITNESS_FUNC : TEST N. 3 (2D)
 	//----------------------------------------------------------------------------------------
 	cout << "\nPOPULATION::FITNESS_FUNC : TEST N. 3  protected division with correction -----------";
-	// define tree 2*(Z1/Z2) with Z2=0
-	param=2.0;
-	Binary_Node T3_tree(NULL, &Mult);	//root node
-	T3_tree.n_corrections=0;
-	// D1
-	Terminal_Const T3_D1_P1(&T3_tree, param);  // left child, depth 1
-	T3_tree.set_left((Node *)&T3_D1_P1);
-	Binary_Node T3_D1_P2(&T3_tree, &SDiv);  // right child, depth 1
-	T3_tree.set_right((Node *)&T3_D1_P2);
-	// D2
-	Terminal_Var T3_D2_P1(&T3_D1_P2, pb.v_list[0]);  // left child
-	T3_D1_P2.set_left((Node *)&T3_D2_P1);
-	Terminal_Var T3_D2_P2(&T3_D1_P2, pb.v_list[1]);  // right child
-	T3_D1_P2.set_right((Node *)&T3_D2_P2);
+	// define tree 2*(Z1/Z2) with Z2=0 : the protected division returns 1
+	// use already defined tree in Test N. 2 (T2_tree)
 
 	cout << "\nTree : ";
-	P.print_individual((Node *)&T3_tree);
+	P.print_individual((Node *)&T2_tree);
 
 	pb.n_validation=1;
 	data_valid = new Val*[pb.n_validation];
@@ -278,14 +277,14 @@ int main ()
 
 	pb.data_validation=data_valid;
 	pb.show_data_validation();
-	P.fitness_func(1, pb.data_validation, 1, (Node *)&T3_tree, result, P.parameters->normalised,0);
+	P.fitness_func(1, pb.data_validation, 1, (Node *)&T2_tree, result, P.parameters->normalised,0);
 
 	cout << "\n\nOutput : RMSE - result[0] = " << result[0] << "  EXPECTED 0.0" << endl;
-	cout << "Output : N. of hits (threshold=0.0001)- result[1] = " << result[1] << "  EXPECTED 1.0" <<  endl;
+	cout << "Output : Max abs error- result[1] = " << result[1] << "  EXPECTED 1.0" <<  endl;
 	cout << "Output : N. of corrections - result[2] = " << result[2] << "  EXPECTED 1.0"  << endl;
 	cout << "Output : R2 - result[3] = " << result[3] << "  EXPECTED 1.0" << endl;
 
-	if (fabs(result[0])<1.0E-12 && result[1]==1 && result[2]==1 && fabs(result[3]-1.0)<1.0E-12 ) {
+	if (fabs(result[0])<1.0E-12 && fabs(result[1])<1.0E-12 && result[2]==1 && fabs(result[3]-1.0)<1.0E-12 ) {
 		cout << "\nPOPULATION::FITNESS_FUNC : Test n.3 : OK ------------------------------------------" << endl;
 		passed_tests.push_back(3);
 	} else {
@@ -297,7 +296,7 @@ int main ()
 
 
 	//----------------------------------------------------------------------------------------
-	// POPULATION::FITNESS_FUNC : TEST N. 4 (2D)
+	// POPULATION::FITNESS_FUNC : TEST N. 4 (2D) - Check NaN value for R2
 	//----------------------------------------------------------------------------------------
 	cout << "\nPOPULATION::FITNESS_FUNC : TEST N. 4 power -------------------------------";
 	// define tree 2*(Z1^2-Z2^3)
@@ -332,14 +331,15 @@ int main ()
 	data_valid[0][2] = -46.0;	//target
 	pb.data_validation=data_valid;
 	pb.show_data_validation();
+	// call fitness_func providing Sy=0: as error is also zero, R2 will be Nan
 	P.fitness_func(0, pb.data_validation, 1, (Node *)&T4_tree, result, P.parameters->normalised,0);
 
 	cout << "\n\nOutput : RMSE - result[0] = " << result[0] << "  EXPECTED 0.0" << endl;
-	cout << "Output : N. of hits (threshold=0.0001)- result[1] = " << result[1] << "  EXPECTED 1" << endl;
+	cout << "Output : Max abs error- result[1] = " << result[1] << "  EXPECTED 0.0" << endl;
 	cout << "Output : N. of corrections - result[2] = " << result[2] << "  EXPECTED 0" << endl;
-	cout << "Output : R2 - result[3] = " << result[3] << "  EXPECTED NaN" << endl;
+	cout << "Output : R2 - result[3] = " << result[3] << "  EXPECTED -NaN" << endl;
 
-	if (fabs(result[0])<1.0E-12 && result[1]==1 && result[2]==0 && isnan(result[3])) {
+	if (fabs(result[0])<1.0E-12 && fabs(result[1])<1.0E-12 && result[2]==0 && isnan(result[3])) { // isnan detects both +nan and -nan ... (!)
 		cout << "\nPOPULATION::FITNESS_FUNC : Test n.4 : OK ------------------------------------------" << endl;
 		passed_tests.push_back(4);
 	} else {
@@ -351,7 +351,7 @@ int main ()
 
 
 	//----------------------------------------------------------------------------------------
-	// POPULATION::FITNESS_FUNC : TEST N. 5 (1D)
+	// POPULATION::FITNESS_FUNC : TEST N. 5 (1D) - check Inf value for R2
 	//----------------------------------------------------------------------------------------
 	cout << "\nPOPULATION::FITNESS_FUNC : TEST N. 5 cos -------------------------------";
 	pr.nvar = 1;
@@ -411,14 +411,15 @@ int main ()
 	data_valid[0][1] = 1.84781154459874e+04;	// target
 	pb.data_validation=data_valid;
 	pb.show_data_validation();
+	// call fitness_func providing Sy=0: as error is not zero, R2 will be -Inf
 	P.fitness_func(0, pb.data_validation, 1, (Node *)&T5_tree, result, P.parameters->normalised,0);
 
 	cout << "\n\nOutput : Error - result[0] = " << result[0] << "  EXPECTED 0.0" << endl;
-	cout << "Output : N. of hits (threshold=0.0001)- result[1] = " << result[1] << "  EXPECTED 1" <<  endl;
+	cout << "Output : Max abs error- result[1] = " << result[1] << "  EXPECTED 0.0" <<  endl;
 	cout << "Output : N. of corrections - result[2] = " << result[2] << "  EXPECTED 0" << endl;
 	cout << "Output : R2 - result[3] = " << result[3] << "  EXPECTED -inf" << endl;
 
-	if (fabs(result[0])<1.0E-10 && result[1]==1 && result[2]==0 && isinf(result[3])) {
+	if (fabs(result[0])<1.0E-10 && fabs(result[0])<1.0E-10 && result[2]==0 && isinf(result[3])) {  // isinf detects both +inf and -inf ... (!)
 		cout << "\nPOPULATION::FITNESS_FUNC : Test n.5 : OK ------------------------------------------" << endl;
 		passed_tests.push_back(5);
 	} else {
@@ -436,7 +437,7 @@ int main ()
 	pb.set_n_var(2);
 	pb.set_n_cols(3);
 	pb.initialise_variables(&Z, 2);
-	// define tree 2*(Z1^2-Z2^3)
+	// define tree 2*(Z1^2-Z2^3) : use tree T4_tree defined in test 4
 	cout << "\nTree : ";
 	P.print_individual((Node *)&T4_tree);
 
@@ -469,11 +470,11 @@ int main ()
 	P.fitness_func(Sy, pb.data_validation, 5, (Node *)&T4_tree, result, 0,0);
 
 	cout << "\n\nOutput : RMSE - result[0] = " << result[0] << "  EXPECTED 0.0" << endl;
-	cout << "Output : N. of hits (threshold=0.0001)- result[1] = " << result[1] << "  EXPECTED 5" <<  endl;
+	cout << "Output : Max abs error- result[1] = " << result[1] << "  EXPECTED 0.0" <<  endl;
 	cout << "Output : N. of corrections - result[2] = " << result[2] << "  EXPECTED 0" << endl;
 	cout << "Output : R2 - result[3] = " << result[3] << "  EXPECTED 1" << endl;
 
-	if (fabs(result[0])<1.0E-12 && result[1]==5  && result[2]==0 && fabs(result[3]-1.0)<1E-10) {
+	if (fabs(result[0])<1.0E-12 && fabs(result[1])<1.0E-12  && result[2]==0 && fabs(result[3]-1.0)<1E-10) {
 		cout << "\nPOPULATION::FITNESS_FUNC : Test n.6 : OK ------------------------------------------" << endl;
 		passed_tests.push_back(6);
 	} else {
@@ -484,7 +485,7 @@ int main ()
 
 
 	//----------------------------------------------------------------------------------------
-	// POPULATION::FITNESS_FUNC : TEST N. 7 (1D)
+	// POPULATION::FITNESS_FUNC : TEST N. 7 (1D) - Autocorrelation function
 	//----------------------------------------------------------------------------------------
 	cout << "\nPOPULATION::FITNESS_FUNC : TEST N. 7 -----------------------------------";
 	pr.nvar = 1;
@@ -532,7 +533,7 @@ int main ()
 	P.fitness_func(0.0, pb.data_validation, pb.n_validation, (Node *)&T7_tree, result, 0,0);
 	cout << "\nAutocorrelation function values (n. lags = 10)" << endl;
 	for (int k=0; k<pb.delay_max; k++) {
-		cout << "delay=" << k << " " << T7_tree.r_k[k] << endl;
+		cout << "lag=" << k << " " << T7_tree.r_k[k] << endl;
 	}
 	// correct values of acf
 //	1.000000
@@ -547,48 +548,94 @@ int main ()
 //	  -0.311819
 //	  -0.403856
 	cout << "First autocorrelation function root = " << T7_tree.first_acf_root_tree;
+	cout << "Test passed - see comparison of ACF values" << endl;
+	passed_tests.push_back(7);
+
 
 	//----------------------------------------------------------------------------------------
-	// POPULATION::AGGREGATE_F : TEST N. 8 (2D)
+	// POPULATION::AGGREGATE_F : TEST N. 8 (2D) - Aggregate fitness function F
 	//----------------------------------------------------------------------------------------
 	//cout << "\n\nTEST : Population::aggregate_F(RunParameters* pr, Val average_err, Binary_Node *complete_tree, int gen, int G)" << endl;
-	cout << "\nPOPULATION::AGGREGATE_F : TEST N. 8 STILL TO CHECK -----------------------------------";
-	// use tree defined in test n.3 : 2*(Z1/Z2) with Z2=0
+	cout << "\n\nPOPULATION::AGGREGATE_F : TEST N. 8 -----------------------------------";
+	// use tree T2 defined in test n.2: 2*(Z1/Z2)
 	cout << "\nTree : ";
-	P.print_individual((Node *)&T3_tree);
-
+	P.print_individual((Node *)&T2_tree);
+	rows=1;
+	cols=3;
 	pb.n_validation=1;
 	data_valid = new Val*[pb.n_validation];
+	pb.set_n_cols(3);
 	for (int k=0; k<pb.n_validation; k++) data_valid[k]=new Val[cols];
 	data_valid[0][0] = 15.0;
 	data_valid[0][1] = 0.0;
 	data_valid[0][2] = 2.0;
 	pb.data_validation=data_valid;
+	pb.y_max=11.0;
+	pb.y_min=1.0;
+	pb.y_ave=1.0;
+	pb.y_var=1.0;
+	pb.first_acf_root_input=1.0;
 	pb.show_data_validation();
 
+	// weights
 	pr.w_complexity = 0.02;
-	pr.w_n_corrections = .1;
+	pr.w_n_corrections = 0.1;
 	pr.w_size = 0.001;
 	pr.w_factorisation = 0;  // switch between standard approach (<0) and factorisation bonus (>0)
-	pr.w_pen_ord0 = 0;
-	//pr.n_inequality1 = 0;
-	pr.w_pen_ord1 = 0;
+	pr.w_pen_ord0 = 0.0;
+	pr.w_pen_ord1 = 0.0;
+	pr.w_strat_statp=0.1;
+	pr.w_ACF = 0.1;
+	pr.w_tvariation=0.0;
+	// a1=
+	// as a result, Fweight[]
+	P.Fweight[1]=1.0-pr.w_complexity-pr.w_n_corrections-pr.w_size-pr.w_pen_ord0-pr.w_pen_ord1-pr.w_factorisation-pr.w_strat_statp-pr.w_ACF-pr.w_tvariation;
+	P.Fweight[2]= pr.w_complexity;
+	P.Fweight[3]=pr.w_n_corrections;
+	P.Fweight[4]=pr.w_size;
+	P.Fweight[5]=pr.w_pen_ord0;
+	P.Fweight[6]=pr.w_pen_ord1;
+	P.Fweight[8]=pr.w_strat_statp;
+	P.Fweight[10]=pr.w_ACF;
+	P.Fweight[11]=pr.w_tvariation;
 
-	T3_tree.fitness=10.0;   // RMSE or PRESS
+	pr.strat_statp=15;	// Strategy 15
+
+	T2_tree.fitness=10.0;   // RMSE, just a randomly chosen value
 	Val average_err = 15.0;
-	T3_tree.n_tuning_parameters=T3_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?
-	T3_tree.n_corrections=1;
-	int size = T3_tree.count();
+	T2_tree.n_tuning_parameters=T2_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?
+	cout << "T2_tree.n_tuning_parameters = " << T2_tree.n_tuning_parameters;
+	T2_tree.n_corrections=1;
+	int size = T2_tree.count();
+	T2_tree.tree_mean=1.0;
+	T2_tree.tree_variance=1.0;
+	T2_tree.first_acf_root_tree=1.0;
 
-	P.aggregate_F(&pb, &pr, average_err, &T3_tree, 6, 30);
+	P.aggregate_F(&pb, &pr, average_err, &T2_tree, 6, 30);  // average_err, 6 and 30 randomly chosen
 	//void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val average_err, Binary_Node *complete_tree, int gen, int G)
 
 
+	T2_tree.show_state();
+	// ATTENZIONE: da rivedere coefficienti e valori di T[...] dopo riorganizzazione di Agosto '21!
+	cout << "\nOBJECTIVE 1 : RMSE (raw fitness)";
+	double a1=1.0-pr.w_complexity-pr.w_n_corrections-pr.w_size-pr.w_pen_ord0-pr.w_pen_ord1-pr.w_factorisation-pr.w_strat_statp-pr.w_ACF-pr.w_tvariation; // equal to 1-0.121=0.879
+	double Obj1=a1*exp(T2_tree.fitness/fabs(pb.y_max-pb.y_min));  // = e*a1= 1.845713
+	cout << "\nT2_tree.T[1] = " << T2_tree.T[1];  // non assegnato correttamente!
+	cout << "\na1*exp(T2_tree.fitness/fabs(pb.y_max-pb.y_min)) = " << Obj1 << "   SHOULD BE 1.845713" << endl;
 
-	T3_tree.show_state();
-	double a1=1.0-pr.w_complexity-pr.w_n_corrections-pr.w_size-pr.w_pen_ord0-pr.w_pen_ord1;
+	cout << "\nOBJECTIVE 2 : complexity";
+	double Obj2=pr.w_complexity*pow((double)(T2_tree.n_tuning_parameters), 1.0);
+	cout << "\nT2_tree.T[2] = " << T2_tree.T[2]; // non assegnato correttamente!
+	cout << "\npr.w_complexity*pow((double)(T2_tree.n_tuning_parameters), 1.0) = " << Obj2 << "   SHOULD BE 0.02" << endl;
 
-	if (T3_tree.T1==a1*T3_tree.fitness/average_err && T3_tree.T2==pr.w_complexity*T3_tree.n_tuning_parameters && T3_tree.T3==pr.w_n_corrections*T3_tree.n_corrections*1.0E6 && pr.w_size*T3_tree.count()==T3_tree.T4) {
+	cout << "\nOBJECTIVE 3 : corrections";
+	cout << "\nT2_tree.T[3] = " << T2_tree.T[3];
+	cout << "\npr.w_n_corrections*T2_tree.n_corrections*1.0E6 = " << pr.w_n_corrections*T2_tree.n_corrections*1.0E6 << "   SHOULD BE 100000";
+
+	cout << "\nOBJECTIVE 4 : size";
+	cout << "\npr.w_size*T2_tree.count() = " << pr.w_size*T2_tree.count() << "   SHOULD BE 0.005";
+
+	if (fabs(T2_tree.T[1]-a1*exp(T2_tree.fitness/fabs(pb.y_max-pb.y_min)))<1E-4 && fabs(T2_tree.T[2]-pr.w_complexity*T2_tree.n_tuning_parameters)<1E-12 && fabs(T2_tree.T[3]-pr.w_n_corrections*T2_tree.n_corrections*1.0E6)<1E-12 && fabs(pr.w_size*T2_tree.count()-T2_tree.T[4])<1E-12) {
 		cout << "\nPOPULATION::FITNESS_FUNC : Test n.8 : OK ------------------------------------------" << endl;
 		passed_tests.push_back(8);
 	} else {
@@ -598,14 +645,56 @@ int main ()
 	}
 
 
+	//----------------------------------------------------------------------------------------
+	// Binary_Node::find_parameters(void) : TEST N. 9 (2D)
+	//----------------------------------------------------------------------------------------
+	cout << "\nBinary_Node::find_parameters(void) : TEST N. 9 -----------------------------------";
+	cout << "\n Population size = " << P.get_size();
+	P.print_population_with_parameters(0);
+	//for (int i=0; i<P.get_size(); i++) {
+		//P.complete_trees[i] = (Binary_Node *)tree_copy(P.trees[i],NULL);
+		//P.parameters_allocation(P.complete_trees[i],&(P.complete_trees[i]));
+	//}
+	P.evaluate(1,1);
+	P.print_population_with_parameters(0);
+	// print parameters' values
+	int a=0;
+	for (int i=0; i<P.get_size(); i++) {
+		a=P.complete_trees[i]->find_parameters();
+		cout << "\n No of parameters = " << a << "   ";
+		for (int j=0; j<a; j++) {
+			cout << ((Terminal_Const *)P.complete_trees[i]->p_par[j])->value(NULL) << " ";
+		}
+	}
+	// parameters are retrieved correctly. It seems that ::evaluate() does not store n_tuning_parameters
+	cout << endl;
+
+
+
+
+
+
 
 	//----------------------------------------------------------------------------------------
-	// POPULATION::AGGREGATE_F : TEST N. 9 (2D)
+	// POPULATION::SORT : TEST N. 10 (2D)
 	//----------------------------------------------------------------------------------------
-	cout << "\nPOPULATION::AGGREGATE_F : TEST N. 9 STILL TO CHECK -----------------------------------";
-	// use tree defined in test n.3 : 2*(Z1/Z2) with Z2=0
-	cout << "\nTree : ";
-	P.print_individual((Node *)&T3_tree);
+	cout << "\nPOPULATION::SORT : TEST N. 10 -----------------------------------";
+	// use tree defined previously:
+	// T1 test n.1 Z1+Z2, T2 test n.2 : 2*(Z1/Z2), T4 test n.4 2*(Z1^2-Z2^3), T7 test 7 sin(Z1)+cos(2*Z1)
+	// void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val average_err, Binary_Node *complete_tree, int gen, int G)
+
+	P.print_population_with_parameters(0);
+
+	Binary_Node* complete_trees[4];
+	P.complete_trees[0]=&T1_tree;		//T1 test n.1 Z1+Z2
+	P.complete_trees[1]=&T2_tree;		//T2 test n.2 : 2*(Z1/Z2)
+	P.complete_trees[2]=&T4_tree;		//T4 test n.4 2*(Z1^2-Z2^3)
+	P.complete_trees[3]=&T7_tree;		//T7 test n.7 sin(Z1)+cos(2*Z1)
+
+	cout << "\nTrees : ";
+	P.print_individual((Node *)&T2_tree);
+	P.print_individual((Node *)&T4_tree);
+	P.print_individual((Node *)&T7_tree);
 
 	pb.n_validation=1;
 	data_valid = new Val*[pb.n_validation];
@@ -616,6 +705,7 @@ int main ()
 	pb.data_validation=data_valid;
 	pb.show_data_validation();
 
+	// aggregate fitness function weights
 	pr.w_complexity = 0.02;
 	pr.w_n_corrections = .1;
 	pr.w_size = 0.001;
@@ -623,42 +713,184 @@ int main ()
 	pr.w_pen_ord0 = 0;
 	//pr.n_inequality1 = 0;
 	pr.w_pen_ord1 = 0;
-
-	T3_tree.fitness=10.0;   // RMSE or PRESS
-	average_err = 15.0;
-	T3_tree.n_tuning_parameters=T3_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?
-	T3_tree.n_corrections=1;
-	size = T3_tree.count();
-
-	P.aggregate_F(&pb, &pr, average_err, &T3_tree, 6, 30);
-
-	T3_tree.show_state();
 	a1=1.0-pr.w_complexity-pr.w_n_corrections-pr.w_size-pr.w_pen_ord0-pr.w_pen_ord1;
 
-	if (T3_tree.T1==a1*T3_tree.fitness/average_err && T3_tree.T2==pr.w_complexity*T3_tree.n_tuning_parameters && T3_tree.T3==pr.w_n_corrections*T3_tree.n_corrections*1.0E6 && pr.w_size*T3_tree.count()==T3_tree.T4) {
-		cout << "\nPOPULATION::FITNESS_FUNC : Test n.9 : OK ------------------------------------------" << endl;
-		passed_tests.push_back(9);
+
+	// individual T1
+	T1_tree.fitness=5.0;   // randomly chosen RMSE
+	average_err = 2.0;
+	T1_tree.n_tuning_parameters=T1_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?
+	T1_tree.n_corrections=0;
+	size = T1_tree.count();
+	P.aggregate_F(&pb, &pr, average_err, &T1_tree, 6, 30);  // last two integers are current generation gen and total generations G
+	T1_tree.show_state();
+
+	// individual T2
+	T2_tree.fitness=1.0;   // randomly chosen RMSE
+	average_err = 1.0;
+	T2_tree.n_tuning_parameters=T2_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?
+	T2_tree.n_corrections=0;
+	size = T2_tree.count();
+	P.aggregate_F(&pb, &pr, average_err, &T2_tree, 6, 30);  // last two integers are current generation gen and total generations G
+	T2_tree.show_state();
+
+	// individual T4
+	T4_tree.fitness=100.0;   // randomly chosen RMSE
+	average_err = 150.0;
+	T4_tree.n_tuning_parameters=T4_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?
+	T4_tree.n_corrections=0;
+	size = T4_tree.count();
+	P.aggregate_F(&pb, &pr, average_err, &T4_tree, 6, 30); // last two integers are current generation gen and total generations G
+	T4_tree.show_state();
+
+	// individual T7
+	T7_tree.fitness=10.0;   // randomly chosen RMSE
+	average_err = 15.0;
+	T7_tree.n_tuning_parameters=T7_tree.find_parameters();    // not nice... make n_tuning_parameters a member of Node?7
+	T7_tree.n_corrections=0;
+	size = T7_tree.count();
+	P.aggregate_F(&pb, &pr, average_err, &T7_tree, 6, 30); // last two integers are current generation gen and total generations G
+	T7_tree.show_state();
+
+
+	// sort according to F (aggregate fitness F, not RMSE!) : VITAL! Both populations must be sorted, trees[] and complete_trees[]
+	cout << "\nSorting population using Population::sort ...";
+	P.sort(0,tree_comp_F);  // 0 is the generation, just dummy value
+
+	// check if sorting is ok
+	cout << "\nP.complete_trees[0]->F=" << P.complete_trees[0]->F;
+	cout << "\nP.complete_trees[1]->F=" << P.complete_trees[1]->F;
+	cout << "\nP.complete_trees[2]->F=" << P.complete_trees[2]->F;
+	cout << "\nP.complete_trees[3]->F=" << P.complete_trees[3]->F;
+
+	// check sorted order
+	if ((P.complete_trees[0]->F<=P.complete_trees[1]->F) && (P.complete_trees[1]->F<=P.complete_trees[2]->F) && (P.complete_trees[2]->F<=P.complete_trees[3]->F)) {
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.10 : OK ------------------------------------------" << endl;
+		passed_tests.push_back(10);
 	} else {
-		cout << "\nPOPULATION::FITNESS_FUNC : Test n.9 : ERROR !!!! -----------------------------------" << endl;
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.10 : ERROR !!!! -----------------------------------" << endl;
 		errors_no++;
-		failed_tests.push_back(9);
+		failed_tests.push_back(10);
 	}
 
+
+
+
 	//----------------------------------------------------------------------------------------
-	// REPORTER:: TEST 10
+	// POPULATION::SORT : TEST N. 11 (2D)
 	//----------------------------------------------------------------------------------------
+	cout << "\nProblemDefinition::compute_inputdata_stats() : TEST N. 11 -----------------------------------";
+
+	rows=5;
+	cols=2;
+	pb.set_n_data(rows);
+	pb.set_n_var(cols-1);
+	pb.set_n_cols(cols);
+	Val** D = new Val*[pb.get_n_data()];
+	for (int k=0; k<pb.get_n_data(); k++) D[k]=new Val[pb.get_n_var()+1];
+	D[0][0] = 0.0;
+	D[0][1] = 10.0;
+	D[1][0] = 1.0;
+	D[1][1] = 30.0;
+	D[2][0] = 2.0;
+	D[2][1] = 700.0;
+	D[3][0] = 3.0;
+	D[3][1] = 50.0;
+	D[4][0] = 4.0;
+	D[4][1] = 20.0;
+	pb.set_data(D);
+
+	pb.data_test=D;
+	pb.n_test=rows;
+	pb.compute_inputdata_stats();
+	pb.show_data();
+
+	// min target value
+	cout << "\n y_min= " << pb.y_min << " index_min= " << pb.index_min;
+	// max target value
+	cout << "\n y_max= " << pb.y_max << " index_max= " << pb.index_max;
+
+	if ((pb.y_min==10) && (pb.index_min==0) && (pb.y_max==700) && (pb.index_max==2)) {
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.11 : OK ------------------------------------------" << endl;
+		passed_tests.push_back(11);
+	} else {
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.11 : ERROR !!!! -----------------------------------" << endl;
+		errors_no++;
+		failed_tests.push_back(11);
+	}
 
 
+	//----------------------------------------------------------------------------------------
+	// POPULATION::FITNESS_FUNC : TEST N. 12
+	//----------------------------------------------------------------------------------------
+	cout << "\nPOPULATION::FITNESS_FUNC : TEST N. 12 -----------------------------------";
+	// use tree defined previously:
+	// T1 test n.1 Z1+Z2, T2 test n.2 : 2*(Z1/Z2), T4 test n.4 2*(Z1^2-Z2^3), T7 test 7 sin(Z1)+cos(2*Z1)
+	// void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val average_err, Binary_Node *complete_tree, int gen, int G)
 
- ////////////////////////////////////////////////////////////////////////////////////////////
+
+	P.complete_trees[3]=&T7_tree;		//T7 test n.7 sin(Z1)+cos(2*Z1)
+	cout << "\nTree : ";
+	P.print_individual((Node *)&T7_tree);
+
+	rows=5;
+	cols=2;
+	pb.set_n_data(rows);
+	pb.set_n_var(cols-1);
+	pb.set_n_cols(cols);
+	//Val** D = new Val*[pb.get_n_data()];
+	//for (int k=0; k<pb.get_n_data(); k++) D[k]=new Val[pb.get_n_var()+1];
+	D[0][0] = 0.0;
+	D[0][1] = 10.0;
+	D[1][0] = 1.0;
+	D[1][1] = 30.0;
+	D[2][0] = 2.0;
+	D[2][1] = 700.0;
+	D[3][0] = 3.0;
+	D[3][1] = 50.0;
+	D[4][0] = 4.0;
+	D[4][1] = 20.0;
+	pb.set_data(D);
+
+	pb.data_test=D;
+	pb.n_test=rows;
+	pb.compute_inputdata_stats();
+	pb.show_data();
+
+	P.fitness_func(0.0, D, 5, (Node *)&T7_tree, result, 0,0);
+
+	// check min and max of tree
+	cout << "\n T7_tree.tree_min= " << T7_tree.tree_min;
+	cout << "\n T7_tree.index_min= " << T7_tree.index_min;
+	cout << "\n T7_tree.tree_max= " << T7_tree.tree_max;
+	cout << "\n T7_tree.index_max= " << T7_tree.index_max;
+	// tree value at target min and max
+	cout << "\n T7_tree.tree_at_trgt_min= " << T7_tree.tree_at_trgt_min;
+	cout << "\n T7_tree.tree_at_trgt_max= " << T7_tree.tree_at_trgt_max;
+
+
+	if ((fabs(T7_tree.tree_min+0.902303)<10E-7) && (T7_tree.index_min==4) && (fabs(T7_tree.tree_max-1.101290)<10E-7) && (T7_tree.index_max==3) && (fabs(T7_tree.tree_at_trgt_min-1.0)<10E-7) && (fabs(T7_tree.tree_at_trgt_max-0.255654)<10E-7)) {
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.12 : OK ------------------------------------------" << endl;
+		passed_tests.push_back(12);
+	} else {
+		cout << "\nPOPULATION::FITNESS_FUNC : Test n.12 : ERROR !!!! -----------------------------------" << endl;
+		errors_no++;
+		failed_tests.push_back(12);
+	}
+
+ ///////  TEST RESULTS //////////////////////////////////////////////////////////////////////////
 
 	cout << "\nPassed tests:" << endl;
 	for (int i=0; i<passed_tests.size(); i++) cout << passed_tests[i] << " ";
 	cout << endl;
 	cout << "\n\nTotal number of errors : " << errors_no << endl;
 	cout << "Failed tests:" << endl;
-	for (int i=0; i<failed_tests.size(); i++) cout << failed_tests[i] << " ";
-	cout << endl;
+	if (failed_tests.empty())
+		cout << "All tests passed.\n" << endl;
+	else {
+		for (int i=0; i<failed_tests.size(); i++) cout << failed_tests[i] << " ";
+		cout << endl;
+	}
 }
 
 #include "../genetic_code/tree_functions/vector_derivative_functions.cpp"

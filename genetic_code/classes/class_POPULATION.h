@@ -85,7 +85,7 @@ class Population {
 	// function to evaluate the depth of a node in a tree
 	int evaluate_root_distance(Node *p_node);
 
-	//function to allocate parameters (constants) to single individual
+	//function to insert parameters (constants) into a single individual
 	void parameters_allocation(Binary_Node*,  Binary_Node**);
 	
 	// functions that implement selection methods
@@ -274,7 +274,8 @@ class Population {
 	double F_var;
 	double pen_ord1_ave;
 	double T_perc_ave[12];	// array storing the average value of each single aggregate F component in the elite mulitplied by corresp. weight (used to implement the adaptive weight change - ::adjust_Fweight)
-	double Fc_perc_ave[12];
+	double Fc_perc_ave[12]; // archive-averaged percentual contribution of each objective with respect to F (see Population::compute_statistics()) - Fc_perc_ave[0] not used
+	double Fc_ave[12];    // average value of each single aggregate F component in the elite (see Population::compute_statistics()) - Fc_ave[0] not used
 	void compute_statistics(void);
 
 

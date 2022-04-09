@@ -173,7 +173,7 @@ echo Experiment dynamics: collecting the statistical data and writing to $DESTIN
 echo Copy the first column... 
 for column in 2 5 7 10 12 15;
 do
-	FILE=${FILE_NAME[$column]}
+	FILE=${FILE_NAME[$column]}  # write to fitness_min.txt, fitness_var.txt, etc
 	awk  -v gen=$G -v col=$column '$1!="#" {print $col; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$OUTPUT_DIR/run_1/data_gp.txt  |  cat > $DESTINATION/$OUTPUT_DIR/$FILE
 done 
 
@@ -183,19 +183,12 @@ for ((i=2; i<=$N_RUNS; i++ ))   #i = runs
 do
 	for column in 2 5 7 10 12 15;
 	do
-		FILE=${FILE_NAME[$column]}
+		FILE=${FILE_NAME[$column]}  # write to fitness_min.txt, fitness_var.txt, etc
 		awk  -v gen=$G -v col=$column '$1!="#" {print $col; read++} END {while (read<=gen) {print "-1"; read++;}; read=0}' $DESTINATION/$OUTPUT_DIR/run_$i/data_gp.txt | cat > $DESTINATION/$OUTPUT_DIR/temp_c$column.txt
 		paste $DESTINATION/$OUTPUT_DIR/$FILE  $DESTINATION/$OUTPUT_DIR/temp_c$column.txt  > $DESTINATION/$OUTPUT_DIR/temp_cf$column.txt 
 		mv $DESTINATION/$OUTPUT_DIR/temp_cf$column.txt  $DESTINATION/$OUTPUT_DIR/$FILE
 	done
 	
-done
-echo Done
-
-echo Removing temporary files...
-for column in 2 5 7 10 12 15;
-do
-	rm $DESTINATION/$OUTPUT_DIR/temp_c$column.txt
 done
 echo Done
 
@@ -282,4 +275,4 @@ echo Done
 
 #echo sending an e-mail to $MAIL_ADDRESS confirming the data are ready
 #echo "Data of the experiment are ready in directory $DESTINATION/$OUTPUT_DIR" | mail -s "DATA AVAILABLE $OUTPUT_DIR" $MAIL_ADDRESS
-echo Mail NOT sent to $MAIL_ADDRESS. End
+#echo Mail NOT sent to $MAIL_ADDRESS. End

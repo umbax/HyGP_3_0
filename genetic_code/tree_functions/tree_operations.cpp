@@ -19,11 +19,10 @@
 // functions performing operations on entire trees (or subtrees)
 
 
-// this recursively copies a tree.  it takes a pointer to the tree to be
+// function that recursively copies a tree (mathematical structure and numerical coefficients)
+// It copies only the function, variable and value of each node (all the other data members have the values imposed by the constructor)
 // input: pointer to the tree to be copied (src) and a pointer to the parent that the copied tree will have (parent)
 // output: pointer to the new, copied tree.
-// It copies only the function, variable or value of each node. That means that
-// all the data members have the values imposed by the constructor!
 Node *tree_copy(Node *src, Node *parent)
 {
 	int COMMENT =0;
