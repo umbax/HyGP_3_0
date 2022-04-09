@@ -3,7 +3,7 @@
 %%%
 
 
-function varargout = list_selection(varargin)
+function varargout = HyGPcompare(varargin)
     % LIST_SELECTION M-file for list_selection.fig
     %      LIST_SELECTION, by itself, creates a new LIST_SELECTION or raises the existing
     %      singleton*.
