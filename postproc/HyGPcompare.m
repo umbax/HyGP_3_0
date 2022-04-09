@@ -1,3 +1,8 @@
+%%% Function that opens a GUI to compare experiments on different metrics
+%%% Function previously called list_selection.m
+%%%
+
+
 function varargout = list_selection(varargin)
     % LIST_SELECTION M-file for list_selection.fig
     %      LIST_SELECTION, by itself, creates a new LIST_SELECTION or raises the existing
