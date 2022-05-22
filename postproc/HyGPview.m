@@ -61,12 +61,14 @@ end
 last_run = count_runs(directory_name);
 
 % READ INPUT FILE 
-[PAR, R, CONSTR0, CONSTR1]=read_INPUT_FILE(directory_name);
-NVAR = int16(PAR(2))
-NFITCASES = int16(PAR(8))
+%[PAR, R, CONSTR0, CONSTR1]=read_INPUT_FILE(directory_name);
+[NVAR, NFITCASES, R, CONSTR0, CONSTR1]=read_INPUT_FILE(directory_name); 
+%NVAR = int16(PAR(2))
+%NFITCASES = int16(PAR(8))
 
 % READ FILE CONTAINING TEST DATA SET
-[NVAR_test, NTESTCASES, Rtest, found_test]=read_TEST_FILE(directory_name, NVAR);
+%[NVAR_test, NTESTCASES, Rtest, found_test]=read_TEST_FILE(directory_name, NVAR);
+[NVAR_test, NTESTCASES, Rtest, found_test]=read_TEST_FILE(directory_name);
 
 % SELECT OBJECTIVE FUNCTION
 f_obj = assign_f_obj_fun();
@@ -280,6 +282,7 @@ while (run)
     %------------------------------------------------------------------------------------------   
     if (NVAR==1)
         % FFT plot
+        disp('Calling HyGPfft ...')
         HyGPfft(R, tree_output_build, experiment, run, cur_gen);
     end
 

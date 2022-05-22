@@ -62,25 +62,28 @@ first_path = 'D:\relocated_users\relocated_umba\Documents\OneDrive - University 
 
 % read training data set (input file)
 if strcmp(dataset,'train')
-    [NVAR, NCASES, PAR_value, R, CONSTR0, CONSTR1]=read_INPUT_FILE(path); 
+    [NVAR, NCASES, R, CONSTR0, CONSTR1]=read_INPUT_FILE(path); 
 end 
 % read test data set
 if strcmp(dataset,'test')
     [NVAR, NCASES, R, found_test]=read_TEST_FILE(path); %, NVAR); NVAR is the additional input to check that dimensionality is the same. In the future load both train and test data sets!
 end
 
-% compute Sy
+% Statistical properties of training or test data set
 disp('Data matrix first line: ') 
 R(1, :)
 size(R)
-ave = ones(NCASES,1)*mean(R(:,NVAR+1));  %column vector of NCASES entries all equal to mean target value
-Sy = sum((R(:,NVAR+1)-ave(:)).^2); % sum of squared deviations from mean value
+y_ave = mean(R(:,NVAR+1));  %column vector of NCASES entries all equal to mean target value
+y_ave_vector = ones(NCASES,1)*y_ave; 
+Sy = sum((R(:,NVAR+1)-y_ave_vector(:)).^2); % sum of squared deviations from mean value
+y_var=0.0;
+y_var = var(R(:,NVAR+1)); 
 %--------------------------------------------------------------------------
 
 
 
 % --------------------------
-% load data
+% load objectives RMSE, VAR, R2 from archives_best.txt or archives_best_TEST.txt
 % --------------------------
 size(RMSE)
 R2 = zeros(max_n_runs, n_experiments);
@@ -99,7 +102,7 @@ for k=1:n_experiments
     file
     % read RMSE values (3rd entry) of the best individuals of the ecperiment (one per run, collected in "archives_best ...")
     % Structure of training data set: # 1-Gen 2-F 3-Fitness(RMSE) 4-Corrections 5-R2 6-Mean 7-Var 8-Min 9-Max 10-First_ACF_root 11-Tot_variation Expression
-    % Structure of the test data set: ?
+    % Structure of the test data set: ? Check file
     [RMSEsingle, r2single, VARsingle]=textread(file,'%*d %*f %f %*d %f %*f %f %*[^\n]',-1,'bufsize', 50000, 'commentstyle','shell','endofline','\n')
     % initialize the RMSE matrix only the first time
     RMSEsingle
@@ -113,9 +116,9 @@ for k=1:n_experiments
     RMSE(1:N_runs(k),k) = RMSEsingle;
     VAR(1:N_runs(k),k) = VARsingle;
     R2(1:N_runs(k),k) = r2single;
-    RMSE(N_runs(k)+1:max_n_runs,k) = nan; 
-    VAR(N_runs(k)+1:max_n_runs,k) = nan; 
-    R2(N_runs(k)+1:max_n_runs,k) = nan; 
+    RMSE(N_runs(k)+1:max_n_runs,k) = nan; % useful? You already padded the vector
+    VAR(N_runs(k)+1:max_n_runs,k) = nan; % useful? You already padded the vector
+    R2(N_runs(k)+1:max_n_runs,k) = nan; % useful? You already padded the vector
 
 end
 
@@ -184,6 +187,10 @@ best
 %----------------------------------------------------
 % plot PARETO fronts with 2 objectives: RMSE and VAR
 %------------------------------------------------------
+% compute difference between VAR and y_var for Pareto front representation
+ABS_VAR_diff=zeros(max_n_runs, n_experiments);  
+ABS_VAR_diff=abs(VAR-ones(max_n_runs, n_experiments)*y_var);
+
 markers={'o', 's', 'd', '^', 'v', '>', '<', 'p'};
 marker_used=0;
 figure;
@@ -193,18 +200,18 @@ legend_entries=[""];
 for k=1:n_experiments
     marker_used=marker_used+1;
     for j=1:max_n_runs
-        plot(RMSE(j,k),VAR(j,k), 'Marker', markers(marker_used))
+        plot(RMSE(j,k),ABS_VAR_diff(j,k), 'Marker', markers(marker_used))  %VAR(j,k)
         str=strcat(' R', num2str(j));     % both experiment and run: strcat(experiment_list(k), ' R', num2str(j));
-        text(RMSE(j,k),VAR(j,k),str, 'Interpreter', 'none')
+        text(RMSE(j,k),ABS_VAR_diff(j,k),str, 'Interpreter', 'none')  %VAR(j,k)
         legend_entries=[legend_entries string(experiment_list(k))]
     end
 end
 
 hold off
 xlabel('RMSE');
-ylabel('Var');
-legend(legend_entries,'Interpreter', 'none');
-title({['Pareto front for RMSE vs Variance on ' mark];'Distribution of best individuals (one per run)'}, 'FontSize',size_title);
+ylabel('|Var(model)-Var(target)|', 'Interpreter', 'none');
+legend(legend_entries,'Interpreter', 'none', FontSize=8);
+title({['Pareto front for RMSE vs Variance on ' mark];'Distribution of best individuals (one per run)'; ['Target variance y_var= ' num2str(y_var)]}, 'FontSize',size_title, 'Interpreter', 'none');
 
 
 
