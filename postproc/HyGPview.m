@@ -281,9 +281,10 @@ while (run)
     % (relies on the vector tree_output_build returned by plot_act_vs_est()
     %------------------------------------------------------------------------------------------   
     if (NVAR==1)
-        % FFT plot
+        % FFT plot on training data set
         disp('Calling HyGPfft ...')
         HyGPfft(R, tree_output_build, experiment, run, cur_gen);
+        
     end
 
     %--------------------------------------------------------------------------
