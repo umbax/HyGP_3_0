@@ -20,9 +20,13 @@ R(1:10,:)  % just to check that the right data are used
 %L = 5000;             % Length of signal - size of building data set?
 %Z1 = ones(1,L)+(0:L-1)*T;        % Time vector on which sampling is made (to be replaced by input data set)
 Z1=R(:,1);
-T=0.0022
+disp('R(2,1)')
+R(2,1)
+disp('R(1,1)')
+R(1,1)
+T=R(2,1)-R(1,1) % trying to capture the delta between time steps - assuming that sampling is UNIFORM    %T=0.0022
 Fs=1/T
-L=3000
+L=size(R,1)                 %3000
 
 % Original signal (input data set)
 S = R(:,2);

@@ -32,7 +32,7 @@ end
 %************************************
 %}
 
-function [PAR_value, R, CONSTR0, CONSTR1]=read_INPUT_FILE(directory_name)
+function [NVAR, NTRAIN, R, CONSTR0, CONSTR1]=read_INPUT_FILE(directory_name)
 
 
 % directories definition
@@ -113,7 +113,7 @@ end
 % define explicitly NVAR and NFTICASES so to avoid using PAR_value(...) in the rest of the script        
 NVAR = int16(PAR_value(2));
 NFITCASES = int16(PAR_value(8));
-
+NTRAIN = NFITCASES;
 
 %read binary operations
 bin_op = '';

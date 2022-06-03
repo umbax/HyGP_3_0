@@ -61,12 +61,14 @@ end
 last_run = count_runs(directory_name);
 
 % READ INPUT FILE 
-[PAR, R, CONSTR0, CONSTR1]=read_INPUT_FILE(directory_name);
-NVAR = int16(PAR(2))
-NFITCASES = int16(PAR(8))
+%[PAR, R, CONSTR0, CONSTR1]=read_INPUT_FILE(directory_name);
+[NVAR, NFITCASES, R, CONSTR0, CONSTR1]=read_INPUT_FILE(directory_name); 
+%NVAR = int16(PAR(2))
+%NFITCASES = int16(PAR(8))
 
 % READ FILE CONTAINING TEST DATA SET
-[NVAR_test, NTESTCASES, Rtest, found_test]=read_TEST_FILE(directory_name, NVAR);
+%[NVAR_test, NTESTCASES, Rtest, found_test]=read_TEST_FILE(directory_name, NVAR);
+[NVAR_test, NTESTCASES, Rtest, found_test]=read_TEST_FILE(directory_name);
 
 % SELECT OBJECTIVE FUNCTION
 f_obj = assign_f_obj_fun();
@@ -90,35 +92,38 @@ while (run)
     if (run)
         clear GEN F FITNESS R2 HITS EXPR;    
     end
-    %-----------------------------------------
-    % Figure 1 : plot F evolution of all runs
-    %-----------------------------------------
-    Fave_matrix=[];
-    leg={};         %cell(last_run,1);
-    s_leg=0;
-    ok_run=0;
-    filename = 'data_gp.txt';
-    for i_run=1:last_run; 
-        file = [directory_name '/run_' num2str(i_run) '/' filename]; 
-        fid = fopen(file);
-        if (fid~=-1)
-            C = textscan(fid,'%u %f %f %f %f %f %f %f %f %f %f %f %f %f %f','commentstyle','#'); % 15 columns
-            fclose(fid);
-            s_leg=s_leg+1;
-            ok_run=ok_run+1;
-            Fave_matrix(:,ok_run)=C{12};  % average F->C{13}, min F->C{12}
-            leg(s_leg)={['Run ' num2str(i_run)]};    % leg(i_run)={['Run ' num2str(i_run)]}
-        end
-        
-    end
-    ok_run;
-    size(Fave_matrix);
-    plot(Fave_matrix,'-o')
-    legend(leg)
-    title({experiment; 'Evolution of minimum aggregate error (F) throughout the runs'},'FontSize',size_title,'Interpreter','none');
+%     %-----------------------------------------
+%     % Figure 1 : plot F evolution of all runs
+%     %-----------------------------------------
+%     Fave_matrix=[];
+%     leg={};         %cell(last_run,1);
+%     s_leg=0;
+%     ok_run=0;
+%     filename = 'data_gp.txt';
+%     for i_run=1:last_run; 
+%         file = [directory_name '/run_' num2str(i_run) '/' filename]; 
+%         fid = fopen(file);
+%         if (fid~=-1)
+%             C = textscan(fid,'%u %f %f %f %f %f %f %f %f %f %f %f %f %f %f','commentstyle','#'); % 15 columns
+%             fclose(fid);
+%             s_leg=s_leg+1;
+%             ok_run=ok_run+1;
+%             Fave_matrix(:,ok_run)=C{12};  % average F->C{13}, min F->C{12}
+%             % if you launch HyGPvoew with an experiment with different no
+%             % of generations per run it goes into error as dimensions are
+%             % different!
+%             leg(s_leg)={['Run ' num2str(i_run)]};    % leg(i_run)={['Run ' num2str(i_run)]}
+%         end
+%         
+%     end
+%     ok_run;
+%     size(Fave_matrix);
+%     plot(Fave_matrix,'-o')
+%     legend(leg)
+%     title({experiment; 'Evolution of minimum aggregate error (F) throughout the runs'},'FontSize',size_title,'Interpreter','none');
 
     % check the number of generations
-    filename = 'best_gp.txt'; % to access the individuals in the archive use 'objectives.txt';
+    filename = 'best_gp.txt'; % best model - to access the individuals in the archive use 'objectives.txt';
     file = [directory_name '/run_' num2str(run) '/' filename];
     % extract number of generations from file (for my GP implementations)
     [GEN] = textread(file,'%d %*[^\n]',-1,'bufsize',16382,'commentstyle','shell','endofline','\n');
@@ -158,7 +163,7 @@ while (run)
     % read tree objectives(TREE_MEAN, TREE_VAR, TREE_MIN, TREE_MAX, etc) at the requested generation
     disp([experiment ': tree in run ' num2str(run) ', generation ' num2str(cur_gen) ])
     %C = textscan(fid,'%u %f %f %f %d %q',1,'bufsize',16382,'commentstyle','#'); %,'endofline','\n')
-    C = textscan(fid,'%u %f %f %u %f %f %f %f %f %f %f %q',1,'commentstyle','#'); %,'endofline','\n')  % best_gp.txt
+    C = textscan(fid,'%u %f %f %u %f %f %f %f %f %f %f %f %q',1,'commentstyle','#'); %,'endofline','\n')  % best_gp.txt
     fclose(fid);
     cur_gen
     %# Gen F Fitness(RMSE) Corrections R2(adim.) Mean Var Min Max First_ACF Tot_variation Expression
@@ -173,7 +178,8 @@ while (run)
     TREE_MAX = C{9}
     TREE_FIRST_ACF = C{10}
     TREE_TOT_VARIATION = C{11}
-    EXPR = char(C{12})
+    MAXABSERROR = C{12}
+    EXPR = char(C{13})
 
     %
     tree_string = EXPR 
@@ -258,6 +264,7 @@ while (run)
         figure;
         hold on
         plot(R(1:max_lag+1,1),acf_original,'-k',R(1:max_lag+1,1),acf_tree_build ,'-r')   
+        % the line that follows can be improved.. too much discretised!
         plot(R(floor(ACF_pt_original),1),acf_original(floor(ACF_pt_original)),'dk',R(floor(ACF_pt_tree_build),1),acf_tree_build(floor(ACF_pt_tree_build)) ,'or')   
         hold off
         title('Autocorrelation function: original signal vs HyGP model')
@@ -275,6 +282,7 @@ while (run)
     %------------------------------------------------------------------------------------------   
     if (NVAR==1)
         % FFT plot
+        disp('Calling HyGPfft ...')
         HyGPfft(R, tree_output_build, experiment, run, cur_gen);
     end
 

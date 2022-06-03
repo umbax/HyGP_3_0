@@ -18,6 +18,7 @@
 
 function [outputArg1,outputArg2] = plot_model(experiment, run, cur_gen, fitness, R2_now, NVAR, R, tree_string, f_obj, dataset_type)
 
+disp('start plot model:')
 size_title = 11;
 
 % define variables
@@ -46,10 +47,10 @@ f_llim = min(R(:,NVAR+1)); %0;  %.95  %&1.2*min(min(f_obj));
 % 1 INPUT VARIABLE 
 if (NVAR==1)    
     npoints_1D=size(R,1);     %6000 %1000.0;
-    Z1 = [lim_var(1,1) : abs(lim_var(1,2)- lim_var(1,1))/(npoints_1D-1.0) : lim_var(1,2)]
+    Z1 = [lim_var(1,1) : abs(lim_var(1,2)- lim_var(1,1))/(npoints_1D-1.0) : lim_var(1,2)];
     % compute HyGP model values in Z1
     tree_values=zeros(1,size(Z1,2));
-    tree_values_size = size(tree_values,2)
+    tree_values_size = size(tree_values,2);
     for i=1:tree_values_size
         tree_values(i)= compute_expression(tree_string, Z1(i));  % not possible to use as input the whole vector x
     end
@@ -184,6 +185,6 @@ title({line1_title; line2_title; line3_title; line4_title},'FontSize',size_title
 %zlim([min(f_llim,f_ulim) max(f_llim,f_ulim)]);  % sometimes when uncommented the plot is blank... don't know why...
 hold off
 
-
+disp('end plot model')
 end
 
