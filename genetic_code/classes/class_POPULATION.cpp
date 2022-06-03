@@ -2939,7 +2939,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F[11] = pow(fabs(ppd->tot_variation_input-complete_tree->tot_variation_tree)/ppd->tot_variation_input,3);
 	}
 
-	// STRATEGY 15 : UNDER TEST - max/min values of target function and tree are checked at the target index
+	// STRATEGY 15 : objectives: variance + mean + max + min, where max and min values of target function and tree are checked at the target index
 	if ((pr->strat_statp)==15) {
 		// fitness value (RMSE)
 		F[1] = exp(10.0*complete_tree->fitness/fabs(ppd->y_max-ppd->y_min)); //20/2/21 try exp(complete_tree->fitness/average_err);
@@ -2957,8 +2957,8 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		F[6] = 0.0;     //(complete_tree->pen_ord1)/(pen_ord1_ave+.001);
 		F[7] = 0.0;
 		// statistical properties of the tree (mean and variance)
-		//F[8] = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1.0)) + exp(fabs(ppd->y_max-complete_tree->tree_at_trgt_max)/fabs(ppd->y_max))+ exp(fabs(ppd->y_min-complete_tree->tree_at_trgt_min)/fabs(ppd->y_min));
-		F[8] = exp(fabs(ppd->y_max-complete_tree->tree_at_trgt_max)/fabs(ppd->y_max))-1.0 + exp(fabs(ppd->y_min-complete_tree->tree_at_trgt_min)/fabs(ppd->y_min))-1.0;
+		F[8] = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1.0)) + exp(fabs(ppd->y_max-complete_tree->tree_at_trgt_max)/(fabs(ppd->y_max)+1.0))+ exp(fabs(ppd->y_min-complete_tree->tree_at_trgt_min)/(fabs(ppd->y_min)+1.0));
+		// only max/min: F[8] = exp(fabs(ppd->y_max-complete_tree->tree_at_trgt_max)/fabs(ppd->y_max))-1.0 + exp(fabs(ppd->y_min-complete_tree->tree_at_trgt_min)/fabs(ppd->y_min))-1.0;
 		// presence of high level polynomials that cause divergent behaviour
 		F[9] = 0.0;
 		// difference in point at which ACF halves
@@ -3010,7 +3010,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 
 
 	//------------------------------------------------------------
-	// calculation of contributions (objectives multiplied by weights) at tree level
+	// calculation of contributions T (objectives multiplied by weights) at tree level
 	//------------------------------------------------------------
 	for (int i=1; i<12; i++) complete_tree->T[i] = Fweight[i]*complete_tree->Fc[i];  // from 1 to 11
 
