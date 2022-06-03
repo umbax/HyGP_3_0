@@ -183,8 +183,8 @@ while (run)
 
     %
     tree_string = EXPR 
-    fitness = FITNESS   
-    R2_now = R2  
+    RMSE_HyGP = FITNESS   
+    R2_HyGP = R2  
     disp(' ')
 
     % here you can place the call to the function that computes the
@@ -221,18 +221,6 @@ while (run)
     %axis tight equal;
     title({experiment; 'Selected points in the domain'},'FontSize',size_title,'Interpreter','none');
 
-
-    %------------------------------------------------------------------------------------------
-    % Figure 3 : plot objective function and selected HyGP model on building and test data sets
-    % (RMSE and R2 are read from 'best_gp.txt' and currently only evaluated on building data set in plot_act_vs_est
-    %------------------------------------------------------------------------------------------
-    % plot model on building data set
-    plot_model(experiment, run, cur_gen, fitness, R2_now, NVAR, R, tree_string, f_obj, 'Building');
-    % plot model on test data set
-    if (found_test) 
-        plot_model(experiment, run, cur_gen, -9999, -9999, NVAR_test, Rtest, tree_string, f_obj, 'Test');
-    end
-
     %------------------------------------------------------------------------
     % ACTUAL VS ESTIMATED RESPONSES : RMSE, R2, min, max, etc are computed
     % in plot_act_vs_est script. Transfer these operations in this (main) file?
@@ -245,6 +233,26 @@ while (run)
     end
     disp(['Shown image: run ' num2str(run) ', generation ' num2str(cur_gen) ]); 
 
+    
+    %------------------------------------------------------------------------------------------
+    % Figure 3 : plot objective function and selected HyGP model on building and test data sets
+    % (RMSE and R2 are read from 'best_gp.txt' and currently only evaluated on building data set in plot_act_vs_est
+    %------------------------------------------------------------------------------------------
+    % plot model on building data set
+    % RMSE_HyGP has to be equal to objectives_test.RMSE, R2_HyGP has to be equal to objectives_test.R2 
+    % as same individual evaluated on the same data sets (training and test)
+    plot_model(experiment, run, cur_gen, RMSE_HyGP, R2_HyGP, NVAR, R, tree_string, f_obj, 'Building');
+    % plot model on test data set
+    if (found_test) 
+        % objectives.RMSE, objectives.R2 are the RMSE and the R2 of the
+        % current individual calculated by MATLAB - not necessarily
+        % identical to RMSE_HyGP_test, R2_HyGP_test computed by HyGP as in
+        % HyGP code the best individual on the train data set may be
+        % different from the best individual on the test data set.
+        plot_model(experiment, run, cur_gen, objectives_test.RMSE, objectives_test.R2, NVAR_test, Rtest, tree_string, f_obj, 'Test');
+    end
+
+    
 
     %------------------------------------------------------------------------------------------
     % Autocorrelation function of input data (building) set and selected HyGP model
@@ -282,9 +290,13 @@ while (run)
     %------------------------------------------------------------------------------------------   
     if (NVAR==1)
         % FFT plot on training data set
-        disp('Calling HyGPfft ...')
-        HyGPfft(R, tree_output_build, experiment, run, cur_gen);
-        
+        disp('Plot GP spectrum on training data set ...')
+        HyGPfft(R, tree_output_build, experiment, run, cur_gen, 'Building');
+        if (found_test) 
+            % FFT plot on test data set
+            disp('Plot GP spectrum on test data set ...')
+            HyGPfft(Rtest, tree_output_test, experiment, run, cur_gen, 'Test');
+        end
     end
 
     %--------------------------------------------------------------------------
