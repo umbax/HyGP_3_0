@@ -752,7 +752,7 @@ void Population::crossover (Binary_Node *p1, Binary_Node *p2, int cp1, int cp2, 
 			insert_parameter((Node*)*c2, (Node **)c2, &Mult, (Val)1.) ;
 	}
 
-	// set the fitness of the two new offspring to a high number!
+	// set the fitness (RMSE) of the two new offspring to a high number!
 	// this declaration is
 	(*c1)->fitness=9.999999E99;
 	(*c2)->fitness=9.999999E99;
@@ -1207,7 +1207,7 @@ void Population::print_population_without_parameters(int gen)
 
 	char *expr;	
 	cout <<"\n\n --------------------  GENERATION " << gen << " without parameters -------------------" << endl; 
-	cout << " n F fitness hits n_nodes depth expr" << endl; 	
+	cout << " n F fitness(RMSE) hits n_nodes depth expr" << endl;
 	for (int j=0;j<size;j++) {
 		expr = print(j,trees);
 		cout << j << "  " << scientific << trees[j]->F << " " << trees[j]->fitness;
@@ -2255,7 +2255,8 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 	// initialisation of internal variables
 	Val* treeval = new Val[n_cases];  // 10/1/21 turned Val treeval into a dynamic array
 	Val a_max, a_min;
-	int i_min, i_max;
+	int i_min=0;
+	int i_max=0;
 	Val error = 0.0;
 	Val error_norm = 0.0;
 	Val square_err = 0.0;
@@ -2350,10 +2351,10 @@ void Population::fitness_func(Val Sy, Val** data_used, int n_cases, Node *curren
 			cout << "\nerror predicted-target = " << error;
 		}
 		square_err = square_err + error*error;   //sum of the square of the errors - SSres (https://en.wikipedia.org/wiki/Coefficient_of_determination)
-		sum_values = sum_values + treeval[i]; 				// sum of the tree values to compute mean
+		sum_values = sum_values + treeval[i]; 	// sum of the tree values to compute mean
 		sum_square_values = sum_square_values + treeval[i]*treeval[i];
 		if (parameters->nvar==1) {
-			if (i>0) tot_variation=tot_variation+fabs(treeval[i]-treeval[i-1]);
+			if (i>0) tot_variation=tot_variation+fabs(treeval[i]-treeval[i-1]);    // i is the training case counter!
 		}
 		// maximum absolute error
 		if (i==0) {
@@ -2953,12 +2954,11 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		//F4 = pow((double)(complete_tree->count()),2.0);
 		// factorisation bonus enabled only if w_factorisation > 0 (see input file)
 		f_5=pow(complete_tree->pen_ord0, 3.0);
-		F[5]=1.0E6*(exp(f_5)-1.0);   // F[5] = 1.0E6*(exp(F[5]*F[5]*F[5])-1.0);
+		F[5]=1.0E6*(exp(f_5)-1.0);   // F[5] = 1.0E6*(exp(F[5]*F[5]*F[5])-1.0);  //megadistexp3
 		F[6] = 0.0;     //(complete_tree->pen_ord1)/(pen_ord1_ave+.001);
 		F[7] = 0.0;
 		// statistical properties of the tree (mean and variance)
 		F[8] = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var) + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1.0)) + exp(fabs(ppd->y_max-complete_tree->tree_at_trgt_max)/(fabs(ppd->y_max)+1.0))+ exp(fabs(ppd->y_min-complete_tree->tree_at_trgt_min)/(fabs(ppd->y_min)+1.0));
-		// only max/min: F[8] = exp(fabs(ppd->y_max-complete_tree->tree_at_trgt_max)/fabs(ppd->y_max))-1.0 + exp(fabs(ppd->y_min-complete_tree->tree_at_trgt_min)/fabs(ppd->y_min))-1.0;
 		// presence of high level polynomials that cause divergent behaviour
 		F[9] = 0.0;
 		// difference in point at which ACF halves
@@ -3000,28 +3000,47 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		for (int i=1; i<12; i++) F[i]=F[i]/Fsum;
 	}
 
+	// STRATEGY 99 : PURE TEST!!!!
+	if ((pr->strat_statp)==99) {
+		// fitness value (RMSE)
+		//F[1] = exp(10.0*complete_tree->fitness/fabs(ppd->y_max-ppd->y_min))-1.0; //20/2/21 try exp(complete_tree->fitness/average_err);
+		F[1] = exp(complete_tree->fitness/fabs(ppd->y_max-ppd->y_min))-1.0; //20/2/21 try exp(complete_tree->fitness/average_err);
+		// number of tuning parameters squared
+		//F[2] = exp(complete_tree->n_tuning_parameters)-1.0;  //really strong!
+		//F[2] = pow((double)(complete_tree->n_tuning_parameters), 2.0);
+		F[2] = sqrt(complete_tree->n_tuning_parameters);
+		// statistical properties of the tree (mean and variance)
+		F[8] = exp(10.0*fabs(ppd->y_var-complete_tree->tree_variance)/ppd->y_var)-1.0 + exp(10.0*fabs(ppd->y_ave-complete_tree->tree_mean)/(fabs(ppd->y_ave)+1.0))-1.0 + exp(fabs(ppd->y_max-complete_tree->tree_at_trgt_max)/(fabs(ppd->y_max)+1.0))-1.0 + exp(fabs(ppd->y_min-complete_tree->tree_at_trgt_min)/(fabs(ppd->y_min)+1.0))-1.0;
+
+	}
+
 
 	//------------------------------------------------------------
 	// copy locally stored objectives values to tree attributed
 	//------------------------------------------------------------
-	for (int i=1; i<12; i++) complete_tree->Fc[i] = F[i];  // from 1 to 11
-	// complete_tree->Fc[5] = F[5]; //megadistexp3
-	// complete_tree->Fc[7] = F[7]; // not used in the standard approach
-
+	if (pr->strat_statp!=99) {
+		for (int i=1; i<12; i++) complete_tree->Fc[i] = F[i];  // from 1 to 11
+	}
+	if (pr->strat_statp==99) {
+		complete_tree->Fc[1] = F[1];
+		complete_tree->Fc[2] = F[2];
+		complete_tree->Fc[8] = F[8];
+	}
 
 	//------------------------------------------------------------
 	// calculation of contributions T (objectives multiplied by weights) at tree level
 	//------------------------------------------------------------
-	for (int i=1; i<12; i++) complete_tree->T[i] = Fweight[i]*complete_tree->Fc[i];  // from 1 to 11
-
-	//------------------------------------------------------------
-	// fitness function definition
-	//------------------------------------------------------------
-	// dynamic coefficient
-	// double dc;
-	// if (G) 
-	//	dc = (double)(gen/G);
-	// else dc = 1.;
+	if (pr->strat_statp!=99) {
+		for (int i=1; i<12; i++) complete_tree->T[i] = Fweight[i]*complete_tree->Fc[i];  // from 1 to 11
+	}
+	if (pr->strat_statp==99) {
+		Fweight[1]=1.0;
+		complete_tree->T[1] = Fweight[1]*complete_tree->Fc[1];
+		Fweight[8]=1.0;
+		complete_tree->T[8] = Fweight[8]*complete_tree->Fc[8];
+		Fweight[2]=1.0;
+		complete_tree->T[2] = Fweight[2]*complete_tree->Fc[2];
+	}
 
 	// MINMAX approach - Strategy 11
 	if (pr->strat_statp==11) {	// if (pr->minmax) {
@@ -3037,7 +3056,7 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 	}
 
 	// AGGREGATED (WEIGHTED SUM) approach - not strategy 11
-	if (pr->strat_statp!=11) {
+	if ((pr->strat_statp!=11) && (pr->strat_statp!=99)) {
 		// compute F as linear combination of fitness value and other objectives
 		//F = a1*F1+a2*dc*dc*F2+a3*dc*dc*F3+a4*dc*dc*F4;   //dynamic weights
 		//F = a1*F1+a2*F2+a3*(exp(F3*F3)-1)*1000000.0+a4*F4+(1000000.0)*(exp(F5*F5)-1.0)*a5;
@@ -3063,7 +3082,12 @@ void Population::aggregate_F(ProblemDefinition* ppd, RunParameters* pr, Val aver
 		//complete_tree->F = F7*(complete_tree->T1 + complete_tree->T2 + complete_tree->T4 + complete_tree->T5 + complete_tree->T6) + complete_tree->T3 ;
 	}
 
-
+	// PURE TEST
+	if (pr->strat_statp==99) {
+		complete_tree->F = 0.0;
+		complete_tree->F = complete_tree->T[1]*complete_tree->T[2]*complete_tree->T[8];
+		if (isinf(complete_tree->F)) complete_tree->F=MAX_F_VALUE;    // see Population.h
+	}
 
 	if (COMMENT) {  // && (i==0)) {
 		cout << "\nPopulation::aggregate_F" << endl;
@@ -4775,7 +4799,7 @@ void Population::adapt_genetic_operators_rates(void)
 
 void Population::compute_statistics(void)
 // function that computes basic ARCHIVE statistics for the CURRENT generation
-// Fit (fitness initially meant RMSE): min, max, mean and unb. est. of the pop. variance on the archive
+// Fit: min, max, mean and unb. est. of the pop. variance on the archive
 // size: minimum,  average, maximum in the archive
 // depth: minimum,  average, maximum in the archive
 // F value: minimum,  average, maximum, variance in the archive

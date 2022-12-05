@@ -62,7 +62,7 @@ void input_check(RunParameters *pr, ProblemDefinition *pb)
 	}
 
 	// check strategy for statistical properties
-	if ( (pr->strat_statp!=4) && (pr->strat_statp!=6) && (pr->strat_statp!=7) && (pr->strat_statp!=8) && (pr->strat_statp!=9) && (pr->strat_statp!=11) && (pr->strat_statp!=13) && (pr->strat_statp!=14) && (pr->strat_statp!=15) && (pr->strat_statp!=16)) {
+	if ( (pr->strat_statp!=4) && (pr->strat_statp!=6) && (pr->strat_statp!=7) && (pr->strat_statp!=8) && (pr->strat_statp!=9) && (pr->strat_statp!=11) && (pr->strat_statp!=13) && (pr->strat_statp!=14) && (pr->strat_statp!=15) && (pr->strat_statp!=16) && (pr->strat_statp!=99)) {
 		cerr << "\nError: the strategies currently available are STRAT_STATP= 4, STRAT_STATP= 6, STRAT_STATP= 7, STRAT_STATP= 8, STRAT_STATP= 11, STRAT_STATP= 13, STRAT_STATP= 14, STRAT_STATP= 15, , STRAT_STATP= 16!!!\n";
 		exit(-1);
 	}
