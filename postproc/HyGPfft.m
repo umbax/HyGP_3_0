@@ -1,7 +1,7 @@
 %%% script to compare the frequency spectrum (FFT) of original signal and
 %%% HyGP model
 
-function HyGPfft(R, tree_output, experiment, run, cur_gen)
+function HyGPfft(R, tree_output, experiment, run, cur_gen, dataset_type)
 
 % settings ---------------------------------------
 size_title = 11;
@@ -39,11 +39,11 @@ figure
 plot(Z1,X)
 % captions
 line1_title = experiment;
-line2_title = ['Sampled window of HyGP model'];
+line2_title = ['Sampled window of HyGP model - ' dataset_type ' data set'];
 title({line1_title; line2_title}, 'FontSize',size_title,'Interpreter','none');
 xlabel('Z1')
 ylabel('X(Z1)')
-xlim([1 11])
+%xlim([1 11])
 
 % Compute the Fourier transform of the HyGP model.
 Y_HyGP = fft(X);
@@ -63,7 +63,7 @@ f = Fs*(0:(L/2))/L;  %if sampling frequency is Fs, fft can get up to Fs/2
 figure
 plot(f,P1,'-k',f,P1_HyGP, '-r') 
 line1_title = experiment;
-line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - Building data set'];
+line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - ' dataset_type ' data set'];
 line3_title = ['Single-Sided Amplitude Spectrum of HyGP model and original signal'];
 title({line1_title; line2_title; line3_title}, 'FontSize',size_title,'Interpreter','none');
 xlabel('f (Hz)')
