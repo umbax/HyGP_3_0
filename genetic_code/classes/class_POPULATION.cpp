@@ -5791,19 +5791,9 @@ int Population::psominimize(Binary_Node *ntree, int spacedim, double* swarmcentr
 		}
 	}
 
-	// random value generator
-	int seed = -1;
-	if (seed<0) {
-		// if seed = -1 use random seed (time)
-	    time_t *tp = NULL; // seed the random value generator
-		srand((unsigned int) time (tp));    //to be used normally
-		seed = time(tp); // attention! two runs that starts with the same seed are identical!
-		if (COMMENT) cout << "\n\nRandom value generator : seed =-1 : seed randomly generated = " << seed << endl;
-	} else {
-		// if seed >0 use the value given in input file
-	    srand(seed);
-	    if (COMMENT) cout << "\n\n Random value generator : used seed = " << seed << endl;
-	}
+	// ATTENTION!!! Seed initialization must be done only once at the beginning of the code!!!!!
+	// random value generator: seed initialization done in master.cpp
+	// no other operation needed
 
 
 	// list of variables (all the pointers are dynamically allocated, so remember to free memory!)
