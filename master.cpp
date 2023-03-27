@@ -50,6 +50,11 @@ int VERBOSE = 1;     //set to 1 if you want to print on the screen all the comme
 
 int main (int argc, char *argv[])
 {
+
+
+
+
+
 	// check the number of arguments
 	if (argc<3) {
 		cerr << "\nERROR!!! Too few arguments!!!"	;
@@ -113,7 +118,8 @@ int main (int argc, char *argv[])
 
 	// check for errors on the input parameter between parenthesis
 	input_check(&Mparam, &Mprobl);
-	
+
+
 	// compute additional attributes or set up structures in Problem Definition (variables, for example)
 	// now all is done in read_input_file (but it's too messy there...)
 	Mprobl.compute_inputdata_stats();
@@ -140,7 +146,8 @@ int main (int argc, char *argv[])
         cout << "\n\nSEED=-1 in input file: seed randomly generated = " << Mparam.seed << endl;
     } else {
         // if seed >0 use the value given in input file
-        srand(Mparam.seed);
+    	// 29/1/23 Mparam.seed is read from input file as "int", so it might give problem during casting to unsigned int if really large
+    	srand((unsigned int)Mparam.seed);
         cout << "\n\nused seed = " << Mparam.seed << endl;
     }
 	
