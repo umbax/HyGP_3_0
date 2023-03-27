@@ -13,11 +13,11 @@
 %%% limitations under the License.
 
 
-%%% plot_act_vs_est.m
+%%% evaluate_individual.m
 %%% MATLAB function to evaluate the individual on the training or test data set
 %%% it also plots the actual vs estimated response on the given data set
 
-function [tree_output, objectives]=plot_act_vs_est(NFITCASES, NVAR, R, tree_string, experiment, run, cur_gen, dataset_type)
+function [tree_output, objectives]=evaluate_individual(NFITCASES, NVAR, R, tree_string)
     
     disp('start plot_act_vs_est:')
     %-----------------------------------------------
@@ -39,8 +39,8 @@ function [tree_output, objectives]=plot_act_vs_est(NFITCASES, NVAR, R, tree_stri
     error_max = 0.0;
     error_rel = 0.0;
     error_rel_max = 0.0;
-    norm_errorsq=0.;
-    norm_RMSE = 0.;
+    norm_errorsq=0.0;
+    norm_RMSE = 0.0;
     
     % error computation
     for k=1:NFITCASES  % rows of the data matrix (MATLAB comincia a contare gli array da 1!)
@@ -85,75 +85,48 @@ function [tree_output, objectives]=plot_act_vs_est(NFITCASES, NVAR, R, tree_stri
     end   % end NFITCASES cycle
     
     % percentual variation from actual to estimated
-    disp(' ')
-    disp([dataset_type ' data set quality indicators:'])
-    disp('type comp to compare actual and estimated output')
-    disp('For the table with estimated and actual output type comp')
-    disp('      Actual (Obj. function)         Estimated (Tree)         Variation%      ')
-    comp = [R(:,NVAR+1) tree_output(:) 100.0*(tree_output(:)-R(:,NVAR+1))./R(:,NVAR+1)];
+%     disp(' ')
+%     disp('Quality indicators:')
+%     disp('type comp to compare actual and estimated output')
+%     disp('For the table with estimated and actual output type comp')
+%     disp('      Actual (Obj. function)         Estimated (Tree)         Variation%      ')
+%     comp = [R(:,NVAR+1) tree_output(:) 100.0*(tree_output(:)-R(:,NVAR+1))./R(:,NVAR+1)];
+%     
+%     max_perc_var = max(abs(comp(:,3)));
+%     disp(['Maximum absolute % variation = ' num2str(max_perc_var)])
     
-    max_perc_var = max(abs(comp(:,3)));
-    disp(['Maximum absolute % variation = ' num2str(max_perc_var)])
-    
-    % output values of HyGP tree on the given data set (build or test)
+    % HyGP tree objectives on the given data set (build or test)
     %--------------------------------------------------------------------
     N = cast(NFITCASES,'double');
     % 1) RMSE
     rmse = sqrt(errorsq/N);
-    rmse = sqrt(mean((comp(:,1)-comp(:,2)).^2));
+    %rmse = sqrt(mean((comp(:,1)-comp(:,2)).^2));
     objectives.RMSE=rmse;    
-    % 3) R2  
-    Serr = sum(((comp(:,1)-comp(:,2)).^2));
+    % 2) R2  
+    %Serr = sum(((comp(:,1)-comp(:,2)).^2));
+    Serr = sum(( (R(:,NVAR+1) - tree_output(:)) .^2));
     y_ave = mean(R(:,NVAR+1))*ones(N,1);
     Sy =  sum((R(:,NVAR+1)-y_ave).^2);
     objectives.R2=1.- Serr/Sy;
-    % 4) Mean
+    % 3) Mean
     objectives.Mean=sum_tree_output/N;
-    % 5) Variance (see reformulation in http://datagenetics.com/blog/november22017/index.html)
+    % 4) Variance (see reformulation in http://datagenetics.com/blog/november22017/index.html)
     objectives.Var=sum_squared_tree_output/N - objectives.Mean*objectives.Mean;
-    % 6) Min
+    % 5) Min
     objectives.Min=min(tree_output);
-    % 7) Max
+    % 6) Max
     objectives.Max=max(tree_output);
-    % 8) ACF
+    % 7) ACF
     % 18/11/21 to be completed!
-    % 9) Total variation
+    % 8) Total variation
     objectives.Tot_variation=tot_variation;
     
     % norm_RMSE = sqrt(norm_errorsq/N);
     % error_max; % to be added to objectives instead of hits? Is it L-infinite norm? 
     % error_rel_max;
-    % errorabs;
-    
-    
-    
-    
-    
-    %------------------------------------------
-    % plot estimated against actual response
-    %------------------------------------------
-    figure;
-    plot(R(:,NVAR+1),tree_output,'or',R(:,NVAR+1),R(:,NVAR+1),'b')
-    line1_title = experiment;
-    line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - ' dataset_type ' data set'];
-    %line3_title = [dataset_type ' data set'];
-    line4_title = ['Matlab RMSE = ' num2str(objectives.RMSE, '%e')];
-    line5_title = ['Matlab R2 = ' num2str(objectives.R2, '%e')];
-    line6_title = ['Matlab Max error = ' num2str(error_max, '%e')];
-    line7_title = ['Matlab Max rel error (%) = ' num2str(error_rel_max, '%e')];
-    line8_title = [' '];
-    title({line1_title; line2_title; line4_title; line5_title; line6_title; line7_title},'FontSize',size_title,'Interpreter','none');
-    ylabel('Estimated','FontSize',size_title)
-    xlabel('Actual', 'FontSize',size_title)
-    axis equal;
-    outbut_bounds=[min(R(:,NVAR+1)) max(R(:,NVAR+1))];
-    if (size(outbut_bounds,1)==1 && size(outbut_bounds,2)==2)
-        xlim(outbut_bounds);
-        ylim(outbut_bounds);
-    end
-    
+    % errorabs;  
    
-disp('end plot_act_vs_est:')
+%disp('end plot_act_vs_est:')
 return
 end
 

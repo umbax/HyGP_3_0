@@ -223,13 +223,61 @@ while (run)
 
     %------------------------------------------------------------------------
     % ACTUAL VS ESTIMATED RESPONSES : RMSE, R2, min, max, etc are computed
-    % in plot_act_vs_est script. Transfer these operations in this (main) file?
+    % in plot_act_vs_est script. Transfer plotting operations in this (main) file?
     %------------------------------------------------------------------------
-    % plot actual vs estimated response on building data set
-    [tree_output_build, objectives_build]=plot_act_vs_est(NFITCASES, NVAR, R, tree_string, experiment, run, cur_gen, 'Building');
-    % plot actual vs estimated response on test data set (if found)
+    % plot actual vs estimated response on TRAINING data set
+    [tree_output_build, objectives_build]=evaluate_individual(NFITCASES, NVAR, R, tree_string);
+   
+    %------------------------------------------------------------
+    % plot estimated against actual response on TRAINING DATA SET
+    %------------------------------------------------------------
+    figure;
+    plot(R(:,NVAR+1),tree_output,'or',R(:,NVAR+1),R(:,NVAR+1),'b')
+    line1_title = experiment;
+    line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - Training data set'];
+    %line3_title = [dataset_type ' data set'];
+    line4_title = ['Matlab RMSE = ' num2str(objectives_build.RMSE, '%e')];
+    line5_title = ['Matlab R2 = ' num2str(objectives_build.R2, '%e')];
+    %line6_title = ['Matlab Max error = ' num2str(error_max, '%e')];  % not yet in objectives_build
+    %line7_title = ['Matlab Max rel error (%) = ' num2str(error_rel_max,'%e')]; % not yet in objectives_build
+    line8_title = [' '];
+    title({line1_title; line2_title; line4_title; line5_title;},'FontSize',size_title,'Interpreter','none');
+    ylabel('Estimated','FontSize',size_title)
+    xlabel('Actual', 'FontSize',size_title)
+    axis equal;
+    outbut_bounds=[min(R(:,NVAR+1)) max(R(:,NVAR+1))];
+    if (size(outbut_bounds,1)==1 && size(outbut_bounds,2)==2)
+        xlim(outbut_bounds);
+        ylim(outbut_bounds);
+    end
+    
+    
+    % plot actual vs estimated response on TEST data set (if found)
     if (found_test) 
-        [tree_output_test, objectives_test]=plot_act_vs_est(NTESTCASES, NVAR, Rtest, tree_string, experiment, run, cur_gen, 'Test');
+        [tree_output_test, objectives_test]=evaluate_individual(NTESTCASES, NVAR, Rtest, tree_string);
+        
+        %------------------------------------------------------------
+        % plot estimated against actual response on TEST DATA SET
+        %------------------------------------------------------------
+        figure;
+        plot(Rtest(:,NVAR+1),tree_output,'or',Rtest(:,NVAR+1),Rtest(:,NVAR+1),'b')
+        line1_title = experiment;
+        line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - Test data set'];
+        %line3_title = [dataset_type ' data set'];
+        line4_title = ['Matlab RMSE = ' num2str(objectives_test.RMSE, '%e')];
+        line5_title = ['Matlab R2 = ' num2str(objectives_test.R2, '%e')];
+        %line6_title = ['Matlab Max error = ' num2str(error_max, '%e')];  % not yet in objectives_build
+        %line7_title = ['Matlab Max rel error (%) = ' num2str(error_rel_max,'%e')]; % not yet in objectives_build
+        line8_title = [' '];
+        title({line1_title; line2_title; line4_title; line5_title;},'FontSize',size_title,'Interpreter','none');
+        ylabel('Estimated','FontSize',size_title)
+        xlabel('Actual', 'FontSize',size_title)
+        axis equal;
+        outbut_bounds=[min(Rtest(:,NVAR+1)) max(Rtest(:,NVAR+1))];
+        if (size(outbut_bounds,1)==1 && size(outbut_bounds,2)==2)
+            xlim(outbut_bounds);
+            ylim(outbut_bounds);
+        end
     end
     disp(['Shown image: run ' num2str(run) ', generation ' num2str(cur_gen) ]); 
 
@@ -244,11 +292,10 @@ while (run)
     plot_model(experiment, run, cur_gen, RMSE_HyGP, R2_HyGP, NVAR, R, tree_string, f_obj, 'Building');
     % plot model on test data set
     if (found_test) 
-        % objectives.RMSE, objectives.R2 are the RMSE and the R2 of the
-        % current individual calculated by MATLAB - not necessarily
-        % identical to RMSE_HyGP_test, R2_HyGP_test computed by HyGP as in
-        % HyGP code the best individual on the train data set may be
-        % different from the best individual on the test data set.
+        % objectives.RMSE, objectives.R2 are the RMSE and the R2 of the current individual calculated by MATLAB
+        % - not necessarily identical to RMSE_HyGP_test computed by HyGP.
+        % This is because HyGP sorts the Population after evaluating the individuals on the test data set,
+        % so the best individual on the train data set may be different from the best one on the test data set.
         plot_model(experiment, run, cur_gen, objectives_test.RMSE, objectives_test.R2, NVAR_test, Rtest, tree_string, f_obj, 'Test');
     end
 
