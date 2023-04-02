@@ -33,9 +33,9 @@ last_address = last_directory(1:last);
 
 % get the directory
 if (strcmp(last_directory,''))
-    address = ['~' sep 'code' sep 'C++' sep 'experiments' sep 'structuralGP_OLD' sep 'output']
+    address = ['~' sep 'code' sep 'C++' sep 'experiments' sep 'structuralGP_OLD' sep 'output'];
 else
-    address = last_address
+    address = last_address;
 end
 
 directory_name = uigetdir(address,'Select the experiment');
