@@ -38,7 +38,7 @@ format long e;
 
 % settings and variables ----------------------------------------
 plot_char = '-b';
-size_title = 11;
+size_title = 13;
 pi=3.141592653589793e+00;
 sep = filesep;  % set separator
 objectives_build=struct('RMSE',0.0,'Corrections',0,'R2',0.0,'Mean',0.0,'Var',0.0,'Min',0.0,'Max',0.0,'ACF',0.0,'Tot_variation',0.0);

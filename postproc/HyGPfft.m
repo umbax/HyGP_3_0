@@ -4,7 +4,7 @@
 function HyGPfft(R, tree_output, experiment, run, cur_gen, dataset_type)
 
 % settings ---------------------------------------
-size_title = 11;
+size_title = 13;
 pi=3.141592653589793e+00;
 sep = filesep;  % set separator 
 %-------------------------------------------------------
