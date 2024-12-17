@@ -23,6 +23,7 @@ n_experiments = dim_experiment_list(1,2);
 % set directory and file names
 filename = 'fitness_min.txt'; 
 n_found = 0; 
+S_cell = cell([n_experiments 1]);
 Smean_cell = cell([n_experiments 1]);
 gen_cell = cell([n_experiments 1]);
 %directory_name = directory_list{1};
@@ -32,20 +33,21 @@ gen_cell = cell([n_experiments 1]);
 % load the data (rows = generations, columns = runs)
 for j=1:n_experiments
     
-    % check if size_ave.txt exists in the experiment directory
+    % check if fitness_min.txt exists in the experiment directory
     found = 0;
-    found = search_file(directory_list{j},filename); 
+    found = search_file(directory_list{j},filename)
     
     if (found)
         file = [directory_list{j} sep  filename];
         % load the data (rows = generations, columns = runs)
         delimiter = ' ';
-        Fit = dlmread(file);
+        Fit = dlmread(file)
         dim_Fit=size(Fit);
-        [Fitmean, nrun_valid] = smart_mean(Fit);
-        s = size(Fitmean);
-        gen = [0:s(1)-1];
+        [Fitmean, nrun_valid] = smart_mean(Fit)
+        s = size(Fitmean)
+        gen = [0:s(1)-1]
         % update cells
+        S_cell{j,1} = Fit;
         Smean_cell{j,1} = Fitmean;
         gen_cell{j,1} = gen;
     else
@@ -60,7 +62,25 @@ if (n_found ~= n_experiments)
     disp('Not all files have been found')
 end
 
-% plot the distribution
+% plot the minium fitness found (in the run archive) at each generation for each run
+% ATTENTION: REALLY MESSY FOR MORE THAN ONE EXPERIMENT!!
+nh = figure();
+set(nh,'DefaultAxesLineStyleOrder','-|-.|--|:', 'DefaultAxesColorOrder',[0 0 1])
+% this way up to 4 different lien styles can be created: you'll have to find
+% a way to incorporate different markers as well...
+% {'+','o','*','.','x','s','d','^','v','>','<','p','h'} 
+%plot(gen',Fitmean,plot_char)
+for j=1:n_experiments
+    plot(gen_cell{j},S_cell{j})
+    hold all
+end
+title('Minimum RMSE for each run (archives)','FontSize',size_title);
+xlabel('Generation', 'FontSize',size_label);
+ylabel('RMSE','FontSize',size_label);
+legend(experiment_list, 'interpreter', 'none', 'FontSize', size_label,'Location','best')
+
+
+% plot the average of the minium fitness found at each generation throughout all runs
 nh = figure();
 set(nh,'DefaultAxesLineStyleOrder','-|-.|--|:', 'DefaultAxesColorOrder',[0 0 1])
 % this way up to 4 different lien styles can be created: you'll have to find

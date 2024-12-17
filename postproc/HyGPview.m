@@ -232,7 +232,7 @@ while (run)
     % plot estimated against actual response on TRAINING DATA SET
     %------------------------------------------------------------
     figure;
-    plot(R(:,NVAR+1),tree_output,'or',R(:,NVAR+1),R(:,NVAR+1),'b')
+    plot(R(:,NVAR+1),tree_output_build,'or',R(:,NVAR+1),R(:,NVAR+1),'b')
     line1_title = experiment;
     line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - Training data set'];
     %line3_title = [dataset_type ' data set'];
@@ -260,7 +260,7 @@ while (run)
         % plot estimated against actual response on TEST DATA SET
         %------------------------------------------------------------
         figure;
-        plot(Rtest(:,NVAR+1),tree_output,'or',Rtest(:,NVAR+1),Rtest(:,NVAR+1),'b')
+        plot(Rtest(:,NVAR+1),tree_output_test,'or',Rtest(:,NVAR+1),Rtest(:,NVAR+1),'b')
         line1_title = experiment;
         line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - Test data set'];
         %line3_title = [dataset_type ' data set'];
@@ -298,7 +298,7 @@ while (run)
         % so the best individual on the train data set may be different from the best one on the test data set.
         plot_model(experiment, run, cur_gen, objectives_test.RMSE, objectives_test.R2, NVAR_test, Rtest, tree_string, f_obj, 'Test');
     end
-
+ 
     
 
     %------------------------------------------------------------------------------------------

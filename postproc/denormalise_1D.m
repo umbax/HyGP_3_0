@@ -2,7 +2,9 @@
 %%% It currently works only for NVAR=1 !!!!
 
 %%% input: normalised tranining data set (input file) and test data set (test file)
-%%% output: peformance of the best tree for the run and generation specified by the user
+%%% output: peformance in the original, denomalised space of the best tree for the run and generation specified by the user
+
+%%% ATTENTION! Before running, set correctly the corresponding normalising coefficients - lines 52-62 !!
 
 clear all;
 close all;
@@ -10,7 +12,8 @@ format long e;
 
 % settings and variables ----------------------------------------
 plot_char = '-b';
-size_title = 13;
+size_title = 14;
+size_axes = 12;
 pi=3.141592653589793e+00;
 sep = filesep;  % set separator
 objectives_build_ORIG=struct('RMSE',0.0,'Corrections',0,'R2',0.0,'Mean',0.0,'Var',0.0,'Min',0.0,'Max',0.0,'ACF',0.0,'Tot_variation',0.0);
@@ -43,19 +46,18 @@ last_run = count_runs(directory_name);
 %[NVAR_test, NTESTCASES, Rtest, found_test]=read_TEST_FILE(directory_name, NVAR);
 [NVAR_test, NTESTCASES, Rtest, found_test]=read_TEST_FILE(directory_name);
 
-
-
-% % normalising coefficients for independent data
+ 
+% % normalising coefficients for independent data (x)
 % a_ind = input("Coefficient a for independent data (x): ")
-% b_ind = input("Coefficient b for independent data (y): ")
-a_ind = 977.826513
-b_ind = 0.989990
+% b_ind = input("Coefficient b for independent data (y): ") 
+a_ind = 5.002501250625312e-04
+b_ind = 9.994997498749375e-01
 
-% % normalising coefficients for dependent data
+% % normalising coefficients for dependent data (y)
 % a_dep = input("Coefficient a for dependent data (x): ")
 % b_dep = input("Coefficient b for dependent data (y): ")
-a_dep = 183.833620 
-b_dep = 6.003371
+a_dep = 4.907203770577576e-04
+b_dep = 6.243153242010772e+00       
 
 % ASK WHICH RUN TO PLOT
 message = [ num2str(last_run) ' runs in the selected experiment. Which? '];
@@ -139,7 +141,7 @@ while (run)
     R2_HyGP = R2  
 
     % compute error on training data set: data set is denormalised using a_ind and b_ind and then RMSE is computed
-    [R_ORIG, output_build_ORIG, objectives_build_ORIG]=evaluate_individual_to_ORIG_1D(a_ind, a_dep, b_ind, b_dep, NFITCASES, NVAR, R, tree_string, 'Building');
+    [R_ORIG, output_build_ORIG, objectives_build_ORIG]=evaluate_individual_to_ORIG_1D(a_ind, a_dep, b_ind, b_dep, NFITCASES, NVAR, R, tree_string, 'Training');
     % compute error on test data set (if found): data set is denormalised using a_ind and b_ind and then RMSE is computed
     if (found_test) 
         [Rtest_ORIG, output_test_ORIG, objectives_test_ORIG]=evaluate_individual_to_ORIG_1D(a_ind, a_dep, b_ind, b_dep, NTESTCASES, NVAR, Rtest, tree_string, 'Test');
@@ -154,15 +156,19 @@ while (run)
     plot(Rtest_ORIG(:,1), Rtest_ORIG(:,2), '-ok', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k', 'MarkerSize',2);
     % visualize selected tree
     plot(Rtest_ORIG(:,1),output_test_ORIG,'r','LineWidth', 1); 
-    plot ([(11-b_ind)/a_ind (11-b_ind)/a_ind], [min(output_test_ORIG) max(output_test_ORIG)], 'b', 'Linewidth', 4)  %&%&% line beyond which there is extrapolation
+    %plot ([(11-b_ind)/a_ind (11-b_ind)/a_ind], [min(output_test_ORIG) max(output_test_ORIG)], 'b', 'Linewidth', 4)  %&%&% line beyond which there is extrapolation
+    % plot line defining the end of the training data set
+    plot ([19991 19991], [min(output_test_ORIG) max(output_test_ORIG)], 'b', 'Linewidth', 4)  %2000th point: only for Vasily Towne's case
     legend('Original signal','HyGP model','Location','best')    
     % captions
     line1_title = experiment;
-    line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - test data set'];
+    line2_title =  ['Run ' num2str(run) ', Gen. ' num2str(cur_gen) ' - Test data set'];
     line3_title = ['RMSE = ' num2str(objectives_test_ORIG.RMSE, '%e')];
     line4_title = ['R2 = ' num2str(objectives_test_ORIG.R2, '%e')];
     title({line1_title; line2_title; line3_title; line4_title},'FontSize',size_title,'Interpreter','none');
     xlim([Rtest_ORIG(1,1) Rtest_ORIG(NTESTCASES,1)]);
+    xlabel('Time (days)','FontSize',size_axes)
+    ylabel('Time coefficient','FontSize',size_axes)
     hold off
 
     %------------------------------------------------------------------------------------------
@@ -172,11 +178,11 @@ while (run)
     if (NVAR==1)
         % FFT plot on training data set
         disp('Plot GP model spectrum on training data set ...')
-        HyGPfft(R_ORIG, output_build_ORIG, experiment, run, cur_gen, 'Build');
+        HyGPfft(R_ORIG, output_build_ORIG, experiment, run, cur_gen, 'Training');
         if (found_test) 
             % FFT plot on test data set
             disp('Plot GP model spectrum on test data set ...')
-            HyGPfft(Rtest_ORIG, output_test_ORIG, experiment, run, cur_gen, 'Test');
+            HyGPfft(Rtest_ORIG, output_test_ORIG, experiment, run, cur_gen, 'Test');                 
         end
     end
 
@@ -185,7 +191,7 @@ while (run)
     %------------------------------------------------------------------------------------------
     format long;  
     % write to file test data
-    testdata2file=[Rtest_ORIG(:,1), Rtest_ORIG(:,2), output_test_ORIG, output_test_ORIG-Rtest_ORIG(:,2)]
+    testdata2file=[Rtest_ORIG(:,1), Rtest_ORIG(:,2), output_test_ORIG, output_test_ORIG-Rtest_ORIG(:,2)];
     file_ORIG_name = [directory_name sep 'Denormalised_GPdata_test_r' num2str(run) 'g' num2str(cur_gen) '.txt']
     fileID = fopen(file_ORIG_name,'w');
     fprintf(fileID, '# %s Run=%s Gen=%s\r\n',experiment, num2str(run), num2str(cur_gen));
@@ -220,7 +226,7 @@ end
 function [R_ORIG, tree_output_ORIG, objectives_ORIG]=evaluate_individual_to_ORIG_1D(a_ind, a_dep, b_ind, b_dep, NFITCASES, NVAR, R, tree_string, dataset_type)
     
     %%% ATTENTION: funciton valid ONLY for NVAR=1!!!
-    %%% _ORIG : variable trasnformed into ORIGINAL (physical) space (basically, denormalised) 
+    %%% _ORIG : variable transformed into ORIGINAL (physical) space (basically, denormalised) 
     if ((NVAR>1) || (NVAR<1)) 
         disp('This function only works for NVAR = 1. Exit')
         exit
@@ -251,8 +257,15 @@ function [R_ORIG, tree_output_ORIG, objectives_ORIG]=evaluate_individual_to_ORIG
     Mean_ORIG = 0.;
     
     % denormalise R  (NVAR must be 1, NVAR>1 not accepted so far)
-    % independent variable
-    R_ORIG(:,1)=(R(:,1)-b_ind.*ones(NFITCASES,1))./a_ind
+    % independent variable 
+%     % fix for missing time column in Towne SPOD data
+%     if (strcmp(dataset_type, 'Training'))
+%         R_ORIG(:,1)= ((2*10^-5)*[1:1:3000])';  %only to introduce time in Vasily Towne's data 
+%     end
+%     if (strcmp(dataset_type, 'Test'))
+%         R_ORIG(:,1)= ((2*10^-5)*[1:1:5348])';  %only to introduce time in Vasily Towne's data 
+%     end
+    R_ORIG(:,1)=(R(:,1)-b_ind.*ones(NFITCASES,1))./a_ind;  %correct version
     % dependent variable (target)
     R_ORIG(:,2)=(R(:,2)-b_dep.*ones(NFITCASES,1))./a_dep;
 
